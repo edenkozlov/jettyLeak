@@ -1,0 +1,831 @@
+import { useCallback, useMemo, useRef, useState } from 'react'
+import type { Props as RechartLabelProps } from 'recharts/types/component/Label'
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceArea,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
+
+import { useTheme } from '@/contexts/ThemeContext'
+import { useChartTags } from '@/hooks/useChartTags'
+import { useChartZoomPan } from '@/hooks/useChartZoomPan'
+import {
+  RANGE_MS,
+  TIME_RANGE_OPTIONS,
+  useReportsPage,
+  type TimeRange,
+} from '@/hooks/useReportsPage'
+
+const CHART_COLORS = {
+  light: {
+    line: '#6366f1',
+    grid: '#e5e7eb',
+    axis: '#6b7280',
+    tooltipBg: '#ffffff',
+    tooltipBorder: '#e5e7eb',
+    tooltipText: '#111827',
+  },
+  dark: {
+    line: '#818cf8',
+    grid: '#374151',
+    axis: '#9ca3af',
+    tooltipBg: '#1f2937',
+    tooltipBorder: '#374151',
+    tooltipText: '#f3f4f6',
+  },
+} as const
+
+function formatTick(ts: number, rangeMs: number): string {
+  const d = new Date(ts)
+  if (rangeMs <= 5 * 60_000) {
+    return d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+  }
+  if (rangeMs <= 6 * 60 * 60_000) {
+    return d.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+  }
+  return d.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
+}
+
+function computeTickInterval(rangeMs: number): number {
+  if (rangeMs <= 10_000) return 1_000
+  if (rangeMs <= 30_000) return 5_000
+  if (rangeMs <= 60_000) return 10_000
+  if (rangeMs <= 5 * 60_000) return 60_000
+  if (rangeMs <= 15 * 60_000) return 3 * 60_000
+  if (rangeMs <= 60 * 60_000) return 10 * 60_000
+  if (rangeMs <= 6 * 60 * 60_000) return 60 * 60_000
+  if (rangeMs <= 24 * 60 * 60_000) return 3 * 60 * 60_000
+  return 6 * 60 * 60_000
+}
+
+function formatTooltipTime(ts: number): string {
+  return new Date(ts).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  })
+}
+
+const MAX_VISIBLE_LABELS = 14
+
+function renderValueLabel(
+  props: RechartLabelProps,
+  totalPoints: number,
+  color: string,
+) {
+  const x = Number(props.x ?? 0)
+  const y = Number(props.y ?? 0)
+  const index = Number(props.index ?? 0)
+  const value = props.value as number | null | undefined
+
+  const interval = Math.max(1, Math.floor(totalPoints / MAX_VISIBLE_LABELS))
+  if (index % interval !== 0) return null
+  if (value === null || value === undefined) return null
+
+  return (
+    <text
+      x={x}
+      y={y - 10}
+      textAnchor="middle"
+      fontSize={10}
+      fontWeight={500}
+      fill={color}
+    >
+      {value.toFixed(2)}
+    </text>
+  )
+}
+
+function rangeButtonClass(isActive: boolean): string {
+  if (isActive) {
+    return 'bg-indigo-600 text-white'
+  }
+  return 'bg-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+}
+
+export default function Reports() {
+  const { mode } = useTheme()
+  const colors = CHART_COLORS[mode]
+
+  const {
+    sensors,
+    selectedSensorId,
+    selectedSensorName,
+    chartData,
+    timeRange,
+    isLive,
+    connected,
+    sensorsLoading,
+    reportsLoading,
+    reportsError,
+    handleSensorChange,
+    handleTimeRangeChange,
+    handleToggleLive,
+  } = useReportsPage()
+
+  const dataMin = chartData.length > 0 ? chartData[0]!.timestamp : 0
+  const dataMax =
+    chartData.length > 0 ? chartData[chartData.length - 1]!.timestamp : 0
+
+  const homeMin =
+    timeRange === 'all' || dataMax === 0
+      ? dataMin
+      : Math.max(dataMin, dataMax - RANGE_MS[timeRange])
+  const homeMax = dataMax
+
+  const [tagFormTimestamp, setTagFormTimestamp] = useState<number | null>(null)
+  const [tagTitle, setTagTitle] = useState('')
+  const [tagDescription, setTagDescription] = useState('')
+
+  const {
+    tags,
+    selectedTag,
+    setSelectedTag,
+    createTag,
+    updateTag,
+    deleteTag,
+  } = useChartTags(selectedSensorId)
+
+  const [isEditingTag, setIsEditingTag] = useState(false)
+  const [editTagTitle, setEditTagTitle] = useState('')
+  const [editTagDescription, setEditTagDescription] = useState('')
+
+  const visibleRangeMsRef = useRef(0)
+
+  const handleChartClick = useCallback(
+    (timestamp: number) => {
+      const range = visibleRangeMsRef.current
+      const threshold = Math.max(range * 0.02, 2000)
+
+      let closestTag: (typeof tags)[number] | null = null
+      let closestDist = Infinity
+      for (const tag of tags) {
+        const tagTs = new Date(tag.tagged_at).getTime()
+        const dist = Math.abs(tagTs - timestamp)
+        if (dist < closestDist) {
+          closestDist = dist
+          closestTag = tag
+        }
+      }
+
+      if (closestTag && closestDist <= threshold) {
+        setSelectedTag(closestTag)
+      } else {
+        setTagFormTimestamp(timestamp)
+      }
+    },
+    [tags, setSelectedTag],
+  )
+
+  const {
+    chartWrapperRef,
+    domain,
+    visibleRangeMs,
+    isZoomed,
+    refAreaLeft,
+    refAreaRight,
+    onChartMouseDown,
+    onChartMouseMove,
+    onChartMouseUp,
+    cancelSelection,
+    panLeft,
+    panRight,
+    zoomIn,
+    zoomOut,
+    resetZoom,
+  } = useChartZoomPan(dataMin, dataMax, homeMin, homeMax, handleChartClick)
+
+  visibleRangeMsRef.current = visibleRangeMs
+
+  const onTimeRangeChange = useCallback(
+    (range: TimeRange) => {
+      resetZoom()
+      handleTimeRangeChange(range)
+    },
+    [resetZoom, handleTimeRangeChange],
+  )
+
+  const onSensorChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      resetZoom()
+      setSelectedTag(null)
+      handleSensorChange(e)
+    },
+    [resetZoom, setSelectedTag, handleSensorChange],
+  )
+
+  const visibleData = useMemo(() => {
+    if (chartData.length === 0) return chartData
+    const [left, right] = domain
+    let startIdx = chartData.findIndex((p) => p.timestamp >= left)
+    if (startIdx < 0) startIdx = chartData.length
+    let endIdx = chartData.findIndex((p) => p.timestamp > right)
+    if (endIdx < 0) endIdx = chartData.length
+    return chartData.slice(
+      Math.max(0, startIdx - 1),
+      Math.min(chartData.length, endIdx + 1),
+    )
+  }, [chartData, domain])
+
+  const zoomTicks = useMemo(() => {
+    if (visibleRangeMs <= 0) return []
+    const [left, right] = domain
+    const step = computeTickInterval(visibleRangeMs)
+    const start = Math.ceil(left / step) * step
+    const ticks: number[] = []
+    for (let t = start; t <= right; t += step) {
+      ticks.push(t)
+    }
+    return ticks
+  }, [domain, visibleRangeMs])
+
+  const visibleTags = useMemo(() => {
+    if (!tags.length || chartData.length === 0) return []
+    const [left, right] = domain
+    return tags.filter((tag) => {
+      const ts = new Date(tag.tagged_at).getTime()
+      return ts >= left && ts <= right
+    })
+  }, [tags, domain, chartData.length])
+
+  const handleSaveTag = useCallback(async () => {
+    if (!tagFormTimestamp || !tagTitle.trim()) return
+    await createTag(tagFormTimestamp, tagTitle.trim(), tagDescription.trim())
+    setTagFormTimestamp(null)
+    setTagTitle('')
+    setTagDescription('')
+  }, [tagFormTimestamp, tagTitle, tagDescription, createTag])
+
+  const handleCancelTag = useCallback(() => {
+    setTagFormTimestamp(null)
+    setTagTitle('')
+    setTagDescription('')
+  }, [])
+
+  const closeTagModal = useCallback(() => {
+    setSelectedTag(null)
+    setIsEditingTag(false)
+  }, [setSelectedTag])
+
+  const startEditTag = useCallback(() => {
+    if (!selectedTag) return
+    setEditTagTitle(selectedTag.title)
+    setEditTagDescription(selectedTag.description ?? '')
+    setIsEditingTag(true)
+  }, [selectedTag])
+
+  const cancelEditTag = useCallback(() => {
+    setIsEditingTag(false)
+  }, [])
+
+  const handleSaveEdit = useCallback(async () => {
+    if (!selectedTag || !editTagTitle.trim()) return
+    await updateTag(
+      selectedTag.id,
+      editTagTitle.trim(),
+      editTagDescription.trim(),
+    )
+    setIsEditingTag(false)
+  }, [selectedTag, editTagTitle, editTagDescription, updateTag])
+
+  const handleDeleteTag = useCallback(
+    async (id: number) => {
+      await deleteTag(id)
+      setIsEditingTag(false)
+    },
+    [deleteTag],
+  )
+
+  if (sensorsLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center text-gray-500 dark:text-gray-400">
+        Loading…
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold">Flow Reports</h1>
+          {isLive && connected && (
+            <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+              </span>
+              Live
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleToggleLive}
+            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              isLive
+                ? 'bg-green-600 text-white hover:bg-green-500'
+                : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+            }`}
+          >
+            {isLive ? 'Pause' : 'Resume'}
+          </button>
+
+          <select
+            value={selectedSensorId ?? ''}
+            onChange={onSensorChange}
+            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          >
+            {sensors.map((sensor) => (
+              <option key={sensor.id} value={sensor.id}>
+                {sensor.name ?? `Sensor #${sensor.id}`}
+                {sensor.building?.name ? ` — ${sensor.building.name}` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {reportsError && (
+        <div className="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          {reportsError}
+        </div>
+      )}
+
+      <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {selectedSensorName && (
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Sensor:{' '}
+              <span className="font-medium text-gray-900 dark:text-white">
+                {selectedSensorName}
+              </span>
+              {isLive && (
+                <span className="ml-2 text-xs text-gray-400">
+                  ({chartData.length} points)
+                </span>
+              )}
+            </p>
+          )}
+
+          <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-1 text-xs font-medium dark:border-gray-700 dark:bg-gray-900">
+            {TIME_RANGE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() =>
+                  onTimeRangeChange(opt.value as TimeRange)
+                }
+                className={`rounded-md px-3 py-1.5 transition-colors ${rangeButtonClass(timeRange === opt.value)}`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-3 flex items-center justify-between">
+          <div className="inline-flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-700 dark:bg-gray-900">
+            <button
+              onClick={panLeft}
+              className="rounded-md px-2 py-1 text-sm text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+              title="Pan left"
+            >
+              ◀
+            </button>
+            <button
+              onClick={zoomOut}
+              className="rounded-md px-2 py-1 text-sm text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+              title="Zoom out"
+            >
+              −
+            </button>
+            <button
+              onClick={zoomIn}
+              className="rounded-md px-2 py-1 text-sm text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+              title="Zoom in"
+            >
+              +
+            </button>
+            <button
+              onClick={panRight}
+              className="rounded-md px-2 py-1 text-sm text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+              title="Pan right"
+            >
+              ▶
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            {isZoomed && (
+              <button
+                onClick={resetZoom}
+                className="rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+              >
+                Reset Zoom
+              </button>
+            )}
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              Drag to zoom · Scroll to zoom · Swipe to pan
+            </span>
+          </div>
+        </div>
+
+        {reportsLoading ? (
+          <div className="flex h-80 items-center justify-center text-gray-500 dark:text-gray-400">
+            Loading chart…
+          </div>
+        ) : chartData.length === 0 ? (
+          <div className="flex h-80 items-center justify-center text-gray-400">
+            No report data for this time range
+          </div>
+        ) : (
+          <div
+            ref={chartWrapperRef}
+            className="select-none"
+            onMouseLeave={cancelSelection}
+          >
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart
+                data={visibleData}
+                onMouseDown={onChartMouseDown}
+                onMouseMove={onChartMouseMove}
+                onMouseUp={onChartMouseUp}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
+                <XAxis
+                  dataKey="timestamp"
+                  type="number"
+                  scale="time"
+                  domain={domain}
+                  allowDataOverflow
+                  ticks={zoomTicks}
+                  tickFormatter={(ts: number) =>
+                    formatTick(ts, visibleRangeMs)
+                  }
+                  tick={{ fontSize: 11, fill: colors.axis }}
+                  tickLine={{ stroke: colors.grid }}
+                  axisLine={{ stroke: colors.grid }}
+                />
+                <YAxis
+                  domain={['auto', 'auto']}
+                  tickFormatter={(v: number) => v.toFixed(2)}
+                  tick={{ fontSize: 11, fill: colors.axis }}
+                  tickLine={{ stroke: colors.grid }}
+                  axisLine={{ stroke: colors.grid }}
+                  label={{
+                    value: 'Flow',
+                    angle: -90,
+                    position: 'insideLeft',
+                    style: { fontSize: 12, fill: colors.axis },
+                  }}
+                />
+                <Tooltip
+                  labelFormatter={(ts) => formatTooltipTime(Number(ts))}
+                  formatter={(value) => [
+                    Number(value).toFixed(4),
+                    'Flow Value',
+                  ]}
+                  contentStyle={{
+                    backgroundColor: colors.tooltipBg,
+                    border: `1px solid ${colors.tooltipBorder}`,
+                    borderRadius: 8,
+                    fontSize: 13,
+                    color: colors.tooltipText,
+                  }}
+                  labelStyle={{
+                    fontWeight: 600,
+                    marginBottom: 4,
+                    color: colors.tooltipText,
+                  }}
+                  itemStyle={{ color: colors.tooltipText }}
+                />
+                {refAreaLeft !== null &&
+                  refAreaRight !== null &&
+                  refAreaLeft !== refAreaRight && (
+                    <ReferenceArea
+                      x1={refAreaLeft}
+                      x2={refAreaRight}
+                      strokeOpacity={0.3}
+                      fill={colors.line}
+                      fillOpacity={0.15}
+                    />
+                  )}
+                {visibleTags.map((tag) => (
+                  <ReferenceLine
+                    key={tag.id}
+                    x={new Date(tag.tagged_at).getTime()}
+                    stroke="#f59e0b"
+                    strokeDasharray="5 3"
+                    strokeWidth={1.5}
+                    label={{
+                      value:
+                        tag.title.length > 15
+                          ? tag.title.slice(0, 15) + '\u2026'
+                          : tag.title,
+                      position: 'insideTopRight',
+                      fontSize: 10,
+                      fill: '#f59e0b',
+                      fontWeight: 500,
+                    }}
+                  />
+                ))}
+                <Line
+                  type="monotone"
+                  dataKey="flowValue"
+                  name="Flow Value"
+                  stroke={colors.line}
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                  isAnimationActive={false}
+                  label={(props: RechartLabelProps) =>
+                    renderValueLabel(props, visibleData.length, colors.axis)
+                  }
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Tags
+            </h3>
+            {tags.length > 0 && (
+              <span className="text-xs text-gray-400">
+                {tags.length} tag{tags.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+
+          {tags.length === 0 ? (
+            <p className="py-3 text-center text-xs text-gray-400 italic">
+              Click anywhere on the chart to add a tag
+            </p>
+          ) : (
+            <div className="space-y-1.5">
+              {tags.map((tag) => {
+                const tagTs = new Date(tag.tagged_at).getTime()
+                const inView =
+                  tagTs >= domain[0] && tagTs <= domain[1]
+                return (
+                  <button
+                    key={tag.id}
+                    onClick={() => setSelectedTag(tag)}
+                    className="group flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-left transition-colors hover:border-amber-300 hover:bg-amber-50/60 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-amber-700 dark:hover:bg-amber-900/20"
+                  >
+                    <span
+                      className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${inView ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                      title={
+                        inView ? 'Visible on chart' : 'Outside current view'
+                      }
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+                        {tag.title}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {formatTooltipTime(tagTs)}
+                      </p>
+                    </div>
+                    <span className="flex-shrink-0 text-xs text-gray-300 transition-colors group-hover:text-amber-600 dark:text-gray-600 dark:group-hover:text-amber-400">
+                      View &rarr;
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {tagFormTimestamp !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={handleCancelTag}
+        >
+          <div
+            className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Add Tag
+            </h3>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              {formatTooltipTime(tagFormTimestamp)}
+            </p>
+
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  value={tagTitle}
+                  onChange={(e) => setTagTitle(e.target.value)}
+                  placeholder="e.g. Spike detected"
+                  autoFocus
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && tagTitle.trim()) handleSaveTag()
+                    if (e.key === 'Escape') handleCancelTag()
+                  }}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Description
+                </label>
+                <textarea
+                  value={tagDescription}
+                  onChange={(e) => setTagDescription(e.target.value)}
+                  placeholder="Optional notes..."
+                  rows={3}
+                  className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') handleCancelTag()
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={handleCancelTag}
+                className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveTag}
+                disabled={!tagTitle.trim()}
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Save Tag
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedTag && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={closeTagModal}
+        >
+          <div
+            className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {formatTooltipTime(
+                    new Date(selectedTag.tagged_at).getTime(),
+                  )}
+                </p>
+              </div>
+              <button
+                onClick={closeTagModal}
+                className="ml-4 flex-shrink-0 rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {isEditingTag ? (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Title
+                  </label>
+                  <input
+                    type="text"
+                    value={editTagTitle}
+                    onChange={(e) => setEditTagTitle(e.target.value)}
+                    autoFocus
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && editTagTitle.trim())
+                        handleSaveEdit()
+                      if (e.key === 'Escape') cancelEditTag()
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Description
+                  </label>
+                  <textarea
+                    value={editTagDescription}
+                    onChange={(e) => setEditTagDescription(e.target.value)}
+                    placeholder="Optional notes..."
+                    rows={4}
+                    className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') cancelEditTag()
+                    }}
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    onClick={cancelEditTag}
+                    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSaveEdit}
+                    disabled={!editTagTitle.trim()}
+                    className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h3 className="mt-3 text-lg font-semibold text-gray-900 dark:text-white">
+                  {selectedTag.title}
+                </h3>
+
+                {selectedTag.description ? (
+                  <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
+                    <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-gray-300">
+                      {selectedTag.description}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-3 text-sm italic text-gray-400 dark:text-gray-500">
+                    No description added.
+                  </p>
+                )}
+
+                <div className="mt-5 flex items-center justify-between">
+                  <button
+                    onClick={() => handleDeleteTag(selectedTag.id)}
+                    className="rounded-lg px-3 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20"
+                  >
+                    Delete
+                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={startEditTag}
+                      className="rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400 dark:hover:bg-indigo-900/40"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={closeTagModal}
+                      className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

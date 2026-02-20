@@ -1,0 +1,1070 @@
+---
+description: Comprehensive project architecture, patterns, and coding standards for React Native Expo apps
+alwaysApply: true
+---
+
+# Project Blueprint — React Native Expo Application
+
+This rule defines the full architecture, project structure, coding standards, and patterns for this application. Follow every section precisely when generating, modifying, or reviewing code.
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Notes |
+|---|---|---|
+| Framework | React Native + Expo SDK (latest stable) | Managed workflow, new architecture enabled |
+| Language | TypeScript (strict mode) | No `any` types unless absolutely unavoidable |
+| Routing | Expo Router (file-based) | Typed routes enabled |
+| State (global) | Redux Toolkit | Minimal — auth/session state only |
+| State (local) | Custom hooks + useState | All page/feature logic lives in hooks |
+| API | GraphQL (Hasura) | Queries and mutations in dedicated folders |
+| Auth | Supabase Auth (PKCE) | Session persistence via AsyncStorage |
+| Real-time | GraphQL subscriptions (graphql-ws) | WebSocket with auto-reconnect |
+| Styling | React Native StyleSheet | Theme-aware via `createStyles(theme)` |
+| i18n | i18next + react-i18next | Locale files in `/locales` |
+| Error tracking | Sentry | Wraps root layout, traces GraphQL |
+| Testing | Jest + React Testing Library | Tests in `/__tests__` |
+
+---
+
+## Project Structure
+
+```
+project-root/
+├── app/                              # Expo Router route definitions
+│   ├── _layout.tsx                   # Root layout (providers, Sentry, font loading)
+│   ├── (tabs)/                       # Tab navigator group
+│   │   ├── _layout.tsx               # Tab bar configuration
+│   │   ├── home.tsx                  # Tab screens (thin — proxy to /pages)
+│   │   ├── explore.tsx
+│   │   ├── create.tsx
+│   │   ├── store.tsx
+│   │   └── profile.tsx
+│   ├── login.tsx                     # Auth screens
+│   ├── signup.tsx
+│   └── +not-found.tsx                # 404 fallback
+├── pages/                            # Actual page implementations
+│   ├── (tabs)/
+│   │   ├── home/
+│   │   │   ├── index.tsx             # Component (< 400 lines, UI only)
+│   │   │   └── index.styles.ts       # Co-located styles
+│   │   └── [other tabs]/
+│   ├── login/
+│   │   ├── index.tsx
+│   │   └── index.styles.ts
+│   └── [feature]/
+│       ├── index.tsx
+│       └── index.styles.ts
+├── components/                       # Reusable UI components
+│   ├── DS/                           # Design system (buttons, inputs, cards, headers)
+│   │   ├── Button/
+│   │   │   ├── Button.tsx
+│   │   │   └── Button.styles.ts
+│   │   ├── Input/
+│   │   ├── Header/
+│   │   ├── Card/
+│   │   └── [ComponentName]/
+│   ├── ui/                           # Base primitives (icons, loaders)
+│   └── [FeatureComponent]/           # Feature-specific compound components
+├── hooks/                            # Custom hooks (ALL business logic lives here)
+│   ├── useGraphQL.ts                 # Core GraphQL hook
+│   ├── useSubscription.ts            # Core subscription hook
+│   ├── auth/
+│   │   └── useAuth.ts               # Authentication hook
+│   ├── useHomePage.ts                # Page-specific hooks
+│   ├── useProfile.ts
+│   ├── [serviceName]/                # External service hooks
+│   │   └── use[ServiceName].ts
+│   └── [domain]/                     # Domain-specific hooks
+│       └── use[Domain].ts
+├── queries/                          # GraphQL query definitions ONLY
+│   ├── getUsers.ts
+│   ├── getPostById.ts
+│   └── [getDomainEntity].ts
+├── mutations/                        # GraphQL mutation definitions ONLY
+│   ├── createPost.ts
+│   ├── updateUser.ts
+│   └── [domainMutations].ts
+├── types/                            # TypeScript type/interface definitions
+│   ├── index.ts                      # Barrel exports
+│   ├── users.ts
+│   ├── posts.ts
+│   └── [domain].ts
+├── contexts/                         # React contexts
+│   └── ThemeContext.tsx
+├── redux/                            # Redux store (minimal — auth only)
+│   ├── store.ts
+│   └── loginSlice.ts
+├── lib/                              # Core library setup
+│   ├── supabase.ts                   # Supabase client init
+│   ├── subscriptionClient.ts         # GraphQL WS client
+│   ├── i18n.ts                       # i18next config
+│   └── sentry.ts                     # Sentry init
+├── utils/                            # Pure utility functions
+│   ├── graphqlClient.ts              # Non-hook GraphQL executor
+│   ├── logger/
+│   │   └── logger.ts                 # Structured logging utility
+│   ├── formatDate.ts
+│   └── [utilityName].ts
+├── constants/                        # App-wide constants
+│   ├── Colors.ts                     # Color palette
+│   └── Fonts.ts                      # Font definitions
+├── globals/                          # Environment config
+│   └── constants.ts                  # API URLs, keys, feature flags
+├── locales/                          # i18n translation files
+│   ├── en.ts
+│   └── [locale].ts
+├── assets/                           # Static assets
+│   ├── fonts/
+│   ├── images/
+│   └── logos/
+├── __tests__/                        # Test files
+│   ├── setup/
+│   │   └── jest.setup.ts
+│   ├── hooks/
+│   ├── integration/
+│   └── utils/
+│       └── testHelpers.tsx
+├── app.json                          # Expo config
+├── eas.json                          # EAS Build profiles
+├── tsconfig.json                     # TypeScript config (strict, @/ alias)
+├── jest.config.js                    # Jest config
+├── metro.config.js                   # Metro bundler config
+└── package.json
+```
+
+### Structure Rules
+
+1. `/app` contains ONLY route definitions — thin files that import from `/pages`
+2. `/pages` contains actual page components (< 400 lines each)
+3. Every page component has a co-located `.styles.ts` file
+4. Router ignores `.styles.ts` files via `unstable_settings.ignore`
+5. `/hooks` is the single source of truth for all business logic
+6. `/queries` and `/mutations` are the single source of truth for all GraphQL operations
+7. `/types` is the single source of truth for all type definitions
+8. `/components/DS/` is the design system — reusable across the entire app
+9. `/lib` contains one-time initialization code for external services
+10. `/utils` contains pure functions with no React dependencies
+
+---
+
+## Component Architecture
+
+### Core Principle: Separation of Concerns
+
+Components are **purely presentational**. ALL business logic, state, side effects, and data fetching live in custom hooks.
+
+### Component File Template
+
+```tsx
+import { View, Text, ScrollView } from 'react-native'
+import { useTheme } from '@/contexts/ThemeContext'
+import { usePageName } from '@/hooks/usePageName'
+import Header from '@/components/DS/Header'
+import { createStyles } from './index.styles'
+
+export default function PageName() {
+  const { theme } = useTheme()
+  const styles = createStyles(theme)
+
+  const {
+    // Data
+    items,
+    userData,
+    // Loading
+    loading,
+    error,
+    // UI state
+    activeTab,
+    // Handlers
+    handleItemPress,
+    handleRefresh,
+  } = usePageName()
+
+  const renderItem = ({ item }) => (
+    <ItemCard item={item} onPress={handleItemPress} />
+  )
+
+  if (loading) return <PageLoader />
+
+  return (
+    <View style={styles.container}>
+      {/* Pure JSX — no logic */}
+    </View>
+  )
+}
+```
+
+### Component Rules
+
+- **Max 400 lines** per file — break into subcomponents if exceeded
+- **No `useState`, `useEffect`, `useMemo`, `useCallback`** in components
+- **No inline business logic** in JSX
+- Components receive everything they need from their custom hook
+- Minimal render helpers are OK (e.g., `renderItem` for FlatList)
+- Early returns for loading/error states
+
+---
+
+## Custom Hooks Pattern
+
+### Every page gets a corresponding hook
+
+| Page | Hook |
+|---|---|
+| `pages/(tabs)/home/index.tsx` | `hooks/useHomePage.ts` |
+| `pages/view-event/index.tsx` | `hooks/useViewEvent.ts` |
+| `pages/login/index.tsx` | `hooks/useLogin.ts` |
+
+### Hook File Template
+
+```typescript
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { router } from 'expo-router'
+import { useGraphQL } from '@/hooks/useGraphQL'
+import useAuth from '@/hooks/auth/useAuth'
+import { GET_DATA } from '@/queries/getData'
+import { CREATE_ITEM } from '@/mutations/createItem'
+
+export function usePageName(param?: string) {
+  // 1. Other hooks
+  const { user_id, userData } = useAuth()
+
+  // 2. Local state (grouped by purpose)
+  const [activeTab, setActiveTab] = useState('default')
+  const [items, setItems] = useState([])
+
+  // 3. GraphQL queries (imported from /queries)
+  const { data: queryData, loading, error, executeQuery } = useGraphQL(GET_DATA)
+
+  useEffect(() => {
+    if (user_id) {
+      executeQuery({ userId: user_id })
+    }
+  }, [user_id, executeQuery])
+
+  // 4. GraphQL mutations (imported from /mutations)
+  const { executeQuery: createItem } = useGraphQL(CREATE_ITEM)
+
+  // 5. Computed values (useMemo)
+  const filteredItems = useMemo(() => {
+    if (!items) return []
+    return items.filter((item) => item.active)
+  }, [items])
+
+  // 6. Effects
+  useEffect(() => {
+    // Side effects grouped by concern
+  }, [dependencies])
+
+  // 7. Handlers (ALL wrapped in useCallback, ALL prefixed with "handle")
+  const handleCreateItem = useCallback(async (name: string) => {
+    try {
+      const result = await createItem({ name })
+      if (result) setItems((prev) => [...prev, result])
+    } catch (err) {
+      console.error('Error creating item:', err)
+    }
+  }, [createItem])
+
+  const handleNavigate = useCallback((id: string) => {
+    router.push(`/detail?id=${id}`)
+  }, [])
+
+  // 8. Return FLAT object (no nesting)
+  return {
+    // Data
+    items: filteredItems,
+    userData,
+    // Loading/error
+    loading,
+    error,
+    // UI state
+    activeTab,
+    // Setters (only if component needs direct control)
+    setActiveTab,
+    // Handlers
+    handleCreateItem,
+    handleNavigate,
+  }
+}
+
+export default usePageName
+```
+
+### Hook Internal Order
+
+1. Other hooks (`useAuth`, `useTheme`, etc.)
+2. Local state (`useState`)
+3. GraphQL queries (imported from `/queries`)
+4. GraphQL mutations (imported from `/mutations`)
+5. Computed values (`useMemo`)
+6. Effects (`useEffect`)
+7. Handlers (`useCallback`)
+8. Return object (flat)
+
+### CRITICAL: Flat Return Objects
+
+```typescript
+// WRONG — nested
+return {
+  data: { users, posts },
+  loading: { usersLoading, postsLoading },
+  handlers: { handleClick }
+}
+
+// CORRECT — flat
+return {
+  users,
+  posts,
+  usersLoading,
+  postsLoading,
+  handleClick,
+}
+```
+
+---
+
+## GraphQL Integration
+
+### CRITICAL: All queries and mutations live in dedicated folders
+
+- Queries → `/queries/fileName.ts`
+- Mutations → `/mutations/fileName.ts`
+- NEVER define GraphQL operations inline in hooks or components
+
+### Query File
+
+```typescript
+// queries/getNotifications.ts
+export const GET_NOTIFICATIONS = `
+  query GetNotifications($receiverId: uuid!) {
+    notifications(
+      where: { receiver_id: { _eq: $receiverId } }
+      order_by: { created_at: desc }
+      limit: 50
+    ) {
+      id
+      title
+      description
+      is_read
+      created_at
+    }
+  }
+`
+```
+
+### Mutation File
+
+```typescript
+// mutations/notificationMutations.ts
+export const MARK_NOTIFICATION_READ = `
+  mutation MarkNotificationRead($notificationId: bigint!) {
+    update_notifications_by_pk(
+      pk_columns: { id: $notificationId }
+      _set: { is_read: true }
+    ) {
+      id
+      is_read
+    }
+  }
+`
+
+export const DELETE_NOTIFICATION = `
+  mutation DeleteNotification($notificationId: bigint!) {
+    delete_notifications_by_pk(id: $notificationId) {
+      id
+    }
+  }
+`
+```
+
+### Usage in Hooks
+
+```typescript
+import { useGraphQL } from '@/hooks/useGraphQL'
+import { GET_NOTIFICATIONS } from '@/queries/getNotifications'
+import { MARK_NOTIFICATION_READ } from '@/mutations/notificationMutations'
+
+export function useNotifications() {
+  const { data, loading, executeQuery } = useGraphQL(GET_NOTIFICATIONS)
+  const { executeQuery: markRead } = useGraphQL(MARK_NOTIFICATION_READ)
+
+  useEffect(() => {
+    if (user_id) executeQuery({ receiverId: user_id })
+  }, [user_id, executeQuery])
+
+  const handleMarkRead = useCallback(async (id: number) => {
+    await markRead({ notificationId: id })
+  }, [markRead])
+
+  return {
+    notifications: data?.notifications || [],
+    loading,
+    handleMarkRead,
+  }
+}
+```
+
+### Naming Conventions for GraphQL Files
+
+**Queries** (`/queries`):
+- `getItemById.ts` → `export const GET_ITEM_BY_ID`
+- `getAllItems.ts` → `export const GET_ALL_ITEMS`
+- `getItemsByUserId.ts` → `export const GET_ITEMS_BY_USER_ID`
+
+**Mutations** (`/mutations`):
+- `createItem.ts` → `export const CREATE_ITEM`
+- `updateItem.ts` → `export const UPDATE_ITEM`
+- `deleteItem.ts` → `export const DELETE_ITEM`
+- Related mutations can share one file: `itemMutations.ts`
+
+**Subscriptions** (`/queries`):
+- `postsSubscription.ts` → `export const POSTS_SUBSCRIPTION`
+
+Export names are always `UPPER_SNAKE_CASE`.
+
+### FORBIDDEN Patterns
+
+- Defining queries/mutations inline in hooks
+- Creating wrapper hooks like `useXQuery` or `useXMutation` around `useGraphQL`
+- Nesting data in the return object of hooks that use GraphQL
+
+---
+
+## Subscription Pattern
+
+```typescript
+// queries/messagesSubscription.ts
+export const MESSAGES_SUBSCRIPTION = `
+  subscription MessagesSubscription($chatId: Int!) {
+    messages(where: { chat_id: { _eq: $chatId } }) {
+      id
+      content
+      sender_id
+      created_at
+    }
+  }
+`
+
+// hooks/useChat.ts
+import { useSubscription } from '@/hooks/useSubscription'
+import { MESSAGES_SUBSCRIPTION } from '@/queries/messagesSubscription'
+
+const { data: messagesData } = useSubscription(MESSAGES_SUBSCRIPTION, {
+  chatId: parseInt(chatId)
+})
+```
+
+---
+
+## External Service Hooks
+
+ALL external API/SDK integrations MUST be wrapped in dedicated hooks.
+
+```typescript
+// hooks/useMapbox.ts
+export interface MapboxPlace {
+  id: string
+  place_name: string
+  center: [number, number]
+}
+
+export function useMapbox() {
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const reverseGeocode = useCallback(
+    async (lat: number, lng: number): Promise<MapboxPlace | null> => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${TOKEN}`
+        const res = await fetch(url)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json()
+        return data.features?.[0] || null
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error')
+        return null
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    []
+  )
+
+  return { reverseGeocode, isLoading, error }
+}
+```
+
+### Rules
+
+- One hook per external service (`useMapbox`, `useStripe`, `useGeoapify`, etc.)
+- Each hook manages its own loading/error state
+- Typed interfaces for API responses
+- Used by page hooks — never called directly in components
+- NEVER inline raw `fetch()` calls to external APIs in page hooks
+
+---
+
+## Styling
+
+### Theme-Aware StyleSheet Pattern
+
+Every page/component has a co-located `.styles.ts` file:
+
+```typescript
+// pages/home/index.styles.ts
+import { StyleSheet } from 'react-native'
+import { Theme } from '@/contexts/ThemeContext'
+
+export const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: theme.colors.text,
+      fontFamily: 'CustomFont-Bold',
+    },
+  })
+```
+
+Usage in component:
+
+```tsx
+const { theme } = useTheme()
+const styles = createStyles(theme)
+```
+
+### Style Rules
+
+- Always use `createStyles(theme)` — never hardcode colors
+- Styles in separate `.styles.ts` files, not inline
+- Router ignores `.styles.ts` files
+- Support light and dark themes from day one
+- Color constants in `/constants/Colors.ts`
+- Font constants in `/constants/Fonts.ts`
+
+---
+
+## Navigation (Expo Router)
+
+### File-Based Routing
+
+```
+app/
+├── _layout.tsx           # Root: providers, fonts, Sentry, auth gate
+├── (tabs)/
+│   ├── _layout.tsx       # Tab navigator config
+│   ├── home.tsx          # Each tab imports from /pages
+│   ├── explore.tsx
+│   └── profile.tsx
+├── login.tsx             # Conditional route (shown when !authenticated)
+├── signup.tsx
+├── view-event.tsx        # Detail screens
+├── create-event.tsx
+└── +not-found.tsx
+```
+
+### Route File Pattern (thin proxy)
+
+```tsx
+// app/(tabs)/home.tsx
+export { default } from '@/pages/(tabs)/home'
+```
+
+### Navigation Rules
+
+- `/app` files are thin proxies — actual implementation in `/pages`
+- Use `router.push()`, `router.replace()` for programmatic navigation
+- Auth-gated routes: conditional rendering in root `_layout.tsx`
+- Typed routes enabled in `app.json`: `experiments.typedRoutes: true`
+
+---
+
+## State Management
+
+### Redux — Auth Only
+
+```typescript
+// redux/store.ts
+import { configureStore } from '@reduxjs/toolkit'
+import loginReducer from './loginSlice'
+
+export const store = configureStore({
+  reducer: { login: loginReducer },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({ serializableCheck: false }),
+})
+
+export type RootState = ReturnType<typeof store.getState>
+export type AppDispatch = typeof store.dispatch
+```
+
+### Typed Hooks
+
+```typescript
+// hooks/useAppSelector.ts
+import { useSelector, useDispatch } from 'react-redux'
+import type { RootState, AppDispatch } from '@/redux/store'
+
+export const useAppSelector = useSelector.withTypes<RootState>()
+export const useAppDispatch = useDispatch.withTypes<AppDispatch>()
+```
+
+### State Rules
+
+- Redux is for **global session state only** (auth, user identity, unread counts)
+- ALL feature/page state lives in custom hooks via `useState`
+- Never add feature-specific slices to Redux
+- Context is for cross-cutting concerns (theme, i18n)
+
+---
+
+## Authentication Flow
+
+1. App starts → Supabase checks for existing session
+2. Auth state listener initialized in root layout
+3. If no session → show login screen (conditional route)
+4. On login → `supabase.auth.signInWithPassword()`
+5. Session created → dispatch `authenticate` to Redux
+6. Fetch user profile → store in Redux
+7. Set Sentry user context
+8. Register push notification token
+9. Navigate to `/(tabs)/home`
+10. On logout → clear push token, AsyncStorage, Redux state
+
+### Auth Hook
+
+```typescript
+// hooks/auth/useAuth.ts — wraps Supabase + Redux
+export default function useAuth() {
+  const { user_id, userData, token, isAuthenticated } = useAppSelector(
+    (state) => state.login
+  )
+  // ... login, logout, session refresh methods
+  return { user_id, userData, token, isAuthenticated, login, logout }
+}
+```
+
+---
+
+## TypeScript Guidelines
+
+### Type Location
+
+- ALL types in `/types` directory
+- Barrel export from `/types/index.ts`
+- One file per domain (`users.ts`, `posts.ts`, `events.ts`)
+
+### Type Patterns
+
+```typescript
+// types/posts.ts
+export interface Post {
+  id: string
+  title: string
+  content: string
+  author_id: string
+  created_at: string
+}
+
+export type PostType = 'personal' | 'club' | 'event'
+
+export enum PostPrivacy {
+  Public = 'public',
+  Private = 'private',
+  FriendsOnly = 'friends_only',
+}
+```
+
+### Inference Rules
+
+```typescript
+// Let TS infer when obvious
+const [count, setCount] = useState(0)         // inferred as number
+const items = data?.posts || []                // inferred from data
+
+// Explicit when not obvious
+function calculateTotal(items: Item[]): number { ... }
+const handleUpdate = useCallback(async (userId: string, updates: Partial<User>): Promise<boolean> => { ... }, [])
+```
+
+### Strict Rules
+
+- `strict: true` in tsconfig
+- No `any` — use `unknown` and narrow
+- Interfaces for object shapes, types for unions/primitives
+- All function parameters explicitly typed
+- Path alias: `@/*` → `./*`
+
+---
+
+## Naming Conventions
+
+### Files
+
+| Type | Convention | Example |
+|---|---|---|
+| Components | PascalCase | `PostCard.tsx` |
+| Hooks | camelCase with `use` prefix | `useHomePage.ts` |
+| Queries | camelCase with `get` prefix | `getNotifications.ts` |
+| Mutations | camelCase with verb prefix | `createPost.ts` |
+| Types | camelCase | `users.ts` |
+| Utilities | camelCase | `formatDate.ts` |
+| Styles | match parent + `.styles.ts` | `index.styles.ts` |
+
+### Variables
+
+```typescript
+// Booleans: is, has, should, can prefix
+const isLoading = true
+const hasAccess = false
+const shouldRefetch = true
+const canEdit = user_id === post.author_id
+
+// Arrays: plural nouns
+const posts = []
+const organizationMembers = []
+
+// Objects: singular nouns
+const user = { id: '1', name: 'John' }
+```
+
+### Functions
+
+```typescript
+// Event handlers: "handle" prefix, wrapped in useCallback
+const handleSubmit = useCallback(() => {}, [])
+const handleUserClick = useCallback((userId: string) => {}, [])
+
+// Utilities: verb + noun
+const formatDate = (date: Date) => { ... }
+const validateEmail = (email: string) => { ... }
+```
+
+### GraphQL Exports
+
+```typescript
+// UPPER_SNAKE_CASE
+export const GET_USER_BY_ID = `query ...`
+export const CREATE_POST = `mutation ...`
+export const MESSAGES_SUBSCRIPTION = `subscription ...`
+```
+
+---
+
+## Import Organization
+
+Always in this order, separated by blank lines:
+
+```typescript
+// 1. React / React Native
+import React, { useCallback, useEffect, useState } from 'react'
+import { View, Text, ScrollView } from 'react-native'
+
+// 2. Third-party libraries
+import { router } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
+
+// 3. Internal components
+import Header from '@/components/DS/Header'
+import Button from '@/components/DS/Button'
+
+// 4. Hooks
+import { useTheme } from '@/contexts/ThemeContext'
+import useAuth from '@/hooks/auth/useAuth'
+
+// 5. GraphQL queries and mutations
+import { GET_POSTS } from '@/queries/getPosts'
+import { CREATE_POST } from '@/mutations/createPost'
+
+// 6. Types
+import { Post } from '@/types/posts'
+
+// 7. Utilities and constants
+import { logger } from '@/utils/logger'
+import { API_BASE_URL } from '@/globals'
+
+// 8. Styles (always last)
+import { createStyles } from './index.styles'
+```
+
+---
+
+## Performance Best Practices
+
+### Memoization
+
+- `useMemo` for all computed/derived/filtered data
+- `useCallback` for ALL handler functions
+- Proper dependency arrays — no missing or extra deps
+
+### FlatList Optimization
+
+```tsx
+<FlatList
+  data={items}
+  renderItem={renderItem}
+  keyExtractor={(item) => item.id}
+  removeClippedSubviews={true}
+  maxToRenderPerBatch={10}
+  windowSize={10}
+  initialNumToRender={5}
+/>
+```
+
+### Avoid Inline Functions in JSX
+
+```tsx
+// WRONG
+<Button onPress={() => handleAction(item.id)} />
+
+// CORRECT
+const onPress = useCallback(() => handleAction(item.id), [item.id, handleAction])
+<Button onPress={onPress} />
+```
+
+---
+
+## Error Handling
+
+### In Hooks
+
+```typescript
+const handleAction = useCallback(async () => {
+  try {
+    const result = await executeQuery({ ... })
+    if (result) { /* success */ }
+  } catch (err) {
+    console.error('Context about what failed:', err)
+    // Sentry captures automatically via logger
+  }
+}, [executeQuery])
+```
+
+### In GraphQL Hook
+
+- Auth token injection
+- Query deduplication (10s cache)
+- Sentry tracing per query
+- Structured error logging via logger utility
+
+---
+
+## Internationalization
+
+```typescript
+// lib/i18n.ts — initialized once
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+import en from '@/locales/en'
+
+i18n.use(initReactI18next).init({
+  resources: { en: { translation: en } },
+  lng: 'en',
+  fallbackLng: 'en',
+})
+
+// Usage in components
+import { useTranslation } from 'react-i18next'
+const { t } = useTranslation()
+<Text>{t('home.welcome')}</Text>
+```
+
+### Rules
+
+- All user-facing strings go through `t()`
+- Locale files in `/locales/[lang].ts`
+- Keys structured by feature: `home.title`, `profile.editButton`
+- Fallback language always English
+
+---
+
+## Environment Configuration
+
+```typescript
+// globals/constants.ts
+const IS_STAGING = __DEV__ || process.env.EXPO_PUBLIC_ENV === 'staging'
+
+export const SUPABASE_URL = IS_STAGING ? '...' : '...'
+export const GRAPHQL_ENDPOINT = IS_STAGING ? '...' : '...'
+export const MAPBOX_TOKEN = '...'
+```
+
+### Rules
+
+- All environment-specific values in `/globals/constants.ts`
+- Staging vs production detected automatically
+- Secrets stored as Expo environment variables or EAS secrets
+- Never commit real API keys — use `.env` + `EXPO_PUBLIC_` prefix
+
+---
+
+## Testing
+
+### Structure
+
+```
+__tests__/
+├── setup/jest.setup.ts       # Global mocks (router, AsyncStorage, etc.)
+├── hooks/                    # Unit tests for hooks
+├── integration/              # Full-flow tests
+└── utils/testHelpers.tsx     # Test utilities, render wrappers
+```
+
+### Jest Config
+
+```javascript
+// jest.config.js
+module.exports = {
+  preset: 'jest-expo',
+  testTimeout: 10000,
+  moduleNameMapper: { '^@/(.*)$': '<rootDir>/$1' },
+  setupFilesAfterSetup: ['./__tests__/setup/jest.setup.ts'],
+  collectCoverageFrom: [
+    'components/**/*.{ts,tsx}',
+    'hooks/**/*.{ts,tsx}',
+    'pages/**/*.{ts,tsx}',
+  ],
+}
+```
+
+### Scripts
+
+```json
+{
+  "test": "jest",
+  "test:watch": "jest --watch",
+  "test:coverage": "jest --coverage",
+  "test:verbose": "jest --verbose"
+}
+```
+
+---
+
+## Root Layout Pattern
+
+```tsx
+// app/_layout.tsx
+import { useFonts } from 'expo-font'
+import { SplashScreen } from 'expo-router'
+import * as Sentry from '@sentry/react-native'
+import { Provider } from 'react-redux'
+import { store } from '@/redux/store'
+import { ThemeProvider } from '@/contexts/ThemeContext'
+import '@/lib/i18n'
+
+SplashScreen.preventAutoHideAsync()
+
+function RootLayout() {
+  const [fontsLoaded] = useFonts({ ... })
+
+  useEffect(() => {
+    if (fontsLoaded) SplashScreen.hideAsync()
+  }, [fontsLoaded])
+
+  if (!fontsLoaded) return null
+
+  return (
+    <Provider store={store}>
+      <ThemeProvider>
+        <Stack />
+      </ThemeProvider>
+    </Provider>
+  )
+}
+
+export default Sentry.wrap(RootLayout)
+```
+
+---
+
+## EAS Build Configuration
+
+```json
+{
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "node": "22.11.0"
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": { "appleId": "...", "ascAppId": "...", "appleTeamId": "..." }
+    }
+  }
+}
+```
+
+---
+
+## Logging
+
+```typescript
+// utils/logger/logger.ts
+type LogSource = 'GRAPHQL' | 'AUTH' | 'NAVIGATION' | 'APP'
+
+class Logger {
+  info(source: LogSource, message: string, data?: any) { ... }
+  error(source: LogSource, message: string, error?: any) { ... }
+  warn(source: LogSource, message: string, data?: any) { ... }
+}
+
+export const logger = new Logger()
+```
+
+### Rules
+
+- Use `logger` instead of raw `console.log` for anything important
+- Always include a source tag
+- Errors automatically forwarded to Sentry
+- Remove debug logs before committing
+
+---
+
+## Checklist — Every New Page
+
+- [ ] Route file in `/app` (thin proxy)
+- [ ] Page component in `/pages` (< 400 lines, UI only)
+- [ ] Style file co-located as `.styles.ts`
+- [ ] Custom hook in `/hooks/usePageName.ts` (all logic)
+- [ ] Hook returns flat object
+- [ ] GraphQL queries in `/queries`
+- [ ] GraphQL mutations in `/mutations`
+- [ ] Types in `/types`
+- [ ] All handlers wrapped in `useCallback`
+- [ ] All computed values in `useMemo`
+- [ ] Theme-aware styles via `createStyles(theme)`
+- [ ] Imports organized per import order rules
+
+## Checklist — Every New Component
+
+- [ ] Lives in `/components/DS/` (design system) or `/components/[Feature]/`
+- [ ] Co-located `.styles.ts`
+- [ ] Props typed with interface
+- [ ] Purely presentational — no business logic
+- [ ] < 400 lines
+
+## Checklist — Every New Hook
+
+- [ ] Lives in `/hooks/`
+- [ ] Uses `useGraphQL` directly (no wrapper hooks)
+- [ ] Imports queries from `/queries`, mutations from `/mutations`
+- [ ] Flat return object
+- [ ] Handlers prefixed with `handle`, wrapped in `useCallback`
+- [ ] Computed values in `useMemo`
+- [ ] Internal order follows the prescribed sequence
