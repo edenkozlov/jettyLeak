@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { Props as RechartLabelProps } from 'recharts/types/component/Label'
-import type { TooltipProps } from 'recharts'
+import type { Payload } from 'recharts/types/component/DefaultTooltipContent'
 import {
   CartesianGrid,
   Line,
@@ -188,14 +188,14 @@ function buildEnrichedData(
   })
 }
 
-function CustomTooltip({
-  active,
-  payload,
-  label,
-  colors,
-}: TooltipProps<number, string> & {
+interface CustomTooltipProps {
+  active?: boolean
+  payload?: ReadonlyArray<Payload<number, string>>
+  label?: string | number
   colors: { tooltipBg: string; tooltipBorder: string; tooltipText: string }
-}) {
+}
+
+function CustomTooltip({ active, payload, label, colors }: CustomTooltipProps) {
   if (!active || !payload?.length) return null
 
   const flowEntry = payload.find((e) => e.value != null)
