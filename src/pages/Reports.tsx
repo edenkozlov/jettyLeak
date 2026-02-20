@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { Props as RechartLabelProps } from 'recharts/types/component/Label'
+import type { TooltipProps } from 'recharts'
 import {
   CartesianGrid,
   Line,
@@ -16,9 +17,12 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { useChartTags } from '@/hooks/useChartTags'
 import { useChartZoomPan } from '@/hooks/useChartZoomPan'
 import {
+  getSignalColorByType,
+  getSignalLabel,
   RANGE_MS,
   TIME_RANGE_OPTIONS,
   useReportsPage,
+  type ParsedSignal,
   type TimeRange,
 } from '@/hooks/useReportsPage'
 
@@ -127,6 +131,97 @@ function rangeButtonClass(isActive: boolean): string {
   return 'bg-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
 }
 
+function getActiveSignalType(
+  timestamp: number,
+  signals: ParsedSignal[],
+): number | null {
+  for (const s of signals) {
+    const start = new Date(s.start_time).getTime()
+    const end = new Date(s.end_time).getTime()
+    if (timestamp >= start && timestamp <= end) return s.signalType
+  }
+  return null
+}
+
+interface EnrichedPoint {
+  timestamp: number
+  flowValue: number | null
+  [key: string]: number | null
+}
+
+function buildEnrichedData(
+  points: { timestamp: number; flowValue: number | null }[],
+  signals: ParsedSignal[],
+): EnrichedPoint[] {
+  if (points.length === 0) return []
+
+  const types: (number | null)[] = points.map((p) =>
+    getActiveSignalType(p.timestamp, signals),
+  )
+
+  return points.map((p, i) => {
+    const currentType = types[i]!
+    const prevType = i > 0 ? types[i - 1]! : undefined
+    const nextType = i < types.length - 1 ? types[i + 1]! : undefined
+
+    const result: EnrichedPoint = {
+      timestamp: p.timestamp,
+      flowValue: p.flowValue,
+    }
+
+    const key =
+      currentType !== null ? `flow_type_${currentType}` : 'flow_default'
+    result[key] = p.flowValue
+
+    if (prevType !== undefined && prevType !== currentType) {
+      const prevKey =
+        prevType !== null ? `flow_type_${prevType}` : 'flow_default'
+      result[prevKey] = p.flowValue
+    }
+    if (nextType !== undefined && nextType !== currentType) {
+      const nextKey =
+        nextType !== null ? `flow_type_${nextType}` : 'flow_default'
+      result[nextKey] = p.flowValue
+    }
+
+    return result
+  })
+}
+
+function CustomTooltip({
+  active,
+  payload,
+  label,
+  colors,
+}: TooltipProps<number, string> & {
+  colors: { tooltipBg: string; tooltipBorder: string; tooltipText: string }
+}) {
+  if (!active || !payload?.length) return null
+
+  const flowEntry = payload.find((e) => e.value != null)
+  if (!flowEntry) return null
+
+  return (
+    <div
+      style={{
+        backgroundColor: colors.tooltipBg,
+        border: `1px solid ${colors.tooltipBorder}`,
+        borderRadius: 8,
+        padding: '8px 12px',
+        fontSize: 13,
+        color: colors.tooltipText,
+      }}
+    >
+      <p style={{ fontWeight: 600, marginBottom: 4 }}>
+        {formatTooltipTime(Number(label))}
+      </p>
+      <p style={{ color: String(flowEntry.color ?? colors.tooltipText) }}>
+        Flow Value: {Number(flowEntry.value).toFixed(4)}
+      </p>
+    </div>
+  )
+}
+
 export default function Reports() {
   const { mode } = useTheme()
   const colors = CHART_COLORS[mode]
@@ -142,6 +237,10 @@ export default function Reports() {
     sensorsLoading,
     reportsLoading,
     reportsError,
+    parsedSignals,
+    signalTypeIds,
+    sensorMappings,
+    updateMapping,
     handleSensorChange,
     handleTimeRangeChange,
     handleToggleLive,
@@ -173,6 +272,11 @@ export default function Reports() {
   const [isEditingTag, setIsEditingTag] = useState(false)
   const [editTagTitle, setEditTagTitle] = useState('')
   const [editTagDescription, setEditTagDescription] = useState('')
+
+  const [editingMappingType, setEditingMappingType] = useState<number | null>(
+    null,
+  )
+  const [editingMappingLabel, setEditingMappingLabel] = useState('')
 
   const visibleRangeMsRef = useRef(0)
 
@@ -271,6 +375,11 @@ export default function Reports() {
       return ts >= left && ts <= right
     })
   }, [tags, domain, chartData.length])
+
+  const enrichedData = useMemo(
+    () => buildEnrichedData(visibleData, parsedSignals),
+    [visibleData, parsedSignals],
+  )
 
   const handleSaveTag = useCallback(async () => {
     if (!tagFormTimestamp || !tagTitle.trim()) return
@@ -454,6 +563,59 @@ export default function Reports() {
           </div>
         </div>
 
+        {signalTypeIds.length > 0 && (
+          <div className="mb-3 flex flex-wrap items-center gap-3">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              Signals:
+            </span>
+            {signalTypeIds.map((typeId) => (
+              <div key={typeId} className="flex items-center gap-1.5">
+                <span
+                  className="inline-block h-0.5 w-4 rounded-full"
+                  style={{
+                    backgroundColor: getSignalColorByType(typeId),
+                  }}
+                />
+                {editingMappingType === typeId ? (
+                  <input
+                    type="text"
+                    value={editingMappingLabel}
+                    onChange={(e) => setEditingMappingLabel(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key === 'Enter' && editingMappingLabel.trim()) {
+                        await updateMapping(typeId, editingMappingLabel.trim())
+                        setEditingMappingType(null)
+                      }
+                      if (e.key === 'Escape') setEditingMappingType(null)
+                    }}
+                    onBlur={async () => {
+                      if (editingMappingLabel.trim()) {
+                        await updateMapping(typeId, editingMappingLabel.trim())
+                      }
+                      setEditingMappingType(null)
+                    }}
+                    autoFocus
+                    className="w-24 rounded border border-indigo-300 bg-white px-1.5 py-0.5 text-xs text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-indigo-600 dark:bg-gray-700 dark:text-white"
+                  />
+                ) : (
+                  <button
+                    onClick={() => {
+                      setEditingMappingType(typeId)
+                      setEditingMappingLabel(
+                        getSignalLabel(typeId, sensorMappings),
+                      )
+                    }}
+                    className="rounded px-1 py-0.5 text-xs text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-700 dark:hover:text-white"
+                    title="Click to rename"
+                  >
+                    {getSignalLabel(typeId, sensorMappings)}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
         {reportsLoading ? (
           <div className="flex h-80 items-center justify-center text-gray-500 dark:text-gray-400">
             Loading chart…
@@ -470,7 +632,7 @@ export default function Reports() {
           >
             <ResponsiveContainer width="100%" height={400}>
               <LineChart
-                data={visibleData}
+                data={enrichedData}
                 onMouseDown={onChartMouseDown}
                 onMouseMove={onChartMouseMove}
                 onMouseUp={onChartMouseUp}
@@ -504,24 +666,7 @@ export default function Reports() {
                   }}
                 />
                 <Tooltip
-                  labelFormatter={(ts) => formatTooltipTime(Number(ts))}
-                  formatter={(value) => [
-                    Number(value).toFixed(4),
-                    'Flow Value',
-                  ]}
-                  contentStyle={{
-                    backgroundColor: colors.tooltipBg,
-                    border: `1px solid ${colors.tooltipBorder}`,
-                    borderRadius: 8,
-                    fontSize: 13,
-                    color: colors.tooltipText,
-                  }}
-                  labelStyle={{
-                    fontWeight: 600,
-                    marginBottom: 4,
-                    color: colors.tooltipText,
-                  }}
-                  itemStyle={{ color: colors.tooltipText }}
+                  content={<CustomTooltip colors={colors} />}
                 />
                 {refAreaLeft !== null &&
                   refAreaRight !== null &&
@@ -555,17 +700,36 @@ export default function Reports() {
                 ))}
                 <Line
                   type="monotone"
-                  dataKey="flowValue"
-                  name="Flow Value"
+                  dataKey="flow_default"
+                  name="Flow"
                   stroke={colors.line}
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 4 }}
                   isAnimationActive={false}
+                  connectNulls={false}
                   label={(props: RechartLabelProps) =>
-                    renderValueLabel(props, visibleData.length, colors.axis)
+                    renderValueLabel(
+                      props,
+                      enrichedData.length,
+                      colors.axis,
+                    )
                   }
                 />
+                {signalTypeIds.map((typeId) => (
+                  <Line
+                    key={typeId}
+                    type="monotone"
+                    dataKey={`flow_type_${typeId}`}
+                    name={getSignalLabel(typeId, sensorMappings)}
+                    stroke={getSignalColorByType(typeId)}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                    isAnimationActive={false}
+                    connectNulls={false}
+                  />
+                ))}
               </LineChart>
             </ResponsiveContainer>
           </div>

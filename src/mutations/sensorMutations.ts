@@ -51,3 +51,15 @@ export const DELETE_SENSOR = `
     }
   }
 `
+
+export const UPDATE_SENSOR_MAPPINGS = `
+  mutation UpdateSensorMappings($id: bigint!, $mappings: jsonb!) {
+    update_sensor_by_pk(
+      pk_columns: { id: $id }
+      _set: { mappings: $mappings }
+    ) {
+      id
+      mappings
+    }
+  }
+`

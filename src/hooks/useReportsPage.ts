@@ -4,9 +4,12 @@ import { useGraphQL } from '@/hooks/useGraphQL'
 import { useSubscription } from '@/hooks/useSubscription'
 import { GET_SENSORS } from '@/queries/getSensors'
 import { GET_REPORTS_BY_SENSOR_ID } from '@/queries/getReportsBySensorId'
+import { GET_SIGNALS_BY_SENSOR_ID } from '@/queries/getSignalsBySensorId'
+import { UPDATE_SENSOR_MAPPINGS } from '@/mutations/sensorMutations'
 import { LATEST_REPORT_SUBSCRIPTION } from '@/queries/reportSubscription'
 
-import type { Report, Sensor } from '@/types'
+import type { Report, Sensor, Signal, SensorMappings } from '@/types'
+import { parseSignalValue } from '@/types'
 
 interface SensorsResponse {
   sensor: Sensor[]
@@ -16,8 +19,43 @@ interface ReportsResponse {
   report: Report[]
 }
 
+interface SignalsResponse {
+  signal: Signal[]
+}
+
 interface SubscriptionResponse {
   report: Report[]
+}
+
+export const SIGNAL_COLORS = [
+  '#6366f1', // indigo
+  '#f43f5e', // rose
+  '#10b981', // emerald
+  '#f59e0b', // amber
+  '#3b82f6', // blue
+  '#8b5cf6', // violet
+  '#ec4899', // pink
+  '#14b8a6', // teal
+  '#f97316', // orange
+  '#06b6d4', // cyan
+] as const
+
+export function getSignalColorByType(signalType: number): string {
+  return SIGNAL_COLORS[signalType % SIGNAL_COLORS.length]!
+}
+
+export function getSignalLabel(
+  signalType: number,
+  mappings: SensorMappings | null,
+): string {
+  return mappings?.[String(signalType)] ?? `Type ${signalType}`
+}
+
+export interface ParsedSignal extends Signal {
+  signalType: number
+  confidence: number
+  readings: number
+  status: string
 }
 
 export interface ChartPoint {
@@ -127,6 +165,13 @@ export function useReportsPage() {
     executeQuery: fetchReports,
   } = useGraphQL<ReportsResponse>(GET_REPORTS_BY_SENSOR_ID)
 
+  const { data: signalsData, executeQuery: fetchSignals } =
+    useGraphQL<SignalsResponse>(GET_SIGNALS_BY_SENSOR_ID)
+
+  const { executeQuery: executeMappingsUpdate } = useGraphQL<{
+    update_sensor_by_pk: { id: number; mappings: SensorMappings }
+  }>(UPDATE_SENSOR_MAPPINGS)
+
   const [selectedSensorId, setSelectedSensorId] = useState<number | null>(null)
   const [timeRange, setTimeRange] = useState<TimeRange>('1m')
   const [isLive, setIsLive] = useState(true)
@@ -200,8 +245,12 @@ export function useReportsPage() {
             ? QUERY_LIMITS[timeRange]
             : QUERY_LIMITS[timeRange] * FETCH_BUFFER,
       })
+      fetchSignals({
+        sensorId: selectedSensorId,
+        since: fetchSinceTimestamp(timeRange),
+      })
     }
-  }, [selectedSensorId, timeRange, fetchReports])
+  }, [selectedSensorId, timeRange, fetchReports, fetchSignals])
 
   useEffect(() => {
     if (!reportsData?.report) return
@@ -246,10 +295,44 @@ export function useReportsPage() {
     return generateTicks(timeRange, min, max)
   }, [chartData, timeRange])
 
-  const selectedSensorName = useMemo(() => {
-    const sensor = sensors.find((s) => s.id === selectedSensorId)
-    return sensor?.name ?? null
-  }, [sensors, selectedSensorId])
+  const parsedSignals = useMemo<ParsedSignal[]>(() => {
+    const raw = signalsData?.signal ?? []
+    const result: ParsedSignal[] = []
+    for (const s of raw) {
+      const parsed = parseSignalValue(s.value)
+      if (parsed) {
+        result.push({
+          ...s,
+          signalType: parsed.signal_type,
+          confidence: parsed.confidence,
+          readings: parsed.readings,
+          status: parsed.status,
+        })
+      }
+    }
+    return result
+  }, [signalsData])
+
+  const signalTypeIds = useMemo(() => {
+    const unique = [...new Set(parsedSignals.map((s) => s.signalType))]
+    unique.sort((a, b) => a - b)
+    return unique
+  }, [parsedSignals])
+
+  const selectedSensor = useMemo(
+    () => sensors.find((s) => s.id === selectedSensorId) ?? null,
+    [sensors, selectedSensorId],
+  )
+
+  const sensorMappings = useMemo(
+    () => selectedSensor?.mappings ?? null,
+    [selectedSensor],
+  )
+
+  const selectedSensorName = useMemo(
+    () => selectedSensor?.name ?? null,
+    [selectedSensor],
+  )
 
   // --- Handlers ---
 
@@ -274,6 +357,16 @@ export function useReportsPage() {
     lastSeenIdRef.current = null
   }, [])
 
+  const updateMapping = useCallback(
+    async (signalType: number, label: string) => {
+      if (selectedSensorId === null) return
+      const updated = { ...sensorMappings, [String(signalType)]: label }
+      await executeMappingsUpdate({ id: selectedSensorId, mappings: updated })
+      await fetchSensors()
+    },
+    [selectedSensorId, sensorMappings, executeMappingsUpdate, fetchSensors],
+  )
+
   return {
     sensors,
     selectedSensorId,
@@ -286,6 +379,10 @@ export function useReportsPage() {
     sensorsLoading,
     reportsLoading,
     reportsError,
+    parsedSignals,
+    signalTypeIds,
+    sensorMappings,
+    updateMapping,
     handleSensorChange,
     handleTimeRangeChange,
     handleToggleLive,

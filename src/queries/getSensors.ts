@@ -6,6 +6,7 @@ export const GET_SENSORS = `
       name
       location
       building_id
+      mappings
       building {
         id
         name

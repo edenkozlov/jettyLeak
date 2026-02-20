@@ -1,5 +1,7 @@
 export type { Building } from './building'
 export type { Client } from './client'
 export type { Report } from './report'
-export type { Sensor } from './sensor'
+export type { Sensor, SensorMappings } from './sensor'
+export type { Signal, SignalValue } from './signal'
+export { parseSignalValue } from './signal'
 export type { Tag } from './tag'
