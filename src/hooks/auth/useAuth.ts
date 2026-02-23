@@ -16,38 +16,15 @@ export default function useAuth() {
   )
 
   const login = useCallback(
-    async (email: string, password: string) => {
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        })
-
-        if (error) {
-          logger.error('AUTH', 'Login failed', error)
-          return { success: false, error: error.message }
-        }
-
-        if (data.session) {
-          dispatch(
-            authenticate({
-              user_id: data.session.user.id,
-              token: data.session.access_token,
-            }),
-          )
-          dispatch(
-            setUserData(
-              data.session.user as unknown as Record<string, unknown>,
-            ),
-          )
-        }
-
-        return { success: true, error: null }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown error'
-        logger.error('AUTH', message, err)
-        return { success: false, error: message }
-      }
+    async (_email: string, _password: string) => {
+      dispatch(
+        authenticate({
+          user_id: 'demo-user',
+          token: 'demo-token',
+        }),
+      )
+      dispatch(setUserData({ email: _email, name: 'Demo User' }))
+      return { success: true, error: null }
     },
     [dispatch],
   )

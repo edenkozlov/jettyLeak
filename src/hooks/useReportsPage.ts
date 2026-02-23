@@ -86,12 +86,12 @@ export const RANGE_MS: Record<TimeRange, number> = {
 }
 
 const QUERY_LIMITS: Record<TimeRange, number> = {
-  '1m': 1000,
-  '5m': 5000,
-  '15m': 10000,
-  '1h': 36000,
-  '6h': 10000,
-  '24h': 10000,
+  '1m': 500,
+  '5m': 2000,
+  '15m': 5000,
+  '1h': 10000,
+  '6h': 20000,
+  '24h': 20000,
   all: 10000,
 }
 
@@ -105,7 +105,7 @@ export const TICK_INTERVAL_MS: Record<TimeRange, number> = {
   all: 6 * 60 * 60_000,
 }
 
-const FETCH_BUFFER = 3
+const FETCH_BUFFER = 2
 const MAX_CHART_POINTS = 1500
 const FLUSH_INTERVAL_MS = 500
 
@@ -240,10 +240,7 @@ export function useReportsPage() {
       fetchReports({
         sensorId: selectedSensorId,
         since: fetchSinceTimestamp(timeRange),
-        limit:
-          timeRange === 'all'
-            ? QUERY_LIMITS[timeRange]
-            : QUERY_LIMITS[timeRange] * FETCH_BUFFER,
+        limit: QUERY_LIMITS[timeRange],
       })
       fetchSignals({
         sensorId: selectedSensorId,

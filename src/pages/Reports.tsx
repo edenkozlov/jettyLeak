@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import type { Props as RechartLabelProps } from 'recharts/types/component/Label'
-import type { Payload } from 'recharts/types/component/DefaultTooltipContent'
+import type { TooltipProps } from 'recharts'
 import {
   CartesianGrid,
   Line,
@@ -25,6 +25,12 @@ import {
   type ParsedSignal,
   type TimeRange,
 } from '@/hooks/useReportsPage'
+
+const RAW_TO_LPH = 1000
+
+function toLph(raw: number): number {
+  return Math.abs(raw) * RAW_TO_LPH
+}
 
 const CHART_COLORS = {
   light: {
@@ -119,7 +125,7 @@ function renderValueLabel(
       fontWeight={500}
       fill={color}
     >
-      {value.toFixed(2)}
+      {toLph(value).toFixed(1)}
     </text>
   )
 }
@@ -130,6 +136,89 @@ function rangeButtonClass(isActive: boolean): string {
   }
   return 'bg-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
 }
+
+// --- Gap compression ---
+
+interface CompressedPoint {
+  timestamp: number
+  cx: number
+  flowValue: number | null
+}
+
+interface TimelineCompression {
+  points: CompressedPoint[]
+  toCompressed: (realTs: number) => number
+  toReal: (cx: number) => number
+}
+
+function compressTimeline(
+  data: { timestamp: number; flowValue: number | null }[],
+): TimelineCompression {
+  const identity = {
+    points: data.map((p) => ({ ...p, cx: p.timestamp })),
+    toCompressed: (ts: number) => ts,
+    toReal: (ts: number) => ts,
+  }
+  if (data.length < 3) return identity
+
+  const gaps: number[] = []
+  for (let i = 1; i < data.length; i++) {
+    gaps.push(data[i]!.timestamp - data[i - 1]!.timestamp)
+  }
+  const sorted = [...gaps].sort((a, b) => a - b)
+  const median = sorted[Math.floor(sorted.length / 2)]!
+  const maxGap = Math.max(median * 5, 5000)
+
+  const hasLargeGap = gaps.some((g) => g > maxGap)
+  if (!hasLargeGap) return identity
+
+  const realTs = data.map((p) => p.timestamp)
+  const cx: number[] = [realTs[0]!]
+  for (let i = 1; i < realTs.length; i++) {
+    const gap = realTs[i]! - realTs[i - 1]!
+    cx.push(cx[i - 1]! + Math.min(gap, maxGap))
+  }
+
+  const points = data.map((p, i) => ({ ...p, cx: cx[i]! }))
+
+  const toCompressed = (ts: number): number => {
+    if (ts <= realTs[0]!) return cx[0]! + (ts - realTs[0]!)
+    if (ts >= realTs[realTs.length - 1]!)
+      return cx[cx.length - 1]! + (ts - realTs[realTs.length - 1]!)
+    let lo = 0
+    let hi = realTs.length - 1
+    while (lo < hi - 1) {
+      const mid = (lo + hi) >> 1
+      if (realTs[mid]! <= ts) lo = mid
+      else hi = mid
+    }
+    const realGap = realTs[hi]! - realTs[lo]!
+    if (realGap === 0) return cx[lo]!
+    const frac = (ts - realTs[lo]!) / realGap
+    return cx[lo]! + frac * (cx[hi]! - cx[lo]!)
+  }
+
+  const toReal = (cts: number): number => {
+    if (cts <= cx[0]!) return realTs[0]! + (cts - cx[0]!)
+    if (cts >= cx[cx.length - 1]!)
+      return realTs[realTs.length - 1]! + (cts - cx[cx.length - 1]!)
+    let lo = 0
+    let hi = cx.length - 1
+    while (lo < hi - 1) {
+      const mid = (lo + hi) >> 1
+      if (cx[mid]! <= cts) lo = mid
+      else hi = mid
+    }
+    const cGap = cx[hi]! - cx[lo]!
+    if (cGap === 0) return realTs[lo]!
+    const frac = (cts - cx[lo]!) / cGap
+    return realTs[lo]! + frac * (realTs[hi]! - realTs[lo]!)
+  }
+
+  return { points, toCompressed, toReal }
+}
+
+// --- Signal type enrichment ---
 
 function getActiveSignalType(
   timestamp: number,
@@ -145,12 +234,13 @@ function getActiveSignalType(
 
 interface EnrichedPoint {
   timestamp: number
+  cx: number
   flowValue: number | null
   [key: string]: number | null
 }
 
 function buildEnrichedData(
-  points: { timestamp: number; flowValue: number | null }[],
+  points: CompressedPoint[],
   signals: ParsedSignal[],
 ): EnrichedPoint[] {
   if (points.length === 0) return []
@@ -164,42 +254,49 @@ function buildEnrichedData(
     const prevType = i > 0 ? types[i - 1]! : undefined
     const nextType = i < types.length - 1 ? types[i + 1]! : undefined
 
+    const inverted = p.flowValue != null ? -p.flowValue : null
+
     const result: EnrichedPoint = {
       timestamp: p.timestamp,
-      flowValue: p.flowValue,
+      cx: p.cx,
+      flowValue: inverted,
     }
 
     const key =
       currentType !== null ? `flow_type_${currentType}` : 'flow_default'
-    result[key] = p.flowValue
+    result[key] = inverted
 
     if (prevType !== undefined && prevType !== currentType) {
       const prevKey =
         prevType !== null ? `flow_type_${prevType}` : 'flow_default'
-      result[prevKey] = p.flowValue
+      result[prevKey] = inverted
     }
     if (nextType !== undefined && nextType !== currentType) {
       const nextKey =
         nextType !== null ? `flow_type_${nextType}` : 'flow_default'
-      result[nextKey] = p.flowValue
+      result[nextKey] = inverted
     }
 
     return result
   })
 }
 
-interface CustomTooltipProps {
-  active?: boolean
-  payload?: ReadonlyArray<Payload<number, string>>
-  label?: string | number
-  colors: { tooltipBg: string; tooltipBorder: string; tooltipText: string }
-}
+// --- Tooltip ---
 
-function CustomTooltip({ active, payload, label, colors }: CustomTooltipProps) {
+function CustomTooltip({
+  active,
+  payload,
+  colors,
+}: TooltipProps<number, string> & {
+  colors: { tooltipBg: string; tooltipBorder: string; tooltipText: string }
+}) {
   if (!active || !payload?.length) return null
 
   const flowEntry = payload.find((e) => e.value != null)
   if (!flowEntry) return null
+
+  const realTs = (flowEntry.payload as EnrichedPoint | undefined)?.timestamp
+  const timeStr = realTs != null ? formatTooltipTime(realTs) : ''
 
   return (
     <div
@@ -212,11 +309,9 @@ function CustomTooltip({ active, payload, label, colors }: CustomTooltipProps) {
         color: colors.tooltipText,
       }}
     >
-      <p style={{ fontWeight: 600, marginBottom: 4 }}>
-        {formatTooltipTime(Number(label))}
-      </p>
+      <p style={{ fontWeight: 600, marginBottom: 4 }}>{timeStr}</p>
       <p style={{ color: String(flowEntry.color ?? colors.tooltipText) }}>
-        Flow Value: {Number(flowEntry.value).toFixed(4)}
+        Flow: {toLph(Number(flowEntry.value)).toFixed(1)} L/h
       </p>
     </div>
   )
@@ -246,14 +341,24 @@ export default function Reports() {
     handleToggleLive,
   } = useReportsPage()
 
-  const dataMin = chartData.length > 0 ? chartData[0]!.timestamp : 0
-  const dataMax =
-    chartData.length > 0 ? chartData[chartData.length - 1]!.timestamp : 0
+  const timeline = useMemo(() => compressTimeline(chartData), [chartData])
 
-  const homeMin =
-    timeRange === 'all' || dataMax === 0
-      ? dataMin
-      : Math.max(dataMin, dataMax - RANGE_MS[timeRange])
+  const dataMin =
+    timeline.points.length > 0 ? timeline.points[0]!.cx : 0
+  const dataMax =
+    timeline.points.length > 0
+      ? timeline.points[timeline.points.length - 1]!.cx
+      : 0
+
+  const homeMin = useMemo(() => {
+    if (timeRange === 'all' || dataMax === 0) return dataMin
+    const realMax =
+      chartData.length > 0
+        ? chartData[chartData.length - 1]!.timestamp
+        : 0
+    const realHomeMin = realMax - RANGE_MS[timeRange]
+    return Math.max(dataMin, timeline.toCompressed(realHomeMin))
+  }, [timeRange, dataMin, dataMax, chartData, timeline])
   const homeMax = dataMax
 
   const [tagFormTimestamp, setTagFormTimestamp] = useState<number | null>(null)
@@ -278,18 +383,43 @@ export default function Reports() {
   )
   const [editingMappingLabel, setEditingMappingLabel] = useState('')
 
+  const depthStats = useMemo(() => {
+    if (chartData.length === 0) return null
+    const firstPoint = chartData.find((p) => p.flowValue !== null)
+    const lastPoint = [...chartData].reverse().find((p) => p.flowValue !== null)
+    if (!firstPoint || !lastPoint) return null
+    const startValue = firstPoint.flowValue!
+    const currentValue = lastPoint.flowValue!
+    const change = currentValue - startValue
+
+    let totalLiters = 0
+    for (let i = 1; i < chartData.length; i++) {
+      const prev = chartData[i - 1]!
+      const curr = chartData[i]!
+      if (prev.flowValue == null || curr.flowValue == null) continue
+      const avgLph = toLph((prev.flowValue + curr.flowValue) / 2)
+      const hours = (curr.timestamp - prev.timestamp) / 3_600_000
+      totalLiters += avgLph * hours
+    }
+
+    return { currentValue, startValue, change, totalLiters }
+  }, [chartData])
+
   const visibleRangeMsRef = useRef(0)
 
   const handleChartClick = useCallback(
-    (timestamp: number) => {
+    (cx: number) => {
+      const realTs = timeline.toReal(cx)
       const range = visibleRangeMsRef.current
       const threshold = Math.max(range * 0.02, 2000)
 
       let closestTag: (typeof tags)[number] | null = null
       let closestDist = Infinity
       for (const tag of tags) {
-        const tagTs = new Date(tag.tagged_at).getTime()
-        const dist = Math.abs(tagTs - timestamp)
+        const tagCx = timeline.toCompressed(
+          new Date(tag.tagged_at).getTime(),
+        )
+        const dist = Math.abs(tagCx - cx)
         if (dist < closestDist) {
           closestDist = dist
           closestTag = tag
@@ -299,10 +429,10 @@ export default function Reports() {
       if (closestTag && closestDist <= threshold) {
         setSelectedTag(closestTag)
       } else {
-        setTagFormTimestamp(timestamp)
+        setTagFormTimestamp(realTs)
       }
     },
-    [tags, setSelectedTag],
+    [tags, setSelectedTag, timeline],
   )
 
   const {
@@ -343,38 +473,50 @@ export default function Reports() {
   )
 
   const visibleData = useMemo(() => {
-    if (chartData.length === 0) return chartData
+    const pts = timeline.points
+    if (pts.length === 0) return pts
     const [left, right] = domain
-    let startIdx = chartData.findIndex((p) => p.timestamp >= left)
-    if (startIdx < 0) startIdx = chartData.length
-    let endIdx = chartData.findIndex((p) => p.timestamp > right)
-    if (endIdx < 0) endIdx = chartData.length
-    return chartData.slice(
+    let startIdx = pts.findIndex((p) => p.cx >= left)
+    if (startIdx < 0) startIdx = pts.length
+    let endIdx = pts.findIndex((p) => p.cx > right)
+    if (endIdx < 0) endIdx = pts.length
+    return pts.slice(
       Math.max(0, startIdx - 1),
-      Math.min(chartData.length, endIdx + 1),
+      Math.min(pts.length, endIdx + 1),
     )
-  }, [chartData, domain])
+  }, [timeline, domain])
+
+  const realVisibleRange = useMemo(() => {
+    if (visibleData.length < 2) return visibleRangeMs
+    return (
+      visibleData[visibleData.length - 1]!.timestamp -
+      visibleData[0]!.timestamp
+    )
+  }, [visibleData, visibleRangeMs])
 
   const zoomTicks = useMemo(() => {
-    if (visibleRangeMs <= 0) return []
-    const [left, right] = domain
-    const step = computeTickInterval(visibleRangeMs)
-    const start = Math.ceil(left / step) * step
+    if (visibleData.length < 2) return []
+    const realLeft = visibleData[0]!.timestamp
+    const realRight = visibleData[visibleData.length - 1]!.timestamp
+    const step = computeTickInterval(realVisibleRange)
+    const start = Math.ceil(realLeft / step) * step
     const ticks: number[] = []
-    for (let t = start; t <= right; t += step) {
-      ticks.push(t)
+    for (let t = start; t <= realRight; t += step) {
+      ticks.push(timeline.toCompressed(t))
     }
     return ticks
-  }, [domain, visibleRangeMs])
+  }, [visibleData, realVisibleRange, timeline])
 
   const visibleTags = useMemo(() => {
-    if (!tags.length || chartData.length === 0) return []
+    if (!tags.length || timeline.points.length === 0) return []
     const [left, right] = domain
     return tags.filter((tag) => {
-      const ts = new Date(tag.tagged_at).getTime()
-      return ts >= left && ts <= right
+      const tagCx = timeline.toCompressed(
+        new Date(tag.tagged_at).getTime(),
+      )
+      return tagCx >= left && tagCx <= right
     })
-  }, [tags, domain, chartData.length])
+  }, [tags, domain, timeline])
 
   const enrichedData = useMemo(
     () => buildEnrichedData(visibleData, parsedSignals),
@@ -488,19 +630,52 @@ export default function Reports() {
 
       <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {selectedSensorName && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Sensor:{' '}
-              <span className="font-medium text-gray-900 dark:text-white">
-                {selectedSensorName}
-              </span>
-              {isLive && (
-                <span className="ml-2 text-xs text-gray-400">
-                  ({chartData.length} points)
+          <div className="flex items-center gap-4">
+            {selectedSensorName && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Sensor:{' '}
+                <span className="font-medium text-gray-900 dark:text-white">
+                  {selectedSensorName}
                 </span>
-              )}
-            </p>
-          )}
+                {isLive && (
+                  <span className="ml-2 text-xs text-gray-400">
+                    ({chartData.length} points)
+                  </span>
+                )}
+              </p>
+            )}
+            {depthStats && (
+              <div className="flex items-center gap-3 border-l border-gray-200 pl-4 dark:border-gray-700">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Flow{' '}
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {toLph(depthStats.currentValue).toFixed(1)} L/h
+                  </span>
+                </span>
+                <span
+                  className={`text-xs font-medium ${
+                    depthStats.change > 0
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : depthStats.change < 0
+                        ? 'text-red-600 dark:text-red-400'
+                        : 'text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  {depthStats.change > 0 ? '+' : ''}
+                  {toLph(depthStats.change).toFixed(1)} L/h
+                </span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">|</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Total{' '}
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {depthStats.totalLiters >= 1000
+                      ? `${(depthStats.totalLiters / 1000).toFixed(2)} m³`
+                      : `${depthStats.totalLiters.toFixed(1)} L`}
+                  </span>
+                </span>
+              </div>
+            )}
+          </div>
 
           <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-1 text-xs font-medium dark:border-gray-700 dark:bg-gray-900">
             {TIME_RANGE_OPTIONS.map((opt) => (
@@ -639,14 +814,13 @@ export default function Reports() {
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
                 <XAxis
-                  dataKey="timestamp"
+                  dataKey="cx"
                   type="number"
-                  scale="time"
                   domain={domain}
                   allowDataOverflow
                   ticks={zoomTicks}
-                  tickFormatter={(ts: number) =>
-                    formatTick(ts, visibleRangeMs)
+                  tickFormatter={(cx: number) =>
+                    formatTick(timeline.toReal(cx), realVisibleRange)
                   }
                   tick={{ fontSize: 11, fill: colors.axis }}
                   tickLine={{ stroke: colors.grid }}
@@ -654,12 +828,12 @@ export default function Reports() {
                 />
                 <YAxis
                   domain={['auto', 'auto']}
-                  tickFormatter={(v: number) => v.toFixed(2)}
+                  tickFormatter={(v: number) => toLph(v).toFixed(0)}
                   tick={{ fontSize: 11, fill: colors.axis }}
                   tickLine={{ stroke: colors.grid }}
                   axisLine={{ stroke: colors.grid }}
                   label={{
-                    value: 'Flow',
+                    value: 'L/h',
                     angle: -90,
                     position: 'insideLeft',
                     style: { fontSize: 12, fill: colors.axis },
@@ -682,7 +856,9 @@ export default function Reports() {
                 {visibleTags.map((tag) => (
                   <ReferenceLine
                     key={tag.id}
-                    x={new Date(tag.tagged_at).getTime()}
+                    x={timeline.toCompressed(
+                      new Date(tag.tagged_at).getTime(),
+                    )}
                     stroke="#f59e0b"
                     strokeDasharray="5 3"
                     strokeWidth={1.5}
@@ -755,8 +931,9 @@ export default function Reports() {
             <div className="space-y-1.5">
               {tags.map((tag) => {
                 const tagTs = new Date(tag.tagged_at).getTime()
+                const tagCx = timeline.toCompressed(tagTs)
                 const inView =
-                  tagTs >= domain[0] && tagTs <= domain[1]
+                  tagCx >= domain[0] && tagCx <= domain[1]
                 return (
                   <button
                     key={tag.id}

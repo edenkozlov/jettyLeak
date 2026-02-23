@@ -3,11 +3,11 @@ import { NavLink, Outlet } from 'react-router'
 import { useDashboardLayout } from '@/hooks/useDashboardLayout'
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', path: '/' },
-  { label: 'Clients', path: '/clients' },
-  { label: 'Buildings', path: '/buildings' },
-  { label: 'Sensors', path: '/sensors' },
-  { label: 'Reports', path: '/reports' },
+  { label: 'Dashboard', path: '/dashboard' },
+  { label: 'Clients', path: '/dashboard/clients' },
+  { label: 'Buildings', path: '/dashboard/buildings' },
+  { label: 'Sensors', path: '/dashboard/sensors' },
+  { label: 'Reports', path: '/dashboard/reports' },
 ]
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
@@ -67,7 +67,7 @@ export default function DashboardLayout() {
             <NavLink
               key={item.path}
               to={item.path}
-              end={item.path === '/'}
+              end={item.path === '/dashboard'}
               className={navLinkClass}
             >
               {item.label}

@@ -1,5 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+function clampDomain(
+  left: number,
+  right: number,
+  dMin: number,
+  dMax: number,
+): { left: number; right: number } {
+  const range = right - left
+  const fullRange = dMax - dMin
+  if (range >= fullRange) return { left: dMin, right: dMax }
+  let l = left
+  let r = right
+  if (l < dMin) {
+    l = dMin
+    r = dMin + range
+  }
+  if (r > dMax) {
+    r = dMax
+    l = dMax - range
+  }
+  return { left: Math.max(l, dMin), right: Math.min(r, dMax) }
+}
+
 export function useChartZoomPan(
   dataMin: number,
   dataMax: number,
@@ -87,7 +109,7 @@ export function useChartZoomPan(
       return
     }
 
-    setZoomDomain({ left, right })
+    setZoomDomain(clampDomain(left, right, dataMin, dataMax))
     setRefAreaLeft(null)
     setRefAreaRight(null)
   }, [refAreaLeft, refAreaRight, dataMin, dataMax])
@@ -123,7 +145,9 @@ export function useChartZoomPan(
       if (isHorizontal && Math.abs(e.deltaX) > 0.5) {
         e.preventDefault()
         const panAmount = (e.deltaX / 400) * range
-        setZoomDomain({ left: left + panAmount, right: right + panAmount })
+        setZoomDomain(
+          clampDomain(left + panAmount, right + panAmount, dMin, dMax),
+        )
         return
       }
 
@@ -140,10 +164,9 @@ export function useChartZoomPan(
       if (newRange < fullRange * 0.0005) return
 
       const center = (left + right) / 2
-      setZoomDomain({
-        left: center - newRange / 2,
-        right: center + newRange / 2,
-      })
+      setZoomDomain(
+        clampDomain(center - newRange / 2, center + newRange / 2, dMin, dMax),
+      )
     }
 
     el.addEventListener('wheel', handler, { passive: false })
@@ -156,15 +179,15 @@ export function useChartZoomPan(
     const left = zoomDomain?.left ?? homeMin
     const right = zoomDomain?.right ?? homeMax
     const step = (right - left) * 0.3
-    setZoomDomain({ left: left - step, right: right - step })
-  }, [zoomDomain, homeMin, homeMax])
+    setZoomDomain(clampDomain(left - step, right - step, dataMin, dataMax))
+  }, [zoomDomain, homeMin, homeMax, dataMin, dataMax])
 
   const panRight = useCallback(() => {
     const left = zoomDomain?.left ?? homeMin
     const right = zoomDomain?.right ?? homeMax
     const step = (right - left) * 0.3
-    setZoomDomain({ left: left + step, right: right + step })
-  }, [zoomDomain, homeMin, homeMax])
+    setZoomDomain(clampDomain(left + step, right + step, dataMin, dataMax))
+  }, [zoomDomain, homeMin, homeMax, dataMin, dataMax])
 
   // --- Zoom buttons ---
 
@@ -176,10 +199,9 @@ export function useChartZoomPan(
     const fullRange = dataMax - dataMin
     const newRange = range / 1.3
     if (newRange < fullRange * 0.0005) return
-    setZoomDomain({
-      left: center - newRange / 2,
-      right: center + newRange / 2,
-    })
+    setZoomDomain(
+      clampDomain(center - newRange / 2, center + newRange / 2, dataMin, dataMax),
+    )
   }, [zoomDomain, homeMin, homeMax, dataMin, dataMax])
 
   const zoomOut = useCallback(() => {
@@ -193,10 +215,9 @@ export function useChartZoomPan(
       setZoomDomain({ left: dataMin, right: dataMax })
       return
     }
-    setZoomDomain({
-      left: center - newRange / 2,
-      right: center + newRange / 2,
-    })
+    setZoomDomain(
+      clampDomain(center - newRange / 2, center + newRange / 2, dataMin, dataMax),
+    )
   }, [zoomDomain, homeMin, homeMax, dataMin, dataMax])
 
   return {

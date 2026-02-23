@@ -7,8 +7,8 @@ export function useLogin() {
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('admin@flomo.com')
+  const [password, setPassword] = useState('admin123')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,7 +35,7 @@ export function useLogin() {
       const result = await login(email, password)
 
       if (result.success) {
-        navigate('/', { replace: true })
+        navigate('/dashboard', { replace: true })
       } else {
         setError(result.error ?? 'Login failed')
       }

@@ -8,6 +8,7 @@ import DashboardLayout from '@/layouts/DashboardLayout'
 import Buildings from '@/pages/Buildings'
 import Clients from '@/pages/Clients'
 import Home from '@/pages/Home'
+import Landing from '@/pages/Landing'
 import Login from '@/pages/Login'
 import Reports from '@/pages/Reports'
 import Sensors from '@/pages/Sensors'
@@ -19,15 +20,16 @@ export default function App() {
       <ThemeProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/" element={<Landing />} />
             <Route element={<AuthLayout />}>
               <Route path="/login" element={<Login />} />
             </Route>
-            <Route element={<DashboardLayout />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/clients" element={<Clients />} />
-              <Route path="/buildings" element={<Buildings />} />
-              <Route path="/sensors" element={<Sensors />} />
-              <Route path="/reports" element={<Reports />} />
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<Home />} />
+              <Route path="clients" element={<Clients />} />
+              <Route path="buildings" element={<Buildings />} />
+              <Route path="sensors" element={<Sensors />} />
+              <Route path="reports" element={<Reports />} />
             </Route>
           </Routes>
         </BrowserRouter>
