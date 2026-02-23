@@ -283,13 +283,13 @@ function buildEnrichedData(
 
 // --- Tooltip ---
 
-function CustomTooltip({
-  active,
-  payload,
-  colors,
-}: TooltipProps<number, string> & {
+type CustomTooltipProps = TooltipProps<number, string> & {
+  active?: boolean
+  payload?: ReadonlyArray<{ value?: number | null; color?: string; payload?: unknown }>
   colors: { tooltipBg: string; tooltipBorder: string; tooltipText: string }
-}) {
+}
+
+function CustomTooltip({ active, payload, colors }: CustomTooltipProps) {
   if (!active || !payload?.length) return null
 
   const flowEntry = payload.find((e) => e.value != null)
