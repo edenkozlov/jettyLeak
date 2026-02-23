@@ -86,13 +86,13 @@ export const RANGE_MS: Record<TimeRange, number> = {
 }
 
 const QUERY_LIMITS: Record<TimeRange, number> = {
-  '1m': 500,
-  '5m': 2000,
-  '15m': 5000,
-  '1h': 10000,
-  '6h': 20000,
-  '24h': 20000,
-  all: 10000,
+  '1m': 1000,
+  '5m': 3000,
+  '15m': 8000,
+  '1h': 20000,
+  '6h': 50000,
+  '24h': 100000,
+  all: 200000,
 }
 
 export const TICK_INTERVAL_MS: Record<TimeRange, number> = {
@@ -111,7 +111,7 @@ const FLUSH_INTERVAL_MS = 500
 
 function fetchSinceTimestamp(range: TimeRange): string {
   if (range === 'all') return '1970-01-01T00:00:00Z'
-  return new Date(Date.now() - RANGE_MS[range] * FETCH_BUFFER).toISOString()
+  return new Date(Date.now() - RANGE_MS[range]).toISOString()
 }
 
 function reportToPoint(r: Report): ChartPoint {
@@ -266,24 +266,24 @@ export function useReportsPage() {
 
   const sensors = useMemo(() => sensorsData?.sensor ?? [], [sensorsData])
 
-  const chartData = useMemo(() => {
-    let points: ChartPoint[]
-
+  const rawChartData = useMemo(() => {
     if (!isLive || timeRange === 'all') {
       if (!reportsData?.report?.length) return []
-      points = [...reportsData.report]
+      return [...reportsData.report]
         .sort(
           (a, b) =>
             new Date(a.created_at).getTime() -
             new Date(b.created_at).getTime(),
         )
         .map(reportToPoint)
-    } else {
-      points = liveChartData
     }
-
-    return downsample(points, MAX_CHART_POINTS)
+    return liveChartData
   }, [isLive, timeRange, reportsData, liveChartData])
+
+  const chartData = useMemo(
+    () => downsample(rawChartData, MAX_CHART_POINTS),
+    [rawChartData],
+  )
 
   const xTicks = useMemo(() => {
     if (chartData.length < 2) return []
@@ -369,6 +369,7 @@ export function useReportsPage() {
     selectedSensorId,
     selectedSensorName,
     chartData,
+    rawChartData,
     xTicks,
     timeRange,
     isLive,

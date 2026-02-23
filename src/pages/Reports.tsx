@@ -326,6 +326,7 @@ export default function Reports() {
     selectedSensorId,
     selectedSensorName,
     chartData,
+    rawChartData,
     timeRange,
     isLive,
     connected,
@@ -384,18 +385,18 @@ export default function Reports() {
   const [editingMappingLabel, setEditingMappingLabel] = useState('')
 
   const depthStats = useMemo(() => {
-    if (chartData.length === 0) return null
-    const firstPoint = chartData.find((p) => p.flowValue !== null)
-    const lastPoint = [...chartData].reverse().find((p) => p.flowValue !== null)
+    if (rawChartData.length === 0) return null
+    const firstPoint = rawChartData.find((p) => p.flowValue !== null)
+    const lastPoint = [...rawChartData].reverse().find((p) => p.flowValue !== null)
     if (!firstPoint || !lastPoint) return null
     const startValue = firstPoint.flowValue!
     const currentValue = lastPoint.flowValue!
     const change = currentValue - startValue
 
     let totalLiters = 0
-    for (let i = 1; i < chartData.length; i++) {
-      const prev = chartData[i - 1]!
-      const curr = chartData[i]!
+    for (let i = 1; i < rawChartData.length; i++) {
+      const prev = rawChartData[i - 1]!
+      const curr = rawChartData[i]!
       if (prev.flowValue == null || curr.flowValue == null) continue
       const avgLph = toLph((prev.flowValue + curr.flowValue) / 2)
       const hours = (curr.timestamp - prev.timestamp) / 3_600_000
@@ -403,7 +404,7 @@ export default function Reports() {
     }
 
     return { currentValue, startValue, change, totalLiters }
-  }, [chartData])
+  }, [rawChartData])
 
   const visibleRangeMsRef = useRef(0)
 
