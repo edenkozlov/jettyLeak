@@ -27,9 +27,12 @@ import {
 } from '@/hooks/useReportsPage'
 
 const RAW_TO_LPH = 1000
+const MA_WINDOW_MIN = 3
+const MA_WINDOW_MAX = 500
+const MA_WINDOW_DEFAULT = 20
 
 function toLph(raw: number): number {
-  return Math.abs(raw) * RAW_TO_LPH
+  return raw * RAW_TO_LPH
 }
 
 const CHART_COLORS = {
@@ -254,27 +257,27 @@ function buildEnrichedData(
     const prevType = i > 0 ? types[i - 1]! : undefined
     const nextType = i < types.length - 1 ? types[i + 1]! : undefined
 
-    const inverted = p.flowValue != null ? -p.flowValue : null
+    const value = p.flowValue
 
     const result: EnrichedPoint = {
       timestamp: p.timestamp,
       cx: p.cx,
-      flowValue: inverted,
+      flowValue: value,
     }
 
     const key =
       currentType !== null ? `flow_type_${currentType}` : 'flow_default'
-    result[key] = inverted
+    result[key] = value
 
     if (prevType !== undefined && prevType !== currentType) {
       const prevKey =
         prevType !== null ? `flow_type_${prevType}` : 'flow_default'
-      result[prevKey] = inverted
+      result[prevKey] = value
     }
     if (nextType !== undefined && nextType !== currentType) {
       const nextKey =
         nextType !== null ? `flow_type_${nextType}` : 'flow_default'
-      result[nextKey] = inverted
+      result[nextKey] = value
     }
 
     return result
@@ -285,17 +288,22 @@ function buildEnrichedData(
 
 type CustomTooltipProps = TooltipProps<number, string> & {
   active?: boolean
-  payload?: ReadonlyArray<{ value?: number | null; color?: string; payload?: unknown }>
+  payload?: ReadonlyArray<{ value?: number | null; color?: string; dataKey?: string; payload?: unknown }>
   colors: { tooltipBg: string; tooltipBorder: string; tooltipText: string }
 }
+
+const MA_COLOR = '#f97316'
 
 function CustomTooltip({ active, payload, colors }: CustomTooltipProps) {
   if (!active || !payload?.length) return null
 
-  const flowEntry = payload.find((e) => e.value != null)
-  if (!flowEntry) return null
+  const flowEntry = payload.find((e) => e.dataKey !== 'movingAvg' && e.value != null)
+  const maEntry = payload.find((e) => e.dataKey === 'movingAvg' && e.value != null)
 
-  const realTs = (flowEntry.payload as EnrichedPoint | undefined)?.timestamp
+  if (!flowEntry && !maEntry) return null
+
+  const referenceEntry = flowEntry ?? maEntry
+  const realTs = (referenceEntry!.payload as EnrichedPoint | undefined)?.timestamp
   const timeStr = realTs != null ? formatTooltipTime(realTs) : ''
 
   return (
@@ -310,9 +318,16 @@ function CustomTooltip({ active, payload, colors }: CustomTooltipProps) {
       }}
     >
       <p style={{ fontWeight: 600, marginBottom: 4 }}>{timeStr}</p>
-      <p style={{ color: String(flowEntry.color ?? colors.tooltipText) }}>
-        Flow: {toLph(Number(flowEntry.value)).toFixed(1)} L/h
-      </p>
+      {flowEntry && (
+        <p style={{ color: String(flowEntry.color ?? colors.tooltipText) }}>
+          Flow: {toLph(Number(flowEntry.value)).toFixed(1)} L/h
+        </p>
+      )}
+      {maEntry && (
+        <p style={{ color: MA_COLOR, marginTop: flowEntry ? 2 : 0 }}>
+          MA: {toLph(Number(maEntry.value)).toFixed(1)} L/h
+        </p>
+      )}
     </div>
   )
 }
@@ -328,6 +343,7 @@ export default function Reports() {
     chartData,
     rawChartData,
     timeRange,
+    periodOffset,
     isLive,
     connected,
     sensorsLoading,
@@ -340,7 +356,26 @@ export default function Reports() {
     handleSensorChange,
     handleTimeRangeChange,
     handleToggleLive,
+    handlePreviousPeriod,
+    handleNextPeriod,
   } = useReportsPage()
+
+  const periodLabel = useMemo(() => {
+    if (periodOffset === 0 || timeRange === 'all') return null
+    const rangeMs = RANGE_MS[timeRange]
+    const now = Date.now()
+    const untilMs = now - rangeMs * periodOffset
+    const sinceMs = untilMs - rangeMs
+    const fmt = (ms: number) =>
+      new Date(ms).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
+    return `${fmt(sinceMs)} – ${fmt(untilMs)}`
+  }, [periodOffset, timeRange])
 
   const timeline = useMemo(() => compressTimeline(chartData), [chartData])
 
@@ -398,7 +433,7 @@ export default function Reports() {
       const prev = rawChartData[i - 1]!
       const curr = rawChartData[i]!
       if (prev.flowValue == null || curr.flowValue == null) continue
-      const avgLph = toLph((prev.flowValue + curr.flowValue) / 2)
+      const avgLph = Math.abs(toLph((prev.flowValue + curr.flowValue) / 2))
       const hours = (curr.timestamp - prev.timestamp) / 3_600_000
       totalLiters += avgLph * hours
     }
@@ -523,6 +558,26 @@ export default function Reports() {
     () => buildEnrichedData(visibleData, parsedSignals),
     [visibleData, parsedSignals],
   )
+
+  const [showMovingAverage, setShowMovingAverage] = useState(false)
+  const [maWindow, setMaWindow] = useState(MA_WINDOW_DEFAULT)
+
+  const enrichedDataWithMA = useMemo(() => {
+    if (!showMovingAverage || enrichedData.length === 0) return enrichedData
+    const half = Math.floor(maWindow / 2)
+    return enrichedData.map((point, i) => {
+      const start = Math.max(0, i - half)
+      const end = Math.min(enrichedData.length - 1, i + half)
+      const values: number[] = []
+      for (let j = start; j <= end; j++) {
+        const v = enrichedData[j]!.flowValue
+        if (v != null) values.push(v)
+      }
+      if (values.length === 0) return point
+      const avg = values.reduce((a, b) => a + b, 0) / values.length
+      return { ...point, movingAvg: avg }
+    })
+  }, [enrichedData, showMovingAverage])
 
   const handleSaveTag = useCallback(async () => {
     if (!tagFormTimestamp || !tagTitle.trim()) return
@@ -678,20 +733,55 @@ export default function Reports() {
             )}
           </div>
 
-          <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-1 text-xs font-medium dark:border-gray-700 dark:bg-gray-900">
-            {TIME_RANGE_OPTIONS.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() =>
-                  onTimeRangeChange(opt.value as TimeRange)
-                }
-                className={`rounded-md px-3 py-1.5 transition-colors ${rangeButtonClass(timeRange === opt.value)}`}
-              >
-                {opt.label}
-              </button>
-            ))}
+          <div className="flex items-center gap-2">
+            <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-1 text-xs font-medium dark:border-gray-700 dark:bg-gray-900">
+              {TIME_RANGE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() =>
+                    onTimeRangeChange(opt.value as TimeRange)
+                  }
+                  className={`rounded-md px-3 py-1.5 transition-colors ${rangeButtonClass(timeRange === opt.value)}`}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+
+            {timeRange !== 'all' && (
+              <div className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-900">
+                <button
+                  onClick={handlePreviousPeriod}
+                  className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+                  title="Previous period"
+                >
+                  ‹ Prev
+                </button>
+                <button
+                  onClick={handleNextPeriod}
+                  disabled={periodOffset === 0}
+                  className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+                  title="Next period"
+                >
+                  Next ›
+                </button>
+              </div>
+            )}
           </div>
         </div>
+
+        {periodLabel && (
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-900/20 dark:text-indigo-300">
+            <span className="font-medium">Viewing past period:</span>
+            <span>{periodLabel}</span>
+            <button
+              onClick={handleNextPeriod}
+              className="ml-auto rounded px-2 py-0.5 font-medium transition-colors hover:bg-indigo-100 dark:hover:bg-indigo-900/40"
+            >
+              ← Back to current
+            </button>
+          </div>
+        )}
 
         <div className="mb-3 flex items-center justify-between">
           <div className="inline-flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-700 dark:bg-gray-900">
@@ -725,6 +815,35 @@ export default function Reports() {
             </button>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setShowMovingAverage((v) => !v)}
+                className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  showMovingAverage
+                    ? 'border-orange-300 bg-orange-50 text-orange-600 dark:border-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                    : 'border-gray-200 bg-gray-100 text-gray-500 hover:bg-white hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white'
+                }`}
+                title="Toggle moving average"
+              >
+                Moving Avg
+              </button>
+              {showMovingAverage && (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="range"
+                    min={MA_WINDOW_MIN}
+                    max={MA_WINDOW_MAX}
+                    value={maWindow}
+                    onChange={(e) => setMaWindow(Number(e.target.value))}
+                    className="h-1 w-24 cursor-pointer appearance-none rounded-full bg-orange-200 accent-orange-500 dark:bg-orange-900/40"
+                    title={`Window: ${maWindow} points`}
+                  />
+                  <span className="w-9 text-right text-xs tabular-nums text-orange-600 dark:text-orange-400">
+                    {maWindow}
+                  </span>
+                </div>
+              )}
+            </div>
             {isZoomed && (
               <button
                 onClick={resetZoom}
@@ -808,7 +927,7 @@ export default function Reports() {
           >
             <ResponsiveContainer width="100%" height={400}>
               <LineChart
-                data={enrichedData}
+                data={enrichedDataWithMA}
                 onMouseDown={onChartMouseDown}
                 onMouseMove={onChartMouseMove}
                 onMouseUp={onChartMouseUp}
@@ -888,7 +1007,7 @@ export default function Reports() {
                   label={(props: RechartLabelProps) =>
                     renderValueLabel(
                       props,
-                      enrichedData.length,
+                      enrichedDataWithMA.length,
                       colors.axis,
                     )
                   }
@@ -907,6 +1026,20 @@ export default function Reports() {
                     connectNulls={false}
                   />
                 ))}
+                {showMovingAverage && (
+                  <Line
+                    type="monotone"
+                    dataKey="movingAvg"
+                    name="Moving Average"
+                    stroke={MA_COLOR}
+                    strokeWidth={2.5}
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                    isAnimationActive={false}
+                    connectNulls={true}
+                    strokeDasharray="8 4"
+                  />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>

@@ -109,15 +109,30 @@ const FETCH_BUFFER = 2
 const MAX_CHART_POINTS = 1500
 const FLUSH_INTERVAL_MS = 500
 
-function fetchSinceTimestamp(range: TimeRange): string {
-  if (range === 'all') return '1970-01-01T00:00:00Z'
-  return new Date(Date.now() - RANGE_MS[range]).toISOString()
+function computeTimeWindow(
+  range: TimeRange,
+  offset: number,
+): { since: string; until: string } {
+  if (range === 'all') {
+    return {
+      since: '1970-01-01T00:00:00Z',
+      until: new Date(Date.now() + 86_400_000).toISOString(),
+    }
+  }
+  const rangeMs = RANGE_MS[range]
+  const now = Date.now()
+  const untilMs = now - rangeMs * offset
+  const sinceMs = untilMs - rangeMs
+  return {
+    since: new Date(sinceMs).toISOString(),
+    until: new Date(untilMs).toISOString(),
+  }
 }
 
 function reportToPoint(r: Report): ChartPoint {
   return {
     timestamp: new Date(r.created_at).getTime(),
-    flowValue: r.flow_value,
+    flowValue: r.flow_value != null ? -r.flow_value : r.flow_value,
   }
 }
 
@@ -176,6 +191,7 @@ export function useReportsPage() {
   const [timeRange, setTimeRange] = useState<TimeRange>('1m')
   const [isLive, setIsLive] = useState(true)
   const [liveChartData, setLiveChartData] = useState<ChartPoint[]>([])
+  const [periodOffset, setPeriodOffset] = useState(0)
 
   const bufferRef = useRef<ChartPoint[]>([])
   const lastSeenIdRef = useRef<number | null>(null)
@@ -193,7 +209,7 @@ export function useReportsPage() {
   const { data: subData, connected } = useSubscription<SubscriptionResponse>(
     LATEST_REPORT_SUBSCRIPTION,
     subscriptionVars,
-    isLive && selectedSensorId !== null && timeRange !== 'all',
+    isLive && selectedSensorId !== null && timeRange !== 'all' && periodOffset === 0,
   )
 
   useEffect(() => {
@@ -237,17 +253,20 @@ export function useReportsPage() {
 
   useEffect(() => {
     if (selectedSensorId !== null) {
+      const { since, until } = computeTimeWindow(timeRange, periodOffset)
       fetchReports({
         sensorId: selectedSensorId,
-        since: fetchSinceTimestamp(timeRange),
+        since,
+        until,
         limit: QUERY_LIMITS[timeRange],
       })
       fetchSignals({
         sensorId: selectedSensorId,
-        since: fetchSinceTimestamp(timeRange),
+        since,
+        until,
       })
     }
-  }, [selectedSensorId, timeRange, fetchReports, fetchSignals])
+  }, [selectedSensorId, timeRange, periodOffset, fetchReports, fetchSignals])
 
   useEffect(() => {
     if (!reportsData?.report) return
@@ -267,7 +286,7 @@ export function useReportsPage() {
   const sensors = useMemo(() => sensorsData?.sensor ?? [], [sensorsData])
 
   const rawChartData = useMemo(() => {
-    if (!isLive || timeRange === 'all') {
+    if (!isLive || timeRange === 'all' || periodOffset > 0) {
       if (!reportsData?.report?.length) return []
       return [...reportsData.report]
         .sort(
@@ -278,7 +297,7 @@ export function useReportsPage() {
         .map(reportToPoint)
     }
     return liveChartData
-  }, [isLive, timeRange, reportsData, liveChartData])
+  }, [isLive, timeRange, periodOffset, reportsData, liveChartData])
 
   const chartData = useMemo(
     () => downsample(rawChartData, MAX_CHART_POINTS),
@@ -336,6 +355,7 @@ export function useReportsPage() {
   const handleSensorChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       setSelectedSensorId(Number(e.target.value))
+      setPeriodOffset(0)
       bufferRef.current = []
       lastSeenIdRef.current = null
     },
@@ -344,12 +364,25 @@ export function useReportsPage() {
 
   const handleTimeRangeChange = useCallback((range: TimeRange) => {
     setTimeRange(range)
+    setPeriodOffset(0)
     bufferRef.current = []
     lastSeenIdRef.current = null
   }, [])
 
   const handleToggleLive = useCallback(() => {
     setIsLive((prev) => !prev)
+    bufferRef.current = []
+    lastSeenIdRef.current = null
+  }, [])
+
+  const handlePreviousPeriod = useCallback(() => {
+    setPeriodOffset((prev) => prev + 1)
+    bufferRef.current = []
+    lastSeenIdRef.current = null
+  }, [])
+
+  const handleNextPeriod = useCallback(() => {
+    setPeriodOffset((prev) => Math.max(0, prev - 1))
     bufferRef.current = []
     lastSeenIdRef.current = null
   }, [])
@@ -372,6 +405,7 @@ export function useReportsPage() {
     rawChartData,
     xTicks,
     timeRange,
+    periodOffset,
     isLive,
     connected,
     sensorsLoading,
@@ -384,6 +418,8 @@ export function useReportsPage() {
     handleSensorChange,
     handleTimeRangeChange,
     handleToggleLive,
+    handlePreviousPeriod,
+    handleNextPeriod,
   }
 }
 
