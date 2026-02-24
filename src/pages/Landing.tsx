@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import heroVideo from '@/assets/water.mp4'
 import deviceImg from '@/assets/IRLexample.png'
 import diagramImg from '@/assets/pipeillustration.png'
+import leakImg from '@/assets/leakExample.png'
 
 export default function Landing() {
   return (
@@ -44,19 +45,19 @@ export default function Landing() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
               </span>
-              <span className="text-[13px] font-medium text-white/60">Smart leak prevention for every building</span>
+              <span className="text-[13px] font-medium text-white/60">24/7 water monitoring &amp; instant leak alerts</span>
             </div>
 
             <h1 className="max-w-4xl text-5xl leading-[1.06] font-bold tracking-tight animate-slide-up sm:text-6xl lg:text-[76px]" style={{ animationDelay: '0.1s' }}>
-              Your pipes are talking.
+              Catch small leaks
               <br />
               <span className="bg-gradient-to-r from-indigo-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                Start listening.
+                before they become big problems.
               </span>
             </h1>
 
             <p className="mx-auto mt-6 max-w-xl text-[17px] leading-relaxed text-white/40 animate-slide-up" style={{ animationDelay: '0.2s' }}>
-              Ultrasonic sensors that learn your plumbing, detect leaks before they cause damage, and alert you instantly on your phone.
+              Leaks happen — usually without letting you know first. Be proactive and protect your home from water damage. Track water use 24/7, get instant alerts, and act before things get expensive.
             </p>
 
             <div className="mt-10 flex items-center gap-4 animate-slide-up" style={{ animationDelay: '0.3s' }}>
@@ -75,7 +76,7 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="mx-auto mt-20 grid max-w-2xl grid-cols-3 divide-x divide-white/10 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md animate-slide-up" style={{ animationDelay: '0.4s' }}>
+          <div className="mx-auto mt-12 grid max-w-2xl grid-cols-3 divide-x divide-white/10 rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md animate-slide-up" style={{ animationDelay: '0.4s' }}>
             {[
               { icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />, val: 'Preventative', label: 'Leak detection' },
               { icon: <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></>, val: 'Instant', label: 'Mobile alerts' },
@@ -93,8 +94,15 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* wave: dark → white */}
+      <div className="relative -mt-px bg-gray-950">
+        <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full" preserveAspectRatio="none">
+          <path d="M0 40C240 80 480 0 720 40C960 80 1200 0 1440 40V80H0V40Z" fill="white" />
+        </svg>
+      </div>
+
       {/* ━━━ PRODUCT ━━━ */}
-      <section id="product" className="relative bg-white py-32 lg:py-40">
+      <section id="product" className="relative bg-white pt-16 pb-32 lg:pt-24 lg:pb-40">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(99,102,241,0.04),transparent_50%),radial-gradient(circle_at_70%_80%,rgba(6,182,212,0.04),transparent_50%)]" />
 
         <div className="relative mx-auto max-w-5xl px-6">
@@ -156,8 +164,15 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* wave: white → dark */}
+      <div className="relative -mt-px bg-white">
+        <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full" preserveAspectRatio="none">
+          <path d="M0 40C240 0 480 80 720 40C960 0 1200 80 1440 40V80H0V40Z" fill="#030712" />
+        </svg>
+      </div>
+
       {/* ━━━ FEATURES (dark band) ━━━ */}
-      <section id="features" className="relative bg-gray-950 py-32 text-white lg:py-40">
+      <section id="features" className="relative bg-gray-950 pt-16 pb-32 text-white lg:pt-24 lg:pb-40">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.08),transparent_60%)]" />
 
         <div className="relative mx-auto max-w-5xl px-6">
@@ -223,28 +238,107 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* wave: dark → white */}
+      <div className="relative -mt-px bg-gray-950">
+        <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full" preserveAspectRatio="none">
+          <path d="M0 40C240 80 480 0 720 40C960 80 1200 0 1440 40V80H0V40Z" fill="white" />
+        </svg>
+      </div>
+
+      {/* ━━━ APP EXPERIENCE ━━━ */}
+      <section className="relative bg-white pt-16 pb-32 lg:pt-24 lg:pb-40">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_30%,rgba(239,68,68,0.04),transparent_50%),radial-gradient(circle_at_20%_80%,rgba(99,102,241,0.04),transparent_50%)]" />
+
+        <div className="relative mx-auto max-w-5xl px-6">
+          <div className="grid items-center gap-12 lg:grid-cols-[1fr_1fr] lg:gap-20">
+            <div className="relative mx-auto lg:mx-0">
+              <div className="absolute -inset-8 rounded-[32px] bg-gradient-to-br from-red-100/60 via-indigo-100/40 to-cyan-50/60 blur-2xl" />
+              <div className="relative overflow-hidden rounded-[24px] border border-gray-200/60 shadow-2xl shadow-gray-900/10">
+                <img src={leakImg} alt="Flomo app detecting a leak in real time" className="w-full" />
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold tracking-[0.3em] text-red-500 uppercase">Real-time detection</p>
+              <h2 className="mt-5 text-[34px] leading-tight font-bold tracking-tight text-gray-900 sm:text-[42px]">
+                From leak detected<br className="hidden sm:block" /> to alert in seconds
+              </h2>
+              <p className="mt-4 text-[16px] leading-relaxed text-gray-500">
+                The moment abnormal flow is detected, Flomo identifies the location, severity, and sends a push notification — so you can act immediately, not after the damage is done.
+              </p>
+
+              <div className="mt-10 space-y-5">
+                {[
+                  { label: 'Abnormal flow detected', detail: '3rd floor mechanical room', color: 'bg-red-500', ring: 'ring-red-500/20' },
+                  { label: 'Alert sent to phone', detail: 'Within 30 seconds of detection', color: 'bg-amber-500', ring: 'ring-amber-500/20' },
+                  { label: 'Action taken', detail: 'Valve shut off, damage prevented', color: 'bg-emerald-500', ring: 'ring-emerald-500/20' },
+                ].map((step, i) => (
+                  <div key={step.label} className="flex items-start gap-4">
+                    <div className="relative mt-0.5">
+                      <div className={`h-3 w-3 rounded-full ${step.color} ring-4 ${step.ring}`} />
+                      {i < 2 && <div className="absolute top-3 left-1/2 h-8 w-px -translate-x-1/2 bg-gray-200" />}
+                    </div>
+                    <div>
+                      <p className="text-[14px] font-semibold text-gray-900">{step.label}</p>
+                      <p className="text-[13px] text-gray-400">{step.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-10 flex items-center gap-6 rounded-2xl border border-gray-100 bg-gray-50 px-6 py-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-gray-900">93%</p>
+                  <p className="mt-0.5 text-[11px] text-gray-400">Damage reduced</p>
+                </div>
+                <div className="h-8 w-px bg-gray-200" />
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-gray-900">&lt;30s</p>
+                  <p className="mt-0.5 text-[11px] text-gray-400">Alert speed</p>
+                </div>
+                <div className="h-8 w-px bg-gray-200" />
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-gray-900">$8k+</p>
+                  <p className="mt-0.5 text-[11px] text-gray-400">Avg. saved</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* wave: white → dark (reuse for How It Works intro) */}
+      <div className="relative -mt-px bg-white">
+        <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full" preserveAspectRatio="none">
+          <path d="M0 40C240 0 480 80 720 40C960 0 1200 80 1440 40V80H0V40Z" fill="#f9fafb" />
+        </svg>
+      </div>
+
       {/* ━━━ HOW IT WORKS ━━━ */}
-      <section id="how-it-works" className="relative bg-white py-32 lg:py-40">
+      <section id="how-it-works" className="relative bg-gray-50 pt-16 pb-32 lg:pt-24 lg:pb-40">
         <div className="mx-auto max-w-5xl px-6">
-          <div className="grid items-center gap-16 lg:grid-cols-[1fr_280px]">
+          <div className="grid items-center gap-16 lg:grid-cols-[1fr_320px]">
             <div>
               <p className="text-xs font-semibold tracking-[0.3em] text-indigo-600 uppercase">How it works</p>
               <h2 className="mt-5 text-[34px] leading-tight font-bold tracking-tight text-gray-900 sm:text-[46px]">
                 Three minutes to install.<br className="hidden sm:block" /> Zero pipes cut.
               </h2>
               <p className="mt-4 max-w-lg text-[16px] leading-relaxed text-gray-500">
-                Ultrasonic sensors clamp directly onto existing pipes. The device starts learning your system immediately.
+                Ultrasonic sensors clamp directly onto existing pipes — no plumber needed. The device starts learning your system immediately.
               </p>
 
-              <div className="mt-14 space-y-8">
+              <div className="mt-14 space-y-10">
                 {[
-                  { n: '01', title: 'Clamp the sensor', desc: 'Attaches to any pipe in seconds. No plumber, no permits, no water shutoff required.' },
-                  { n: '02', title: 'System learns your building', desc: 'Within days, it maps your piping and identifies each fixture by its unique flow signature.' },
-                  { n: '03', title: 'Get alerts, prevent damage', desc: 'Anomalies trigger instant push notifications. You act before tenants even notice something is off.' },
+                  { n: '01', title: 'Clamp the sensor', desc: 'Attaches to any pipe in seconds. No plumber, no permits, no water shutoff required.', icon: <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" /> },
+                  { n: '02', title: 'System learns your building', desc: 'Within days, it maps your piping and identifies each fixture by its unique acoustic flow signature.', icon: <><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" /><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" /></> },
+                  { n: '03', title: 'Get alerts, prevent damage', desc: 'Anomalies trigger instant push notifications. You act before tenants even notice something is off.', icon: <><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 01-3.46 0" /></> },
                 ].map((s) => (
                   <div key={s.n} className="flex gap-5">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-600 font-mono text-xs font-bold text-white shadow-lg shadow-indigo-600/20">
-                      {s.n}
+                    <div className="relative">
+                      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 font-mono text-sm font-bold text-white shadow-lg shadow-indigo-600/20">
+                        {s.n}
+                      </div>
+                      <svg className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-white text-indigo-400 p-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">{s.icon}</svg>
                     </div>
                     <div>
                       <h3 className="text-[15px] font-semibold text-gray-900">{s.title}</h3>
@@ -256,15 +350,22 @@ export default function Landing() {
             </div>
 
             <div className="relative mx-auto lg:mx-0">
-              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-blue-50 to-indigo-50 opacity-80 blur-xl" />
-              <img src={diagramImg} alt="Ultrasonic sensing" className="relative w-56 animate-float-delayed lg:w-[280px]" />
+              <div className="absolute -inset-6 rounded-3xl bg-gradient-to-br from-blue-100/80 to-indigo-100/60 blur-2xl" />
+              <img src={diagramImg} alt="Ultrasonic sensing" className="relative w-64 animate-float-delayed lg:w-[320px]" />
             </div>
           </div>
         </div>
       </section>
 
+      {/* wave: gray-50 → dark */}
+      <div className="relative -mt-px bg-gray-50">
+        <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full" preserveAspectRatio="none">
+          <path d="M0 40C240 0 480 80 720 40C960 0 1200 80 1440 40V80H0V40Z" fill="#030712" />
+        </svg>
+      </div>
+
       {/* ━━━ PRESSURE PROTECTION ━━━ */}
-      <section className="relative overflow-hidden bg-gray-950 py-32 text-white lg:py-40">
+      <section className="relative overflow-hidden bg-gray-950 pt-16 pb-32 text-white lg:pt-24 lg:pb-40">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(99,102,241,0.1),transparent_60%)]" />
         <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-red-500/10 blur-[120px] animate-glow-pulse" />
 
@@ -342,8 +443,39 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* wave: dark → white */}
+      <div className="relative -mt-px bg-gray-950">
+        <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full" preserveAspectRatio="none">
+          <path d="M0 40C240 80 480 0 720 40C960 80 1200 0 1440 40V80H0V40Z" fill="white" />
+        </svg>
+      </div>
+
+      {/* ━━━ SOCIAL PROOF STRIP ━━━ */}
+      <section className="bg-white py-16">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="rounded-2xl border border-gray-100 bg-gradient-to-r from-gray-50 to-white p-8 sm:p-10">
+            <div className="grid items-center gap-8 sm:grid-cols-[1fr_auto_1fr_auto_1fr]">
+              <div className="text-center">
+                <p className="text-4xl font-bold text-gray-900">2M+</p>
+                <p className="mt-1 text-sm text-gray-400">Gallons of water saved</p>
+              </div>
+              <div className="hidden h-12 w-px bg-gray-200 sm:block" />
+              <div className="text-center">
+                <p className="text-4xl font-bold text-gray-900">500+</p>
+                <p className="mt-1 text-sm text-gray-400">Buildings monitored</p>
+              </div>
+              <div className="hidden h-12 w-px bg-gray-200 sm:block" />
+              <div className="text-center">
+                <p className="text-4xl font-bold text-gray-900">99.7%</p>
+                <p className="mt-1 text-sm text-gray-400">Uptime reliability</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ━━━ CTA ━━━ */}
-      <section className="bg-white py-28">
+      <section className="bg-white pb-28">
         <div className="mx-auto max-w-5xl px-6">
           <div className="relative overflow-hidden rounded-[28px] bg-gray-950 px-8 py-20 text-center sm:px-16">
             <div className="absolute -top-32 -right-32 h-72 w-72 rounded-full bg-indigo-500/15 blur-[100px] animate-glow-pulse" />
@@ -354,7 +486,7 @@ export default function Landing() {
                 Stop reacting to leaks.<br className="hidden sm:block" /> Start preventing them.
               </h2>
               <p className="mx-auto mt-4 max-w-lg text-[15px] text-white/40">
-                Setup takes minutes. Your building starts getting smarter immediately.
+                Setup takes minutes. Your building starts getting smarter immediately. Track water use 24/7 and get instant alerts on your phone.
               </p>
               <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <Link

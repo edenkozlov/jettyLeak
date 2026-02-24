@@ -188,7 +188,7 @@ export function useReportsPage() {
   }>(UPDATE_SENSOR_MAPPINGS)
 
   const [selectedSensorId, setSelectedSensorId] = useState<number | null>(null)
-  const [timeRange, setTimeRange] = useState<TimeRange>('1m')
+  const [timeRange, setTimeRange] = useState<TimeRange>('15m')
   const [isLive, setIsLive] = useState(true)
   const [liveChartData, setLiveChartData] = useState<ChartPoint[]>([])
   const [periodOffset, setPeriodOffset] = useState(0)

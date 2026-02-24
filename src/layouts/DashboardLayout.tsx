@@ -1,13 +1,13 @@
-import { NavLink, Outlet } from 'react-router'
+import { Link, NavLink, Outlet } from 'react-router'
 
 import { useDashboardLayout } from '@/hooks/useDashboardLayout'
 
 const NAV_ITEMS = [
-  { label: 'Dashboard', path: '/dashboard' },
+  { label: 'Reports', path: '/dashboard' },
+  { label: 'Home', path: '/dashboard/home' },
   { label: 'Clients', path: '/dashboard/clients' },
   { label: 'Buildings', path: '/dashboard/buildings' },
   { label: 'Sensors', path: '/dashboard/sensors' },
-  { label: 'Reports', path: '/dashboard/reports' },
 ]
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
@@ -40,7 +40,7 @@ export default function DashboardLayout() {
         `}
       >
         <div className="flex h-16 items-center justify-between border-b border-gray-800 px-6">
-          <span className="text-lg font-semibold text-white">Flomo</span>
+          <Link to="/" className="text-lg font-semibold text-white transition-colors hover:text-indigo-400">Flomo</Link>
           <button
             onClick={handleToggleSidebar}
             className="text-gray-400 hover:text-white lg:hidden"
