@@ -77,21 +77,6 @@ export default function Landing() {
             </div>
           </div>
 
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-3 animate-slide-up" style={{ animationDelay: '0.4s' }}>
-            {[
-              { icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />, text: 'Preventative leak detection' },
-              { icon: <><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></>, text: 'Instant mobile alerts' },
-              { icon: <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />, text: 'Non-invasive clamp-on' },
-              { icon: <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />, text: '24/7 monitoring' },
-            ].map((s) => (
-              <div key={s.text} className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 backdrop-blur-sm">
-                <svg className="h-3.5 w-3.5 shrink-0 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                  {s.icon}
-                </svg>
-                <span className="text-[13px] font-medium text-white/60">{s.text}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 

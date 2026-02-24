@@ -700,37 +700,6 @@ export default function Reports() {
                 )}
               </p>
             )}
-            {depthStats && (
-              <div className="flex flex-wrap items-center gap-2 border-l border-gray-200 pl-2 dark:border-gray-700 sm:gap-3 sm:pl-4">
-                <span className="text-[11px] text-gray-500 dark:text-gray-400 sm:text-xs">
-                  Flow{' '}
-                  <span className="font-semibold text-gray-900 dark:text-white">
-                    {toLph(depthStats.currentValue).toFixed(1)} L/h
-                  </span>
-                </span>
-                <span
-                  className={`text-[11px] font-medium sm:text-xs ${
-                    depthStats.change > 0
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : depthStats.change < 0
-                        ? 'text-red-600 dark:text-red-400'
-                        : 'text-gray-500 dark:text-gray-400'
-                  }`}
-                >
-                  {depthStats.change > 0 ? '+' : ''}
-                  {toLph(depthStats.change).toFixed(1)} L/h
-                </span>
-                <span className="hidden text-xs text-gray-400 dark:text-gray-500 sm:inline">|</span>
-                <span className="text-[11px] text-gray-500 dark:text-gray-400 sm:text-xs">
-                  Total{' '}
-                  <span className="font-semibold text-gray-900 dark:text-white">
-                    {depthStats.totalLiters >= 1000
-                      ? `${(depthStats.totalLiters / 1000).toFixed(2)} m³`
-                      : `${depthStats.totalLiters.toFixed(1)} L`}
-                  </span>
-                </span>
-              </div>
-            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
