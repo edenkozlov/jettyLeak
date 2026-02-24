@@ -8,6 +8,7 @@ import DashboardLayout from '@/layouts/DashboardLayout'
 import Buildings from '@/pages/Buildings'
 import Clients from '@/pages/Clients'
 import Home from '@/pages/Home'
+import Demo from '@/pages/Demo'
 import Landing from '@/pages/Landing'
 import Login from '@/pages/Login'
 import Reports from '@/pages/Reports'
@@ -21,6 +22,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/demo" element={<Demo />} />
             <Route element={<AuthLayout />}>
               <Route path="/login" element={<Login />} />
             </Route>

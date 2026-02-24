@@ -637,9 +637,9 @@ export default function Reports() {
 
   return (
     <div>
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">Flow Reports</h1>
+      <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <h1 className="text-xl font-bold sm:text-2xl">Flow Reports</h1>
           {isLive && connected && (
             <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
               <span className="relative flex h-2 w-2">
@@ -651,10 +651,10 @@ export default function Reports() {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={handleToggleLive}
-            className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:py-2 sm:text-sm ${
               isLive
                 ? 'bg-green-600 text-white hover:bg-green-500'
                 : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
@@ -666,7 +666,7 @@ export default function Reports() {
           <select
             value={selectedSensorId ?? ''}
             onChange={onSensorChange}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            className="min-w-0 flex-1 truncate rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:flex-none sm:px-3 sm:py-2 sm:text-sm"
           >
             {sensors.map((sensor) => (
               <option key={sensor.id} value={sensor.id}>
@@ -684,32 +684,32 @@ export default function Reports() {
         </div>
       )}
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
+      <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
+        <div className="mb-4 space-y-3 sm:mb-5">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             {selectedSensorName && (
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
                 Sensor:{' '}
                 <span className="font-medium text-gray-900 dark:text-white">
                   {selectedSensorName}
                 </span>
                 {isLive && (
-                  <span className="ml-2 text-xs text-gray-400">
-                    ({chartData.length} points)
+                  <span className="ml-1 text-xs text-gray-400">
+                    ({chartData.length} pts)
                   </span>
                 )}
               </p>
             )}
             {depthStats && (
-              <div className="flex items-center gap-3 border-l border-gray-200 pl-4 dark:border-gray-700">
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex flex-wrap items-center gap-2 border-l border-gray-200 pl-2 dark:border-gray-700 sm:gap-3 sm:pl-4">
+                <span className="text-[11px] text-gray-500 dark:text-gray-400 sm:text-xs">
                   Flow{' '}
                   <span className="font-semibold text-gray-900 dark:text-white">
                     {toLph(depthStats.currentValue).toFixed(1)} L/h
                   </span>
                 </span>
                 <span
-                  className={`text-xs font-medium ${
+                  className={`text-[11px] font-medium sm:text-xs ${
                     depthStats.change > 0
                       ? 'text-emerald-600 dark:text-emerald-400'
                       : depthStats.change < 0
@@ -720,8 +720,8 @@ export default function Reports() {
                   {depthStats.change > 0 ? '+' : ''}
                   {toLph(depthStats.change).toFixed(1)} L/h
                 </span>
-                <span className="text-xs text-gray-400 dark:text-gray-500">|</span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="hidden text-xs text-gray-400 dark:text-gray-500 sm:inline">|</span>
+                <span className="text-[11px] text-gray-500 dark:text-gray-400 sm:text-xs">
                   Total{' '}
                   <span className="font-semibold text-gray-900 dark:text-white">
                     {depthStats.totalLiters >= 1000
@@ -733,15 +733,15 @@ export default function Reports() {
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-1 text-xs font-medium dark:border-gray-700 dark:bg-gray-900">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex overflow-x-auto rounded-lg border border-gray-200 bg-gray-100 p-0.5 text-[11px] font-medium dark:border-gray-700 dark:bg-gray-900 sm:p-1 sm:text-xs">
               {TIME_RANGE_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() =>
                     onTimeRangeChange(opt.value as TimeRange)
                   }
-                  className={`rounded-md px-3 py-1.5 transition-colors ${rangeButtonClass(timeRange === opt.value)}`}
+                  className={`rounded-md px-2 py-1 transition-colors sm:px-3 sm:py-1.5 ${rangeButtonClass(timeRange === opt.value)}`}
                 >
                   {opt.label}
                 </button>
@@ -749,10 +749,10 @@ export default function Reports() {
             </div>
 
             {timeRange !== 'all' && (
-              <div className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-900">
+              <div className="inline-flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-700 dark:bg-gray-900 sm:gap-1 sm:p-1">
                 <button
                   onClick={handlePreviousPeriod}
-                  className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+                  className="rounded-md px-1.5 py-1 text-[11px] text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:px-2 sm:text-xs"
                   title="Previous period"
                 >
                   ‹ Prev
@@ -760,7 +760,7 @@ export default function Reports() {
                 <button
                   onClick={handleNextPeriod}
                   disabled={periodOffset === 0}
-                  className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+                  className="rounded-md px-1.5 py-1 text-[11px] text-gray-500 transition-colors hover:bg-white hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:px-2 sm:text-xs"
                   title="Next period"
                 >
                   Next ›
@@ -783,49 +783,49 @@ export default function Reports() {
           </div>
         )}
 
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <div className="inline-flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-700 dark:bg-gray-900">
             <button
               onClick={panLeft}
-              className="rounded-md px-2 py-1 text-sm text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+              className="rounded-md px-1.5 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:px-2 sm:text-sm"
               title="Pan left"
             >
               ◀
             </button>
             <button
               onClick={zoomOut}
-              className="rounded-md px-2 py-1 text-sm text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+              className="rounded-md px-1.5 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:px-2 sm:text-sm"
               title="Zoom out"
             >
               −
             </button>
             <button
               onClick={zoomIn}
-              className="rounded-md px-2 py-1 text-sm text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+              className="rounded-md px-1.5 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:px-2 sm:text-sm"
               title="Zoom in"
             >
               +
             </button>
             <button
               onClick={panRight}
-              className="rounded-md px-2 py-1 text-sm text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+              className="rounded-md px-1.5 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:px-2 sm:text-sm"
               title="Pan right"
             >
               ▶
             </button>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => setShowMovingAverage((v) => !v)}
-                className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors ${
+                className={`rounded-md border px-2 py-1 text-[11px] font-medium transition-colors sm:px-2.5 sm:text-xs ${
                   showMovingAverage
                     ? 'border-orange-300 bg-orange-50 text-orange-600 dark:border-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
                     : 'border-gray-200 bg-gray-100 text-gray-500 hover:bg-white hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white'
                 }`}
                 title="Toggle moving average"
               >
-                Moving Avg
+                MA
               </button>
               {showMovingAverage && (
                 <div className="flex items-center gap-1.5">
@@ -835,10 +835,10 @@ export default function Reports() {
                     max={MA_WINDOW_MAX}
                     value={maWindow}
                     onChange={(e) => setMaWindow(Number(e.target.value))}
-                    className="h-1 w-24 cursor-pointer appearance-none rounded-full bg-orange-200 accent-orange-500 dark:bg-orange-900/40"
+                    className="h-1 w-16 cursor-pointer appearance-none rounded-full bg-orange-200 accent-orange-500 dark:bg-orange-900/40 sm:w-24"
                     title={`Window: ${maWindow} points`}
                   />
-                  <span className="w-9 text-right text-xs tabular-nums text-orange-600 dark:text-orange-400">
+                  <span className="w-7 text-right text-[11px] tabular-nums text-orange-600 dark:text-orange-400 sm:w-9 sm:text-xs">
                     {maWindow}
                   </span>
                 </div>
@@ -847,12 +847,12 @@ export default function Reports() {
             {isZoomed && (
               <button
                 onClick={resetZoom}
-                className="rounded-md border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
+                className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] font-medium text-indigo-600 transition-colors hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 sm:px-2.5 sm:text-xs"
               >
-                Reset Zoom
+                Reset
               </button>
             )}
-            <span className="text-xs text-gray-400 dark:text-gray-500">
+            <span className="hidden text-xs text-gray-400 dark:text-gray-500 sm:inline">
               Drag to zoom · Scroll to zoom · Swipe to pan
             </span>
           </div>
@@ -922,10 +922,10 @@ export default function Reports() {
         ) : (
           <div
             ref={chartWrapperRef}
-            className="select-none"
+            className="h-[280px] select-none sm:h-[400px]"
             onMouseLeave={cancelSelection}
           >
-            <ResponsiveContainer width="100%" height={400}>
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={enrichedDataWithMA}
                 onMouseDown={onChartMouseDown}
@@ -1072,7 +1072,7 @@ export default function Reports() {
                   <button
                     key={tag.id}
                     onClick={() => setSelectedTag(tag)}
-                    className="group flex w-full items-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3 text-left transition-colors hover:border-amber-300 hover:bg-amber-50/60 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-amber-700 dark:hover:bg-amber-900/20"
+                    className="group flex w-full items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left transition-colors hover:border-amber-300 hover:bg-amber-50/60 dark:border-gray-700 dark:bg-gray-800 dark:hover:border-amber-700 dark:hover:bg-amber-900/20 sm:gap-3 sm:px-4 sm:py-3"
                   >
                     <span
                       className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${inView ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'}`}
@@ -1101,11 +1101,11 @@ export default function Reports() {
 
       {tagFormTimestamp !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
           onClick={handleCancelTag}
         >
           <div
-            className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+            className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800 sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -1171,11 +1171,11 @@ export default function Reports() {
 
       {selectedTag && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
           onClick={closeTagModal}
         >
           <div
-            className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-xl dark:border-gray-700 dark:bg-gray-800"
+            className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800 sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between">

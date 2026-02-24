@@ -77,7 +77,7 @@ export default function DashboardLayout() {
       </aside>
 
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-6 dark:border-gray-700 dark:bg-gray-800">
+        <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-3 dark:border-gray-700 dark:bg-gray-800 sm:h-16 sm:px-6">
           <button
             onClick={handleToggleSidebar}
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -139,7 +139,7 @@ export default function DashboardLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6">
           <Outlet />
         </main>
       </div>
