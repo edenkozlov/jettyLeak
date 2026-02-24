@@ -30,14 +30,11 @@ export default function Landing() {
       </nav>
 
       {/* ━━━ HERO ━━━ */}
-      <section className="relative flex min-h-screen items-center justify-center bg-gray-950 text-white">
+      <section className="relative flex min-h-screen items-center justify-center bg-gray-900 text-white">
         <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-30">
           <source src={heroVideo} type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_20%,#030308_70%)]" />
-
-        <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-indigo-600/20 blur-[120px] animate-glow-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 h-80 w-80 rounded-full bg-cyan-500/15 blur-[100px] animate-glow-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute inset-0 bg-gray-900/20" />
 
         <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-24 pb-16 sm:px-6 sm:pt-28 sm:pb-20">
           <div className="flex flex-col items-center text-center">
@@ -46,7 +43,7 @@ export default function Landing() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
               </span>
-              <span className="text-[13px] font-medium text-white/60">24/7 water monitoring &amp; instant leak alerts</span>
+              <span className="text-[13px] font-medium text-white/70">24/7 water monitoring &amp; instant leak alerts</span>
             </div>
 
             <h1 className="max-w-4xl text-[36px] leading-[1.08] font-bold tracking-tight animate-slide-up sm:text-5xl md:text-6xl lg:text-[76px]" style={{ animationDelay: '0.1s' }}>
@@ -57,7 +54,7 @@ export default function Landing() {
               </span>
             </h1>
 
-            <p className="mx-auto mt-5 max-w-xl text-[15px] leading-relaxed text-white/40 animate-slide-up sm:mt-6 sm:text-[17px]" style={{ animationDelay: '0.2s' }}>
+            <p className="mx-auto mt-5 max-w-xl text-[15px] leading-relaxed text-white/55 animate-slide-up sm:mt-6 sm:text-[17px]" style={{ animationDelay: '0.2s' }}>
               Continuous flow tracking and instant leak alerts for homes and buildings using non-invasive sensors.
             </p>
 
@@ -79,13 +76,6 @@ export default function Landing() {
 
         </div>
       </section>
-
-      {/* wave: dark → white */}
-      <div className="relative -mt-px bg-gray-950">
-        <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full" preserveAspectRatio="none">
-          <path d="M0 40C240 80 480 0 720 40C960 80 1200 0 1440 40V80H0V40Z" fill="white" />
-        </svg>
-      </div>
 
       {/* ━━━ PRODUCT ━━━ */}
       <section id="product" className="relative bg-white pt-12 pb-20 sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
