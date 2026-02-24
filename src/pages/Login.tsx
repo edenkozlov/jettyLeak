@@ -38,7 +38,7 @@ export default function Login() {
             onChange={handleEmailChange}
             required
             className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-            placeholder="you@example.com"
+            placeholder="test@test.com"
           />
         </div>
 
@@ -56,7 +56,7 @@ export default function Login() {
             onChange={handlePasswordChange}
             required
             className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-            placeholder="••••••••"
+            placeholder="testtest"
           />
         </div>
 

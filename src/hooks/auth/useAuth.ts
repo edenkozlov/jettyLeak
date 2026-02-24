@@ -17,6 +17,10 @@ export default function useAuth() {
 
   const login = useCallback(
     async (_email: string, _password: string) => {
+      if (_email !== 'test@test.com' || _password !== 'testtest') {
+        return { success: false, error: 'Invalid email or password' }
+      }
+
       dispatch(
         authenticate({
           user_id: 'demo-user',
