@@ -20,6 +20,7 @@ export default function Landing() {
                 <a key={l} href={['#product', '#features'][i]} className="text-[13px] text-gray-400 transition hover:text-gray-700">{l}</a>
               ))}
               <Link to="/demo" className="text-[13px] text-gray-400 transition hover:text-gray-700">Live Demo</Link>
+              <Link to="/case-study" className="text-[13px] text-gray-400 transition hover:text-gray-700">Case Study</Link>
             </div>
             <Link to="/login" className="hidden text-[13px] text-gray-400 transition hover:text-gray-700 sm:block">Sign In</Link>
             <Link to="/login" className="rounded-full bg-indigo-600 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-500 sm:px-5 sm:text-[13px]">
@@ -431,6 +432,7 @@ export default function Landing() {
               <a key={l} href={['#product', '#features'][i]} className="text-[12px] text-gray-400 transition hover:text-gray-600">{l}</a>
             ))}
             <Link to="/demo" className="text-[12px] text-gray-400 transition hover:text-gray-600">Live Demo</Link>
+            <Link to="/case-study" className="text-[12px] text-gray-400 transition hover:text-gray-600">Case Study</Link>
             <Link to="/login" className="text-[12px] text-gray-400 transition hover:text-gray-600">Sign In</Link>
           </div>
           <p className="text-[12px] text-gray-300">&copy; {new Date().getFullYear()} Flomo — Made in Canada</p>
