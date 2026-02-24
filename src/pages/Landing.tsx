@@ -43,7 +43,7 @@ export default function Landing() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
               </span>
-              <span className="text-[13px] font-medium text-white/70">24/7 water monitoring &amp; instant leak alerts</span>
+              <span className="text-[13px] font-medium text-white/70">Built for Canadian homes &amp; buildings</span>
             </div>
 
             <h1 className="max-w-4xl text-[36px] leading-[1.08] font-bold tracking-tight animate-slide-up sm:text-5xl md:text-6xl lg:text-[76px]" style={{ animationDelay: '0.1s' }}>
@@ -88,7 +88,7 @@ export default function Landing() {
               A sensor that learns<br className="hidden sm:block" /> your plumbing
             </h2>
             <p className="mt-3 text-[15px] leading-relaxed text-gray-500 sm:mt-4 sm:text-[16px]">
-              Clamp it onto any pipe. Over time it maps your entire water system, identifies every fixture, and knows when something isn't right.
+              Designed for Canadian homes and buildings. Clamp it onto any pipe — copper, PEX, or galvanized. Runs on cellular, so it works in basements and mechanical rooms without WiFi. Over time it maps your water system, identifies every fixture, and knows when something isn't right.
             </p>
           </div>
 
@@ -108,15 +108,21 @@ export default function Landing() {
                 },
                 {
                   title: 'Maps your piping system',
-                  desc: 'Even in buildings decades old with no blueprints, the sensor builds a picture of how water flows through your property.',
+                  desc: 'Works with copper, PEX, CPVC, and galvanized — the mix found in most Canadian homes. Even decades-old buildings with no blueprints.',
                   icon: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></>,
                   gradient: 'from-blue-500 to-cyan-500',
                 },
                 {
                   title: 'Detects leaks early',
-                  desc: 'Catches unusual flow patterns before they become emergencies. Slow drips, running toilets, burst potential — all flagged immediately.',
+                  desc: 'Sensitive enough to pick up flows as small as 1.7 mL/s. Frozen pipe bursts, slow drips, running toilets — all flagged before they become emergencies.',
                   icon: <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />,
                   gradient: 'from-cyan-500 to-teal-500',
+                },
+                {
+                  title: 'No WiFi required',
+                  desc: "Connects over cellular — works in basements, mechanical rooms, warehouses, and anywhere WiFi doesn't reach.",
+                  icon: <><path d="M1 1l22 22" /><path d="M16.72 11.06A10.94 10.94 0 0119 12.55" /><path d="M5 12.55a10.94 10.94 0 015.17-2.39" /><path d="M10.71 5.05A16 16 0 0122.56 9" /><path d="M1.42 9a15.91 15.91 0 014.7-2.88" /><path d="M8.53 16.11a6 6 0 016.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></>,
+                  gradient: 'from-amber-500 to-orange-500',
                 },
                 {
                   title: 'Instant mobile alerts',
@@ -193,6 +199,12 @@ export default function Landing() {
                 glow: 'bg-violet-500/20',
               },
               {
+                title: 'No WiFi needed',
+                desc: 'Runs on cellular — installs in basements, mechanical rooms, and warehouses where WiFi never reaches.',
+                icon: <><path d="M1 1l22 22" /><path d="M16.72 11.06A10.94 10.94 0 0119 12.55" /><path d="M5 12.55a10.94 10.94 0 015.17-2.39" /><path d="M10.71 5.05A16 16 0 0122.56 9" /><path d="M1.42 9a15.91 15.91 0 014.7-2.88" /><path d="M8.53 16.11a6 6 0 016.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></>,
+                glow: 'bg-amber-500/20',
+              },
+              {
                 title: 'Multi-building dashboard',
                 desc: 'Manage an entire portfolio from one screen. Compare buildings, spot outliers, deploy at scale.',
                 icon: <><rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></>,
@@ -262,32 +274,13 @@ export default function Landing() {
                 ))}
               </div>
 
-              <div className="mt-10 grid grid-cols-3 gap-3 sm:gap-6">
-                {[
-                  { val: '93%', label: 'Damage reduced' },
-                  { val: '<30s', label: 'Alert speed' },
-                  { val: '$8k+', label: 'Avg. saved' },
-                ].map((s) => (
-                  <div key={s.label} className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-3 text-center sm:px-5 sm:py-4">
-                    <p className="text-lg font-bold text-gray-900 sm:text-2xl">{s.val}</p>
-                    <p className="mt-0.5 text-[10px] text-gray-400 sm:text-[11px]">{s.label}</p>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* wave: white → gray-50 */}
-      <div className="relative -mt-px bg-white">
-        <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full" preserveAspectRatio="none">
-          <path d="M0 40C240 0 480 80 720 40C960 0 1200 80 1440 40V80H0V40Z" fill="#f9fafb" />
-        </svg>
-      </div>
-
       {/* ━━━ LIVE DEMO ━━━ */}
-      <section id="how-it-works" className="relative bg-gray-50 pt-12 pb-20 sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
+      <section id="how-it-works" className="relative bg-white pt-12 pb-20 sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="grid items-center gap-10 sm:gap-16 lg:grid-cols-[1fr_320px]">
             <div>
@@ -296,7 +289,7 @@ export default function Landing() {
                 See real water data.<br className="hidden sm:block" /> Right now.
               </h2>
               <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-gray-500 sm:mt-4 sm:text-[16px]">
-                This is live data streaming from Flomo sensors installed at our office and warehouse. Explore the same dashboard our customers use to monitor their buildings 24/7.
+                This is live data streaming from Flomo sensors installed at our Toronto office and Vancouver warehouse. Explore the same dashboard our customers across Canada use to monitor their buildings 24/7.
               </p>
 
               <div className="mt-10 space-y-6">
@@ -337,8 +330,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* wave: gray-50 → dark */}
-      <div className="relative -mt-px bg-gray-50">
+      {/* wave: white → dark */}
+      <div className="relative -mt-px bg-white">
         <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="block w-full" preserveAspectRatio="none">
           <path d="M0 40C240 0 480 80 720 40C960 0 1200 80 1440 40V80H0V40Z" fill="#030712" />
         </svg>
@@ -350,71 +343,47 @@ export default function Landing() {
         <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-red-500/10 blur-[120px] animate-glow-pulse" />
 
         <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="grid items-center gap-10 sm:gap-16 lg:grid-cols-[1fr_1fr]">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.3em] text-indigo-400 uppercase">Pressure protection</p>
-              <h2 className="mt-4 text-[26px] leading-tight font-bold tracking-tight sm:mt-5 sm:text-[34px] md:text-[46px]">
-                Know before your tenants do
-              </h2>
-              <p className="mt-3 text-[15px] leading-relaxed text-white/40 sm:mt-4 sm:text-[16px]">
-                During city shutoffs, water returns at full force and destroys weak joints. Flomo detects the pressure change and alerts you before damage starts.
-              </p>
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-semibold tracking-[0.3em] text-indigo-400 uppercase">Who it's for</p>
+            <h2 className="mt-4 text-[26px] leading-tight font-bold tracking-tight sm:mt-5 sm:text-[34px] md:text-[46px]">
+              From single homes<br className="hidden sm:block" /> to entire portfolios
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-white/40 sm:mt-4 sm:text-[16px]">
+              Whether you manage one property or hundreds, Flomo gives you visibility into every pipe — without tearing open a single wall.
+            </p>
+          </div>
 
-              <div className="mt-10 grid grid-cols-3 gap-3 sm:gap-6">
-                {[
-                  { val: '30s', label: 'Avg. alert time' },
-                  { val: '$8k+', label: 'Damage prevented' },
-                  { val: '24/7', label: 'Always watching' },
-                ].map((s) => (
-                  <div key={s.label} className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-3 py-3 text-center sm:px-5 sm:py-4">
-                    <p className="text-xl font-bold text-white sm:text-3xl">{s.val}</p>
-                    <p className="mt-0.5 text-[10px] text-white/30 sm:text-[11px]">{s.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              {[
-                {
-                  title: 'Pressure drop',
-                  desc: 'Instant alert when city-side pressure drops — you know before anyone calls.',
-                  icon: <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></>,
-                  dot: 'bg-red-400',
-                },
-                {
-                  title: 'Surge on restore',
-                  desc: 'Heads-up to slowly restore flow instead of letting pressure slam through.',
-                  icon: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />,
-                  dot: 'bg-amber-400',
-                },
-                {
-                  title: 'Air in system',
-                  desc: 'Detects air pockets that cause hammering and joint failures.',
-                  icon: <path d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2" />,
-                  dot: 'bg-orange-400',
-                },
-                {
-                  title: 'Unexpected flow',
-                  desc: "Water running when nothing should be on? You'll know immediately.",
-                  icon: <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />,
-                  dot: 'bg-indigo-400',
-                },
-              ].map((c) => (
-                <div key={c.title} className="group flex items-start gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5 transition hover:border-white/10 hover:bg-white/[0.05]">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5">
-                    <svg className="h-4.5 w-4.5 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">{c.icon}</svg>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`h-1.5 w-1.5 rounded-full ${c.dot}`} />
-                      <h3 className="text-[14px] font-semibold">{c.title}</h3>
-                    </div>
-                    <p className="mt-1 text-[12px] leading-relaxed text-white/35">{c.desc}</p>
-                  </div>
+          <div className="mt-12 grid gap-3 sm:mt-20 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+            {[
+              {
+                label: 'Homeowners',
+                detail: 'Protect your basement and catch frozen pipe bursts before the insurance claim.',
+                icon: <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />,
+              },
+              {
+                label: 'Property managers',
+                detail: 'Monitor every building remotely. Know about a leak before your tenants do.',
+                icon: <><rect x="1" y="4" width="22" height="16" rx="2" /><path d="M1 10h22" /></>,
+              },
+              {
+                label: 'Condos & stratas',
+                detail: 'Shared risers, shared risk. Track common lines and unit-level anomalies.',
+                icon: <><rect x="4" y="2" width="16" height="20" rx="2" /><path d="M9 22V12h6v10" /><path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01" /></>,
+              },
+              {
+                label: 'Commercial & industrial',
+                detail: 'Warehouses, offices, restaurants — cellular connectivity means zero IT overhead.',
+                icon: <><path d="M2 20h20" /><path d="M5 20V8l7-5 7 5v12" /><rect x="9" y="12" width="6" height="8" /></>,
+              },
+            ].map((c) => (
+              <div key={c.label} className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 transition hover:border-white/10 hover:bg-white/[0.05]">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                  <svg className="h-5 w-5 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">{c.icon}</svg>
                 </div>
-              ))}
-            </div>
+                <h3 className="text-[15px] font-semibold">{c.label}</h3>
+                <p className="mt-2 text-[13px] leading-relaxed text-white/35">{c.detail}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -425,26 +394,6 @@ export default function Landing() {
           <path d="M0 40C240 80 480 0 720 40C960 80 1200 0 1440 40V80H0V40Z" fill="white" />
         </svg>
       </div>
-
-      {/* ━━━ SOCIAL PROOF STRIP ━━━ */}
-      <section className="bg-white py-12 sm:py-16">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="rounded-2xl border border-gray-100 bg-gradient-to-r from-gray-50 to-white p-6 sm:p-10">
-            <div className="grid grid-cols-3 gap-4 sm:gap-8">
-              {[
-                { val: '2M+', label: 'Gallons saved' },
-                { val: '500+', label: 'Buildings' },
-                { val: '99.7%', label: 'Uptime' },
-              ].map((s) => (
-                <div key={s.label} className="text-center">
-                  <p className="text-2xl font-bold text-gray-900 sm:text-4xl">{s.val}</p>
-                  <p className="mt-1 text-[11px] text-gray-400 sm:text-sm">{s.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* ━━━ CTA ━━━ */}
       <section className="bg-white px-4 pb-20 sm:px-0 sm:pb-28">
@@ -458,7 +407,7 @@ export default function Landing() {
                 Stop reacting to leaks.<br className="hidden sm:block" /> Start preventing them.
               </h2>
               <p className="mx-auto mt-3 max-w-lg text-[14px] text-white/40 sm:mt-4 sm:text-[15px]">
-                Setup takes minutes. Your building starts getting smarter immediately. Track water use 24/7 and get instant alerts on your phone.
+                Setup takes minutes. Your building starts getting smarter immediately. Protecting Canadian properties from coast to coast.
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:mt-10 sm:flex-row sm:gap-4">
                 <Link
@@ -490,7 +439,7 @@ export default function Landing() {
             <Link to="/demo" className="text-[12px] text-gray-400 transition hover:text-gray-600">Live Demo</Link>
             <Link to="/login" className="text-[12px] text-gray-400 transition hover:text-gray-600">Sign In</Link>
           </div>
-          <p className="text-[12px] text-gray-300">&copy; {new Date().getFullYear()} Flomo</p>
+          <p className="text-[12px] text-gray-300">&copy; {new Date().getFullYear()} Flomo — Made in Canada</p>
         </div>
       </footer>
     </div>
