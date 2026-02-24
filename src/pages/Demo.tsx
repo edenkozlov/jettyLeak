@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import type { Props as RechartLabelProps } from 'recharts/types/component/Label'
 import type { TooltipProps } from 'recharts'
 import {
@@ -223,25 +223,38 @@ export default function Demo() {
   }, [timeRange, dataMin, dataMax, chartData, timeline])
   const homeMax = dataMax
 
-  const visibleRangeMsRef = useRef(0)
+  const {
+    domain, visibleRangeMs, isZoomed, resetZoom, panLeft, panRight, zoomIn, zoomOut,
+    onChartMouseDown, onChartMouseMove, onChartMouseUp, refAreaLeft, refAreaRight,
+    cancelSelection, chartWrapperRef,
+  } = useChartZoomPan(dataMin, dataMax, homeMin, homeMax)
 
-  const { domain, zoomTicks, isZoomed, resetZoom, panLeft, panRight, zoomIn, zoomOut, onChartMouseDown, onChartMouseMove, onChartMouseUp, refAreaLeft, refAreaRight, cancelSelection, chartWrapperRef } =
-    useChartZoomPan({
-      homeMin,
-      homeMax,
-      dataMin,
-      dataMax,
-      computeTickInterval,
-      toReal: timeline.toReal,
-      toCompressed: timeline.toCompressed,
-      onVisibleRangeChange: (rangeMs) => { visibleRangeMsRef.current = rangeMs },
-    })
+  const visibleData = useMemo(() => {
+    const pts = timeline.points
+    if (pts.length === 0) return pts
+    const [left, right] = domain
+    let startIdx = pts.findIndex((p) => p.cx >= left)
+    if (startIdx < 0) startIdx = pts.length
+    let endIdx = pts.findIndex((p) => p.cx > right)
+    if (endIdx < 0) endIdx = pts.length
+    return pts.slice(Math.max(0, startIdx - 1), Math.min(pts.length, endIdx + 1))
+  }, [timeline, domain])
 
   const realVisibleRange = useMemo(() => {
-    const rStart = timeline.toReal(domain[0])
-    const rEnd = timeline.toReal(domain[1])
-    return rEnd - rStart
-  }, [domain, timeline])
+    if (visibleData.length < 2) return visibleRangeMs
+    return visibleData[visibleData.length - 1]!.timestamp - visibleData[0]!.timestamp
+  }, [visibleData, visibleRangeMs])
+
+  const zoomTicks = useMemo(() => {
+    if (visibleData.length < 2) return []
+    const realLeft = visibleData[0]!.timestamp
+    const realRight = visibleData[visibleData.length - 1]!.timestamp
+    const step = computeTickInterval(realVisibleRange)
+    const start = Math.ceil(realLeft / step) * step
+    const ticks: number[] = []
+    for (let t = start; t <= realRight; t += step) ticks.push(timeline.toCompressed(t))
+    return ticks
+  }, [visibleData, realVisibleRange, timeline])
 
   const enrichedData = useMemo(() => buildEnrichedData(timeline.points, parsedSignals), [timeline, parsedSignals])
 
@@ -273,7 +286,7 @@ export default function Demo() {
     return { currentValue, totalLiters }
   }, [rawChartData])
 
-  const onSensorChange = (e: React.ChangeEvent<HTMLSelectElement>) => handleSensorChange(e.target.value)
+  const onSensorChange = (e: React.ChangeEvent<HTMLSelectElement>) => handleSensorChange(e)
   const onTimeRangeChange = (range: TimeRange) => handleTimeRangeChange(range)
 
   if (sensorsLoading) {
@@ -322,8 +335,7 @@ export default function Demo() {
             )}
           </div>
           <p className="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            This is real data streaming from Flomo sensors installed at our office and warehouse.
-            What you see below is the same dashboard our customers use to monitor their buildings 24/7.
+            Real data streaming from Flomo sensors installed at our office and warehouse.
           </p>
         </div>
 
@@ -484,26 +496,6 @@ export default function Demo() {
           )}
         </div>
 
-        {/* CTA */}
-        <div className="mt-8 text-center sm:mt-12">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Want this for your building?
-          </p>
-          <div className="mt-4 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
-            <Link
-              to="/login"
-              className="w-full rounded-full bg-indigo-600 px-8 py-3 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition hover:bg-indigo-500 sm:w-auto"
-            >
-              Start Monitoring
-            </Link>
-            <Link
-              to="/"
-              className="w-full rounded-full border border-gray-300 px-8 py-3 text-center text-sm font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800 sm:w-auto"
-            >
-              Back to Home
-            </Link>
-          </div>
-        </div>
       </div>
     </div>
   )
