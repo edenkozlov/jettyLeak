@@ -169,8 +169,8 @@ export default function Landing() {
           <div className="mt-12 grid gap-3 sm:mt-20 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
             {[
               {
-                title: 'Live flow monitoring',
-                desc: 'Watch real-time L/h readings with interactive charts. Zoom, pan, and tag events as they happen.',
+                title: 'Live flow & usage tracking',
+                desc: 'Real-time L/h readings with interactive charts. Track volume per hour, day, or month across your entire building.',
                 icon: <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />,
                 glow: 'bg-indigo-500/20',
               },
@@ -191,12 +191,6 @@ export default function Landing() {
                 desc: 'Builds a digital map of your plumbing over time. See how water flows even without blueprints.',
                 icon: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></>,
                 glow: 'bg-emerald-500/20',
-              },
-              {
-                title: 'Usage tracking',
-                desc: 'Total volume per hour, day, or month. Know exactly how much water each part of your building uses.',
-                icon: <><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" /></>,
-                glow: 'bg-violet-500/20',
               },
               {
                 title: 'No WiFi needed',
