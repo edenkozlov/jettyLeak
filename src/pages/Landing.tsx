@@ -9,11 +9,13 @@ import leakImg from '@/assets/app.png'
 import { supabase } from '@/lib/supabase'
 
 export default function Landing() {
+  const [menuOpen, setMenuOpen] = useState(false)
+
   return (
     <div className="min-h-screen overflow-x-hidden antialiased">
       {/* ─── Nav ─── */}
       <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-xl">
-        <div className="flex h-14 items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-10">
+        <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-10">
           <Link to="/">
             <img src={logo} alt="Flomo" className="h-8 sm:h-9" />
           </Link>
@@ -29,16 +31,39 @@ export default function Landing() {
             <Link to="/login" className="rounded-full bg-indigo-600 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-500 sm:px-5 sm:text-[13px]">
               Get Started
             </Link>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 md:hidden"
+              aria-label="Toggle menu"
+            >
+              {menuOpen ? (
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+              ) : (
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /></svg>
+              )}
+            </button>
           </div>
         </div>
+
+        {menuOpen && (
+          <div className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 md:hidden">
+            <div className="flex flex-col gap-3">
+              <a href="#product" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Product</a>
+              <a href="#features" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Features</a>
+              <Link to="/demo" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Live Demo</Link>
+              <Link to="/case-study" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Case Study</Link>
+              <Link to="/login" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Sign In</Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* ━━━ HERO ━━━ */}
-      <section className="relative flex min-h-screen items-center justify-center bg-gray-900 text-white">
-        <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-30">
+      <section className="relative flex min-h-screen items-center justify-center bg-gray-800 text-white">
+        <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-50">
           <source src={heroVideo} type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gray-900/20" />
+        <div className="absolute inset-0 bg-gray-900/10" />
 
         <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-24 pb-16 sm:px-6 sm:pt-28 sm:pb-20">
           <div className="flex flex-col items-center text-center">
@@ -308,16 +333,18 @@ export default function Landing() {
                 ))}
               </div>
 
-              <Link
-                to="/demo"
-                className="mt-10 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 transition-all hover:bg-emerald-500 hover:shadow-xl hover:shadow-emerald-600/30"
-              >
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-                </span>
-                View Live Demo
-              </Link>
+              <div className="mt-10 text-center sm:text-left">
+                <Link
+                  to="/demo"
+                  className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 transition-all hover:bg-emerald-500 hover:shadow-xl hover:shadow-emerald-600/30"
+                >
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                  </span>
+                  View Live Demo
+                </Link>
+              </div>
             </div>
 
             <div className="relative mx-auto flex flex-col items-center lg:mx-0 lg:items-start">
@@ -470,7 +497,7 @@ function InterestSection() {
   }
 
   return (
-    <section id="interested" className="bg-white px-4 pb-20 sm:px-0 sm:pb-28">
+    <section id="interested" className="bg-white px-4 pt-12 pb-20 sm:px-0 sm:pt-16 sm:pb-28">
       <div className="mx-auto max-w-5xl sm:px-6">
         <div className="relative overflow-hidden rounded-[20px] bg-gray-950 px-6 py-14 text-center sm:rounded-[28px] sm:px-16 sm:py-20">
           <div className="absolute -top-32 -right-32 h-72 w-72 rounded-full bg-indigo-500/15 blur-[100px] animate-glow-pulse" />
