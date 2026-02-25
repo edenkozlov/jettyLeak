@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 
+import logo from '@/assets/logoTransparent.png'
 import cs1 from '@/assets/CS1.jpg'
 import cs2 from '@/assets/CS2.jpg'
 import cs3 from '@/assets/CS3.jpg'
@@ -12,8 +13,8 @@ export default function CaseStudy() {
       {/* Nav */}
       <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-xl">
         <div className="flex h-14 items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-10">
-          <Link to="/" className="text-[17px] font-bold tracking-tight text-gray-900">
-            <span className="text-indigo-600">flo</span>mo
+          <Link to="/">
+            <img src={logo} alt="Flomo" className="h-8 sm:h-9" />
           </Link>
           <div className="flex items-center gap-4 sm:gap-8">
             <Link to="/" className="text-[13px] text-gray-400 transition hover:text-gray-700">Home</Link>
@@ -26,11 +27,11 @@ export default function CaseStudy() {
       </nav>
 
       {/* Hero */}
-      <header className="relative overflow-hidden bg-gray-950 pt-28 pb-16 sm:pt-36 sm:pb-24">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.15),transparent_60%)]" />
+      <header className="relative overflow-hidden bg-gray-100 pt-28 pb-16 sm:pt-36 sm:pb-24">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.06),transparent_60%)]" />
         <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <p className="text-xs font-semibold tracking-[0.3em] text-indigo-400 uppercase">Case Study</p>
-          <h1 className="mt-5 text-[28px] leading-[1.15] font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
+          <p className="text-xs font-semibold tracking-[0.3em] text-indigo-600 uppercase">Case Study</p>
+          <h1 className="mt-5 text-[28px] leading-[1.15] font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl">
             How a single pipe burst turned into a national problem worth solving
           </h1>
         </div>
@@ -201,7 +202,7 @@ export default function CaseStudy() {
       {/* Footer */}
       <footer className="border-t border-gray-100 bg-white py-8 sm:py-10">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 sm:gap-6 sm:px-6 md:flex-row">
-          <span className="text-sm font-bold tracking-tight text-gray-900"><span className="text-indigo-600">flo</span>mo</span>
+          <Link to="/"><img src={logo} alt="Flomo" className="h-7" /></Link>
           <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
             <Link to="/" className="text-[12px] text-gray-400 transition hover:text-gray-600">Home</Link>
             <Link to="/demo" className="text-[12px] text-gray-400 transition hover:text-gray-600">Live Demo</Link>

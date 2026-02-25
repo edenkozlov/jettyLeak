@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 
+import logo from '@/assets/logoTransparent.png'
 import heroVideo from '@/assets/water.mp4'
 import deviceImg from '@/assets/IRLexample.png'
 import diagramImg from '@/assets/pipeillustration.png'
 import leakImg from '@/assets/leakExample.png'
+import { supabase } from '@/lib/supabase'
 
 export default function Landing() {
   return (
@@ -11,8 +14,8 @@ export default function Landing() {
       {/* ─── Nav ─── */}
       <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-xl">
         <div className="flex h-14 items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-10">
-          <Link to="/" className="text-[17px] font-bold tracking-tight text-gray-900">
-            <span className="text-indigo-600">flo</span>mo
+          <Link to="/">
+            <img src={logo} alt="Flomo" className="h-8 sm:h-9" />
           </Link>
           <div className="flex items-center gap-4 sm:gap-8">
             <div className="hidden gap-7 md:flex">
@@ -390,43 +393,13 @@ export default function Landing() {
         </svg>
       </div>
 
-      {/* ━━━ CTA ━━━ */}
-      <section className="bg-white px-4 pb-20 sm:px-0 sm:pb-28">
-        <div className="mx-auto max-w-5xl sm:px-6">
-          <div className="relative overflow-hidden rounded-[20px] bg-gray-950 px-6 py-14 text-center sm:rounded-[28px] sm:px-16 sm:py-20">
-            <div className="absolute -top-32 -right-32 h-72 w-72 rounded-full bg-indigo-500/15 blur-[100px] animate-glow-pulse" />
-            <div className="absolute -bottom-32 -left-32 h-72 w-72 rounded-full bg-cyan-500/15 blur-[100px] animate-glow-pulse" style={{ animationDelay: '2s' }} />
-
-            <div className="relative">
-              <h2 className="text-[26px] leading-tight font-bold tracking-tight text-white sm:text-[34px] md:text-[46px]">
-                Stop reacting to leaks.<br className="hidden sm:block" /> Start preventing them.
-              </h2>
-              <p className="mx-auto mt-3 max-w-lg text-[14px] text-white/40 sm:mt-4 sm:text-[15px]">
-                Setup takes minutes. Your building starts getting smarter immediately. Protecting Canadian properties from coast to coast.
-              </p>
-              <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:mt-10 sm:flex-row sm:gap-4">
-                <Link
-                  to="/login"
-                  className="w-full rounded-full bg-white px-10 py-3.5 text-center text-sm font-semibold text-gray-900 shadow-lg transition hover:bg-gray-100 hover:shadow-xl sm:w-auto"
-                >
-                  Get Started Free
-                </Link>
-                <a
-                  href="#product"
-                  className="w-full rounded-full border border-white/10 px-10 py-3.5 text-center text-sm font-semibold text-white/50 transition hover:border-white/20 hover:text-white sm:w-auto"
-                >
-                  Learn More
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* ━━━ INTERESTED ━━━ */}
+      <InterestSection />
 
       {/* ━━━ Footer ━━━ */}
       <footer className="border-t border-gray-100 bg-white py-8 sm:py-10">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 sm:gap-6 sm:px-6 md:flex-row">
-          <span className="text-sm font-bold tracking-tight text-gray-900"><span className="text-indigo-600">flo</span>mo</span>
+          <Link to="/"><img src={logo} alt="Flomo" className="h-7" /></Link>
           <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
             {['Product', 'Features'].map((l, i) => (
               <a key={l} href={['#product', '#features'][i]} className="text-[12px] text-gray-400 transition hover:text-gray-600">{l}</a>
@@ -439,5 +412,87 @@ export default function Landing() {
         </div>
       </footer>
     </div>
+  )
+}
+
+function InterestSection() {
+  const [email, setEmail] = useState('')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [errorMsg, setErrorMsg] = useState('')
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!email.trim()) return
+
+    setStatus('loading')
+    setErrorMsg('')
+
+    try {
+      const { error } = await supabase
+        .from('interested')
+        .insert({ email: email.trim().toLowerCase() })
+
+      if (error) {
+        if (error.code === '23505') {
+          setStatus('success')
+        } else {
+          throw error
+        }
+      } else {
+        setStatus('success')
+      }
+      setEmail('')
+    } catch (err: any) {
+      setStatus('error')
+      setErrorMsg(err?.message || 'Something went wrong. Try again.')
+    }
+  }
+
+  return (
+    <section className="bg-white px-4 pb-20 sm:px-0 sm:pb-28">
+      <div className="mx-auto max-w-5xl sm:px-6">
+        <div className="relative overflow-hidden rounded-[20px] bg-gray-950 px-6 py-14 text-center sm:rounded-[28px] sm:px-16 sm:py-20">
+          <div className="absolute -top-32 -right-32 h-72 w-72 rounded-full bg-indigo-500/15 blur-[100px] animate-glow-pulse" />
+          <div className="absolute -bottom-32 -left-32 h-72 w-72 rounded-full bg-cyan-500/15 blur-[100px] animate-glow-pulse" style={{ animationDelay: '2s' }} />
+
+          <div className="relative">
+            <h2 className="text-[26px] leading-tight font-bold tracking-tight text-white sm:text-[34px] md:text-[46px]">
+              Interested?
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-[14px] text-white/40 sm:mt-4 sm:text-[15px]">
+              Leave your email and we'll reach out when we're ready for you.
+            </p>
+
+            {status === 'success' ? (
+              <div className="mx-auto mt-8 max-w-md rounded-full border border-emerald-500/20 bg-emerald-500/10 px-6 py-3.5 text-sm font-medium text-emerald-400">
+                You're on the list. We'll be in touch.
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:mt-10 sm:flex-row">
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@email.com"
+                  className="flex-1 rounded-full border border-white/10 bg-white/5 px-5 py-3.5 text-sm text-white placeholder-white/30 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                />
+                <button
+                  type="submit"
+                  disabled={status === 'loading'}
+                  className="rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-gray-900 shadow-lg transition hover:bg-gray-100 hover:shadow-xl disabled:opacity-50"
+                >
+                  {status === 'loading' ? 'Sending...' : 'Notify Me'}
+                </button>
+              </form>
+            )}
+
+            {status === 'error' && (
+              <p className="mt-3 text-[13px] text-red-400">{errorMsg}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }
