@@ -212,6 +212,11 @@ export default function CaseStudy() {
             <Link to="/case-study" className="text-[12px] text-gray-400 transition hover:text-gray-600">Case Study</Link>
             <Link to="/login" className="text-[12px] text-gray-400 transition hover:text-gray-600">Sign In</Link>
           </div>
+          <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
+            <Link to="/support" className="text-[12px] text-gray-400 transition hover:text-gray-600">Support</Link>
+            <Link to="/privacy" className="text-[12px] text-gray-400 transition hover:text-gray-600">Privacy Policy</Link>
+            <Link to="/terms" className="text-[12px] text-gray-400 transition hover:text-gray-600">Terms of Service</Link>
+          </div>
           <p className="text-[12px] text-gray-300">&copy; {new Date().getFullYear()} Flomo — Made in Canada</p>
         </div>
       </footer>

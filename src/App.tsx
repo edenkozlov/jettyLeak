@@ -13,6 +13,9 @@ import CaseStudy from '@/pages/CaseStudy'
 import Demo from '@/pages/Demo'
 import Landing from '@/pages/Landing'
 import Login from '@/pages/Login'
+import Support from '@/pages/Support'
+import Privacy from '@/pages/Privacy'
+import Terms from '@/pages/Terms'
 import Reports from '@/pages/Reports'
 import Sensors from '@/pages/Sensors'
 import { store } from '@/redux/store'
@@ -33,6 +36,9 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/case-study" element={<CaseStudy />} />
             <Route path="/demo" element={<Demo />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
             <Route element={<AuthLayout />}>
               <Route path="/login" element={<Login />} />
             </Route>
