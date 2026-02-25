@@ -28,7 +28,7 @@ interface SubscriptionResponse {
 }
 
 export const SIGNAL_COLORS = [
-  '#6366f1', // indigo
+  '#4457c2', // indigo
   '#f43f5e', // rose
   '#10b981', // emerald
   '#f59e0b', // amber

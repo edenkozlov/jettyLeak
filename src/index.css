@@ -2,6 +2,20 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --color-indigo-50: #f0f3fb;
+  --color-indigo-100: #dce2f5;
+  --color-indigo-200: #b9c5eb;
+  --color-indigo-300: #8fa2de;
+  --color-indigo-400: #6a7ed2;
+  --color-indigo-500: #5068c9;
+  --color-indigo-600: #4457c2;
+  --color-indigo-700: #3847a3;
+  --color-indigo-800: #2d3984;
+  --color-indigo-900: #212b63;
+  --color-indigo-950: #141a3d;
+}
+
 /* Landing page animations */
 @keyframes slide-up {
   from { opacity: 0; transform: translateY(24px); }

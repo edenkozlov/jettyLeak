@@ -27,8 +27,10 @@ export default function CaseStudy() {
       </nav>
 
       {/* Hero */}
-      <header className="relative overflow-hidden bg-gray-100 pt-28 pb-16 sm:pt-36 sm:pb-24">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.06),transparent_60%)]" />
+      <header className="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-cyan-50 pt-28 pb-16 sm:pt-36 sm:pb-24">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(68,87,194,0.10),transparent_50%),radial-gradient(ellipse_at_bottom_right,rgba(6,182,212,0.08),transparent_50%)]" />
+        <div className="absolute top-12 left-1/4 h-64 w-64 rounded-full bg-indigo-200/30 blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 h-48 w-48 rounded-full bg-cyan-200/20 blur-3xl" />
         <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
           <p className="text-xs font-semibold tracking-[0.3em] text-indigo-600 uppercase">Case Study</p>
           <h1 className="mt-5 text-[28px] leading-[1.15] font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl">
@@ -79,7 +81,7 @@ export default function CaseStudy() {
               <h2 className="text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">Calibration and the unexpected</h2>
               <div className="mt-4 space-y-4 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]">
                 <p>
-                  During the first two hours of testing, we focused on calibration and baseline measurements. Normal building usage. Toilets, sinks, background flow. Everything looked stable.
+                  During the first two hours of testing, we focused on calibration and baseline measurements. Normal building usage - Toilets, sinks, background flow. Everything looked stable.
                 </p>
                 <p>
                   Then something completely unexpected happened.

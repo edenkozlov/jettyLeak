@@ -37,7 +37,7 @@ function toLph(raw: number): number {
 
 const CHART_COLORS = {
   light: {
-    line: '#6366f1',
+    line: '#4457c2',
     grid: '#e5e7eb',
     axis: '#6b7280',
     tooltipBg: '#ffffff',
@@ -45,7 +45,7 @@ const CHART_COLORS = {
     tooltipText: '#111827',
   },
   dark: {
-    line: '#818cf8',
+    line: '#6a7ed2',
     grid: '#374151',
     axis: '#9ca3af',
     tooltipBg: '#1f2937',
@@ -396,6 +396,20 @@ export default function Reports() {
   }, [timeRange, dataMin, dataMax, chartData, timeline])
   const homeMax = dataMax
 
+  const totalLiters = useMemo(() => {
+    if (chartData.length < 2) return 0
+    let sum = 0
+    for (let i = 1; i < chartData.length; i++) {
+      const prev = chartData[i - 1]!
+      const curr = chartData[i]!
+      if (prev.flowValue == null || curr.flowValue == null) continue
+      const dtHours = (curr.timestamp - prev.timestamp) / 3_600_000
+      const avgLph = (toLph(prev.flowValue) + toLph(curr.flowValue)) / 2
+      sum += avgLph * dtHours
+    }
+    return Math.abs(sum)
+  }, [chartData])
+
   const [tagFormTimestamp, setTagFormTimestamp] = useState<number | null>(null)
   const [tagTitle, setTagTitle] = useState('')
   const [tagDescription, setTagDescription] = useState('')
@@ -676,6 +690,14 @@ export default function Reports() {
                     ({chartData.length} pts)
                   </span>
                 )}
+              </p>
+            )}
+            {chartData.length >= 2 && (
+              <p className="text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
+                Total:{' '}
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  {totalLiters < 1 ? totalLiters.toFixed(2) : totalLiters.toFixed(1)} L
+                </span>
               </p>
             )}
           </div>

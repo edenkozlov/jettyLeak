@@ -3,9 +3,9 @@ import { Link } from 'react-router'
 
 import logo from '@/assets/logoTransparent.png'
 import heroVideo from '@/assets/water.mp4'
-import deviceImg from '@/assets/IRLexample.png'
+import deviceImg from '@/assets/graph.png'
 import diagramImg from '@/assets/pipeillustration.png'
-import leakImg from '@/assets/leakExample.png'
+import leakImg from '@/assets/app.png'
 import { supabase } from '@/lib/supabase'
 
 export default function Landing() {
@@ -63,12 +63,12 @@ export default function Landing() {
             </p>
 
             <div className="mt-10 flex flex-col items-center gap-3 animate-slide-up sm:flex-row sm:gap-4" style={{ animationDelay: '0.3s' }}>
-              <Link
-                to="/login"
+              <a
+                href="#interested"
                 className="w-full rounded-full bg-indigo-600 px-8 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition-all hover:bg-indigo-500 hover:shadow-xl hover:shadow-indigo-600/30 sm:w-auto"
               >
                 Start Monitoring
-              </Link>
+              </a>
               <Link
                 to="/demo"
                 className="w-full rounded-full border border-white/10 bg-white/5 px-8 py-3.5 text-center text-sm font-semibold text-white/60 backdrop-blur-sm transition hover:border-white/20 hover:text-white/90 sm:w-auto"
@@ -83,7 +83,7 @@ export default function Landing() {
 
       {/* ━━━ PRODUCT ━━━ */}
       <section id="product" className="relative bg-white pt-12 pb-20 sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(99,102,241,0.04),transparent_50%),radial-gradient(circle_at_70%_80%,rgba(6,182,212,0.04),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(68,87,194,0.04),transparent_50%),radial-gradient(circle_at_70%_80%,rgba(6,182,212,0.04),transparent_50%)]" />
 
         <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
@@ -92,17 +92,12 @@ export default function Landing() {
               A sensor that learns<br className="hidden sm:block" /> your plumbing
             </h2>
             <p className="mt-3 text-[15px] leading-relaxed text-gray-500 sm:mt-4 sm:text-[16px]">
-              Designed for Canadian homes and buildings. Clamp it onto any pipe — copper, PEX, or galvanized. Runs on cellular, so it works in basements and mechanical rooms without WiFi. Over time it maps your water system, identifies every fixture, and knows when something isn't right.
+              The longer it runs, the smarter it gets. Flomo learns your building's water patterns over time — every fixture, every baseline. When something changes, it doesn't just detect it. It triangulates where the issue is coming from.
             </p>
           </div>
 
-          <div className="mt-12 grid items-center gap-10 sm:mt-20 sm:gap-16 lg:grid-cols-[340px_1fr]">
-            <div className="relative mx-auto lg:mx-0">
-              <div className="absolute -inset-6 rounded-3xl bg-gradient-to-br from-indigo-100 to-cyan-50 opacity-60 blur-2xl" />
-              <img src={deviceImg} alt="Flomo sensor on pipe" className="relative w-60 rounded-2xl shadow-xl animate-float sm:w-72 lg:w-[340px]" />
-            </div>
-
-            <div className="space-y-6">
+          <div className="mt-12 grid items-center gap-10 sm:mt-20 sm:gap-16 lg:grid-cols-[1fr_auto]">
+            <div className="space-y-6 order-2 lg:order-1">
               {[
                 {
                   title: 'Learns every fixture',
@@ -123,8 +118,8 @@ export default function Landing() {
                   gradient: 'from-cyan-500 to-teal-500',
                 },
                 {
-                  title: 'No WiFi required',
-                  desc: "Connects over cellular — works in basements, mechanical rooms, warehouses, and anywhere WiFi doesn't reach.",
+                  title: 'No WiFi at the pipe',
+                  desc: "Sends data via radio to a hub elsewhere in the building. Install the sensor in basements, crawlspaces, or mechanical rooms — no WiFi needed at the pipe.",
                   icon: <><path d="M1 1l22 22" /><path d="M16.72 11.06A10.94 10.94 0 0119 12.55" /><path d="M5 12.55a10.94 10.94 0 015.17-2.39" /><path d="M10.71 5.05A16 16 0 0122.56 9" /><path d="M1.42 9a15.91 15.91 0 014.7-2.88" /><path d="M8.53 16.11a6 6 0 016.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></>,
                   gradient: 'from-amber-500 to-orange-500',
                 },
@@ -146,6 +141,11 @@ export default function Landing() {
                 </div>
               ))}
             </div>
+
+            <div className="relative order-1 mx-auto lg:order-2 lg:mx-0">
+              <div className="absolute -inset-4 rounded-2xl bg-gradient-to-br from-indigo-100 to-cyan-50 opacity-50 blur-2xl" />
+              <img src={deviceImg} alt="Flomo dashboard" className="relative w-full max-w-md rounded-2xl shadow-xl lg:max-w-[480px]" />
+            </div>
           </div>
         </div>
       </section>
@@ -159,7 +159,7 @@ export default function Landing() {
 
       {/* ━━━ FEATURES (dark band) ━━━ */}
       <section id="features" className="relative bg-gray-950 pt-12 pb-20 text-white sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(99,102,241,0.08),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(68,87,194,0.08),transparent_60%)]" />
 
         <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
           <p className="text-center text-xs font-semibold tracking-[0.3em] text-indigo-400 uppercase">Features</p>
@@ -197,8 +197,8 @@ export default function Landing() {
                 glow: 'bg-emerald-500/20',
               },
               {
-                title: 'No WiFi needed',
-                desc: 'Runs on cellular — installs in basements, mechanical rooms, and warehouses where WiFi never reaches.',
+                title: 'No WiFi at the pipe',
+                desc: 'The sensor transmits via radio to a hub with connectivity. Install it anywhere — no WiFi needed where the pipe is.',
                 icon: <><path d="M1 1l22 22" /><path d="M16.72 11.06A10.94 10.94 0 0119 12.55" /><path d="M5 12.55a10.94 10.94 0 015.17-2.39" /><path d="M10.71 5.05A16 16 0 0122.56 9" /><path d="M1.42 9a15.91 15.91 0 014.7-2.88" /><path d="M8.53 16.11a6 6 0 016.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></>,
                 glow: 'bg-amber-500/20',
               },
@@ -210,7 +210,7 @@ export default function Landing() {
               },
             ].map((f) => (
               <div key={f.title} className="group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 transition hover:border-white/10 hover:bg-white/[0.04]">
-                <div className={`absolute -top-8 -right-8 h-24 w-24 rounded-full ${f.glow} blur-2xl opacity-0 transition-opacity group-hover:opacity-100`} />
+                <div className={`absolute top-1/2 left-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full ${f.glow} blur-2xl opacity-0 transition-opacity group-hover:opacity-100`} />
                 <div className="relative">
                   <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5">
                     <svg className="h-5 w-5 text-white/60" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">{f.icon}</svg>
@@ -233,7 +233,7 @@ export default function Landing() {
 
       {/* ━━━ APP EXPERIENCE ━━━ */}
       <section className="relative bg-white pt-12 pb-20 sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_30%,rgba(239,68,68,0.04),transparent_50%),radial-gradient(circle_at_20%_80%,rgba(99,102,241,0.04),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_30%,rgba(239,68,68,0.04),transparent_50%),radial-gradient(circle_at_20%_80%,rgba(68,87,194,0.04),transparent_50%)]" />
 
         <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
           <div className="grid items-center gap-10 lg:grid-cols-[1fr_1fr] lg:gap-20">
@@ -280,7 +280,7 @@ export default function Landing() {
       {/* ━━━ LIVE DEMO ━━━ */}
       <section id="how-it-works" className="relative bg-white pt-12 pb-20 sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="grid items-center gap-10 sm:gap-16 lg:grid-cols-[1fr_320px]">
+          <div className="grid items-center gap-10 sm:gap-16 lg:grid-cols-[1fr_380px]">
             <div>
               <p className="text-xs font-semibold tracking-[0.3em] text-emerald-600 uppercase">Live demo</p>
               <h2 className="mt-4 text-[26px] leading-tight font-bold tracking-tight text-gray-900 sm:mt-5 sm:text-[34px] md:text-[46px]">
@@ -320,9 +320,20 @@ export default function Landing() {
               </Link>
             </div>
 
-            <div className="relative mx-auto lg:mx-0">
-              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-emerald-100/80 to-indigo-100/60 blur-2xl sm:-inset-6" />
-              <img src={diagramImg} alt="Flomo sensor on pipe" className="relative w-48 animate-float-delayed sm:w-64 lg:w-[320px]" />
+            <div className="relative mx-auto flex flex-col items-center lg:mx-0 lg:items-start">
+              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-emerald-100/80 to-indigo-100/60 opacity-60 blur-2xl sm:-inset-6" />
+              <div className="relative flex flex-col items-center space-y-3 lg:items-start lg:space-y-5">
+                <img src={diagramImg} alt="Ultrasonic flow sensing diagram" className="w-64 max-w-full sm:w-72 lg:max-w-[360px] lg:w-full" />
+                <div className="rounded-xl border border-gray-200/80 bg-gray-50 p-4 sm:p-5">
+                  <h4 className="text-[13px] font-semibold text-gray-900 sm:text-[14px]">How the sensor works</h4>
+                  <p className="mt-2 text-[12px] leading-relaxed text-gray-500 sm:text-[13px]">
+                    Two ultrasonic transducers are clamped onto the outside of the pipe. They send sound pulses to each other — one upstream, one downstream. The difference in travel time reveals how fast water is moving, without ever touching it.
+                  </p>
+                  <p className="mt-2 text-[12px] leading-relaxed text-gray-500 sm:text-[13px]">
+                    Completely non-invasive. No cutting, no plumber, no downtime.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -337,7 +348,7 @@ export default function Landing() {
 
       {/* ━━━ PRESSURE PROTECTION ━━━ */}
       <section className="relative overflow-hidden bg-gray-950 pt-12 pb-20 text-white sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(99,102,241,0.1),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(68,87,194,0.1),transparent_60%)]" />
         <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-red-500/10 blur-[120px] animate-glow-pulse" />
 
         <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
@@ -370,7 +381,7 @@ export default function Landing() {
               },
               {
                 label: 'Commercial & industrial',
-                detail: 'Warehouses, offices, restaurants — cellular connectivity means zero IT overhead.',
+                detail: 'Warehouses, offices, restaurants — the sensor talks to a hub via radio, so no IT overhead at the pipe.',
                 icon: <><path d="M2 20h20" /><path d="M5 20V8l7-5 7 5v12" /><rect x="9" y="12" width="6" height="8" /></>,
               },
             ].map((c) => (
@@ -382,6 +393,16 @@ export default function Landing() {
                 <p className="mt-2 text-[13px] leading-relaxed text-white/35">{c.detail}</p>
               </div>
             ))}
+          </div>
+
+          <div className="mt-12 text-center sm:mt-16">
+            <Link
+              to="/case-study"
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-7 py-3 text-sm font-semibold text-white/60 backdrop-blur-sm transition hover:border-white/20 hover:text-white"
+            >
+              View Case Study
+              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+            </Link>
           </div>
         </div>
       </section>
@@ -449,7 +470,7 @@ function InterestSection() {
   }
 
   return (
-    <section className="bg-white px-4 pb-20 sm:px-0 sm:pb-28">
+    <section id="interested" className="bg-white px-4 pb-20 sm:px-0 sm:pb-28">
       <div className="mx-auto max-w-5xl sm:px-6">
         <div className="relative overflow-hidden rounded-[20px] bg-gray-950 px-6 py-14 text-center sm:rounded-[28px] sm:px-16 sm:py-20">
           <div className="absolute -top-32 -right-32 h-72 w-72 rounded-full bg-indigo-500/15 blur-[100px] animate-glow-pulse" />
