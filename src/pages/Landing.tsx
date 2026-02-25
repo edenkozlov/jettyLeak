@@ -486,7 +486,7 @@ function InterestSection() {
 
             {status === 'success' ? (
               <div className="mx-auto mt-8 max-w-md rounded-full border border-emerald-500/20 bg-emerald-500/10 px-6 py-3.5 text-sm font-medium text-emerald-400">
-                You're on the list. We'll be in touch.
+                We've got your info. Someone from our team will be in touch shortly.
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:mt-10 sm:flex-row">
@@ -503,7 +503,7 @@ function InterestSection() {
                   disabled={status === 'loading'}
                   className="rounded-full bg-white px-8 py-3.5 text-sm font-semibold text-gray-900 shadow-lg transition hover:bg-gray-100 hover:shadow-xl disabled:opacity-50"
                 >
-                  {status === 'loading' ? 'Sending...' : 'Notify Me'}
+                  {status === 'loading' ? 'Sending...' : 'Request a Quote'}
                 </button>
               </form>
             )}
