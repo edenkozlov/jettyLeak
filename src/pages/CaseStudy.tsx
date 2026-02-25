@@ -6,6 +6,7 @@ import cs2 from '@/assets/CS2.jpg'
 import cs3 from '@/assets/CS3.jpg'
 import cs4 from '@/assets/CS4.jpg'
 import cs5 from '@/assets/CS5.jpg'
+import ScrollToTopButton from '@/components/ScrollToTopButton'
 
 export default function CaseStudy() {
   return (
@@ -214,6 +215,8 @@ export default function CaseStudy() {
           <p className="text-[12px] text-gray-300">&copy; {new Date().getFullYear()} Flomo — Made in Canada</p>
         </div>
       </footer>
+
+      <ScrollToTopButton />
     </div>
   )
 }

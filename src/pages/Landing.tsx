@@ -7,6 +7,7 @@ import deviceImg from '@/assets/graph.png'
 import diagramImg from '@/assets/pipeillustration.png'
 import leakImg from '@/assets/app.png'
 import { supabase } from '@/lib/supabase'
+import ScrollToTopButton from '@/components/ScrollToTopButton'
 
 export default function Landing() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -459,6 +460,8 @@ export default function Landing() {
           <p className="text-[12px] text-gray-300">&copy; {new Date().getFullYear()} Flomo — Made in Canada</p>
         </div>
       </footer>
+
+      <ScrollToTopButton />
     </div>
   )
 }
