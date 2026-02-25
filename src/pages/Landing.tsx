@@ -478,10 +478,10 @@ function InterestSection() {
 
           <div className="relative">
             <h2 className="text-[26px] leading-tight font-bold tracking-tight text-white sm:text-[34px] md:text-[46px]">
-              Interested?
+              Get Flomo for your building
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-[14px] text-white/40 sm:mt-4 sm:text-[15px]">
-              Leave your email and we'll reach out when we're ready for you.
+              Leave your email and our team will reach out to get you set up.
             </p>
 
             {status === 'success' ? (
