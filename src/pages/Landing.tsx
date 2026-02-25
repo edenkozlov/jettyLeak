@@ -60,11 +60,22 @@ export default function Landing() {
       </nav>
 
       {/* ━━━ HERO ━━━ */}
-      <section className="relative flex min-h-screen items-center justify-center bg-gray-800 text-white">
-        <video autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover opacity-50">
+      <section className="relative flex min-h-screen items-center justify-center bg-gray-900 text-white">
+        <video
+          ref={(el) => {
+            if (el && !el.dataset.started) {
+              el.dataset.started = 'true'
+              el.addEventListener('loadedmetadata', () => {
+                el.currentTime = el.duration * 0.10
+              }, { once: true })
+            }
+          }}
+          autoPlay loop muted playsInline
+          className="absolute inset-0 h-full w-full object-cover opacity-80"
+        >
           <source src={heroVideo} type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gray-900/10" />
+        <div className="absolute inset-0 bg-black/20" />
 
         <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-24 pb-16 sm:px-6 sm:pt-28 sm:pb-20">
           <div className="flex flex-col items-center text-center">
@@ -73,7 +84,7 @@ export default function Landing() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
               </span>
-              <span className="text-[13px] font-medium text-white/70">Built for Canadian homes &amp; buildings</span>
+              <span className="text-[13px] font-medium text-white">Built for Canadian homes &amp; buildings</span>
             </div>
 
             <h1 className="max-w-4xl text-[36px] leading-[1.08] font-bold tracking-tight animate-slide-up sm:text-5xl md:text-6xl lg:text-[76px]" style={{ animationDelay: '0.1s' }}>
@@ -84,7 +95,7 @@ export default function Landing() {
               </span>
             </h1>
 
-            <p className="mx-auto mt-5 max-w-xl text-[15px] leading-relaxed text-white/55 animate-slide-up sm:mt-6 sm:text-[17px]" style={{ animationDelay: '0.2s' }}>
+            <p className="mx-auto mt-5 max-w-xl text-[17px] leading-relaxed text-white animate-slide-up sm:mt-6 sm:text-[20px]" style={{ animationDelay: '0.2s' }}>
               Continuous flow tracking and instant leak alerts for homes and buildings using non-invasive sensors.
             </p>
 
@@ -97,7 +108,7 @@ export default function Landing() {
               </a>
               <Link
                 to="/demo"
-                className="w-full rounded-full border border-white/10 bg-white/5 px-8 py-3.5 text-center text-sm font-semibold text-white/60 backdrop-blur-sm transition hover:border-white/20 hover:text-white/90 sm:w-auto"
+                className="w-full rounded-full border border-white/25 bg-white/10 px-8 py-3.5 text-center text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/40 hover:bg-white/20 sm:w-auto"
               >
                 View Live Demo
               </Link>
