@@ -313,7 +313,7 @@ export default function Landing() {
                 See real water data.<br className="hidden sm:block" /> Right now.
               </h2>
               <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-gray-500 sm:mt-4 sm:text-[16px]">
-                This is live data streaming from Flomo sensors installed at our Toronto office and Vancouver warehouse. Explore the same dashboard our customers across Canada use to monitor their buildings 24/7.
+                This is live data streaming from Flomo sensors installed at our Montreal office and warehouse. Explore the same dashboard our customers across Canada use to monitor their buildings 24/7.
               </p>
 
               <div className="mt-10 space-y-6">

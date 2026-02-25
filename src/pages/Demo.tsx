@@ -332,7 +332,7 @@ export default function Demo() {
             )}
           </div>
           <p className="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            Real data streaming from Flomo sensors installed at our Toronto office and Vancouver warehouse.
+            Real data streaming from Flomo sensors installed at our Montreal office and warehouse.
           </p>
         </div>
 
