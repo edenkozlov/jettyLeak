@@ -29,9 +29,9 @@ export default function Landing() {
               <Link to="/case-study" className="text-[13px] text-gray-400 transition hover:text-gray-700">Case Study</Link>
             </div>
             <Link to="/login" className="hidden text-[13px] text-gray-400 transition hover:text-gray-700 sm:block">Sign In</Link>
-            <Link to="/login" className="rounded-full bg-indigo-600 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-500 sm:px-5 sm:text-[13px]">
+            <a href="#interested" className="rounded-full bg-indigo-600 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-500 sm:px-5 sm:text-[13px]">
               Get Started
-            </Link>
+            </a>
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 md:hidden"
@@ -143,9 +143,9 @@ export default function Landing() {
                   gradient: 'from-indigo-500 to-indigo-600',
                 },
                 {
-                  title: 'Maps your piping system',
-                  desc: 'Works with copper, PEX, CPVC, and galvanized — the mix found in most Canadian homes. Even decades-old buildings with no blueprints.',
-                  icon: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></>,
+                  title: 'Works on any pipe',
+                  desc: 'Copper, PEX, CPVC, galvanized — clamp it on and you\'re set. Designed for the mix of materials found in Canadian homes, even decades-old buildings.',
+                  icon: <><circle cx="12" cy="12" r="10" /><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" /><line x1="2" y1="12" x2="22" y2="12" /></>,
                   gradient: 'from-blue-500 to-cyan-500',
                 },
                 {
@@ -155,9 +155,9 @@ export default function Landing() {
                   gradient: 'from-cyan-500 to-teal-500',
                 },
                 {
-                  title: 'No WiFi at the pipe',
-                  desc: "Sends data via radio to a hub elsewhere in the building. Install the sensor in basements, crawlspaces, or mechanical rooms — no WiFi needed at the pipe.",
-                  icon: <><path d="M1 1l22 22" /><path d="M16.72 11.06A10.94 10.94 0 0119 12.55" /><path d="M5 12.55a10.94 10.94 0 015.17-2.39" /><path d="M10.71 5.05A16 16 0 0122.56 9" /><path d="M1.42 9a15.91 15.91 0 014.7-2.88" /><path d="M8.53 16.11a6 6 0 016.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></>,
+                  title: 'Maps your plumbing',
+                  desc: "Over time, Flomo builds a digital map of your piping system. When a leak happens, it doesn't just detect it — it triangulates where the problem is coming from.",
+                  icon: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></>,
                   gradient: 'from-amber-500 to-orange-500',
                 },
                 {
@@ -235,7 +235,7 @@ export default function Landing() {
               },
               {
                 title: 'No WiFi at the pipe',
-                desc: 'The sensor transmits via radio to a hub with connectivity. Install it anywhere — no WiFi needed where the pipe is.',
+                desc: 'The sensor transmits via LoRa to a hub with connectivity. Install it anywhere — no WiFi needed where the pipe is.',
                 icon: <><path d="M1 1l22 22" /><path d="M16.72 11.06A10.94 10.94 0 0119 12.55" /><path d="M5 12.55a10.94 10.94 0 015.17-2.39" /><path d="M10.71 5.05A16 16 0 0122.56 9" /><path d="M1.42 9a15.91 15.91 0 014.7-2.88" /><path d="M8.53 16.11a6 6 0 016.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></>,
                 glow: 'bg-amber-500/20',
               },
@@ -420,7 +420,7 @@ export default function Landing() {
               },
               {
                 label: 'Commercial & industrial',
-                detail: 'Warehouses, offices, restaurants — the sensor talks to a hub via radio, so no IT overhead at the pipe.',
+                detail: 'Warehouses, offices, restaurants — the sensor talks to a hub via LoRa, so no IT overhead at the pipe.',
                 icon: <><path d="M2 20h20" /><path d="M5 20V8l7-5 7 5v12" /><rect x="9" y="12" width="6" height="8" /></>,
               },
             ].map((c) => (

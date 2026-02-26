@@ -37,7 +37,7 @@ export default function Support() {
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">Does it need WiFi?</h3>
-              <p className="mt-1">Not at the pipe. The sensor transmits data via radio to a hub elsewhere in the building that has connectivity.</p>
+              <p className="mt-1">Not at the pipe. The sensor transmits data via LoRa to a hub elsewhere in the building that has connectivity.</p>
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">How do I read my dashboard?</h3>
