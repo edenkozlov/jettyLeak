@@ -85,16 +85,6 @@ export const RANGE_MS: Record<TimeRange, number> = {
   all: 0,
 }
 
-const QUERY_LIMITS: Record<TimeRange, number> = {
-  '1m': 1000,
-  '5m': 3000,
-  '15m': 8000,
-  '1h': 20000,
-  '6h': 50000,
-  '24h': 100000,
-  all: 200000,
-}
-
 export const TICK_INTERVAL_MS: Record<TimeRange, number> = {
   '1m': 10_000,
   '5m': 60_000,
@@ -258,7 +248,6 @@ export function useReportsPage() {
         sensorId: selectedSensorId,
         since,
         until,
-        limit: QUERY_LIMITS[timeRange],
       })
       fetchSignals({
         sensorId: selectedSensorId,

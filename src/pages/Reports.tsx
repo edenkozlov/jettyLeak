@@ -27,9 +27,17 @@ import {
 } from '@/hooks/useReportsPage'
 
 const RAW_TO_LPH = 1000
-const MA_WINDOW_MIN = 3
-const MA_WINDOW_MAX = 500
-const MA_WINDOW_DEFAULT = 20
+
+const MA_RANGE_OPTIONS = [
+  { value: 10_000, label: '10s' },
+  { value: 30_000, label: '30s' },
+  { value: 60_000, label: '1m' },
+  { value: 5 * 60_000, label: '5m' },
+  { value: 15 * 60_000, label: '15m' },
+  { value: 60 * 60_000, label: '1h' },
+] as const
+
+const MA_DEFAULT_RANGE_MS = 60_000
 
 function toLph(raw: number): number {
   return raw * RAW_TO_LPH
@@ -552,24 +560,114 @@ export default function Reports() {
   )
 
   const [showMovingAverage, setShowMovingAverage] = useState(false)
-  const [maWindow, setMaWindow] = useState(MA_WINDOW_DEFAULT)
+  const [maRangeMs, setMaRangeMs] = useState(MA_DEFAULT_RANGE_MS)
+  const [maSelectMode, setMaSelectMode] = useState(false)
+  const [maRegion, setMaRegion] = useState<{ startTs: number; endTs: number } | null>(null)
+  const [maRefLeft, setMaRefLeft] = useState<number | null>(null)
+  const [maRefRight, setMaRefRight] = useState<number | null>(null)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const chartMouseDown = useCallback((e: any) => {
+    if (maSelectMode && e?.activeLabel != null) {
+      setMaRefLeft(Number(e.activeLabel))
+      setMaRefRight(null)
+      return
+    }
+    onChartMouseDown(e)
+  }, [maSelectMode, onChartMouseDown])
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const chartMouseMove = useCallback((e: any) => {
+    if (maSelectMode && maRefLeft !== null && e?.activeLabel != null) {
+      setMaRefRight(Number(e.activeLabel))
+      return
+    }
+    onChartMouseMove(e)
+  }, [maSelectMode, maRefLeft, onChartMouseMove])
+
+  const chartMouseUp = useCallback(() => {
+    if (maSelectMode) {
+      if (maRefLeft !== null && maRefRight !== null && maRefLeft !== maRefRight) {
+        const left = Math.min(maRefLeft, maRefRight)
+        const right = Math.max(maRefLeft, maRefRight)
+        setMaRegion({ startTs: timeline.toReal(left), endTs: timeline.toReal(right) })
+      }
+      setMaRefLeft(null)
+      setMaRefRight(null)
+      setMaSelectMode(false)
+      return
+    }
+    onChartMouseUp()
+  }, [maSelectMode, maRefLeft, maRefRight, timeline, onChartMouseUp])
+
+  const chartMouseLeave = useCallback(() => {
+    if (maSelectMode && maRefLeft !== null) {
+      setMaRefLeft(null)
+      setMaRefRight(null)
+      return
+    }
+    cancelSelection()
+  }, [maSelectMode, maRefLeft, cancelSelection])
 
   const enrichedDataWithMA = useMemo(() => {
     if (!showMovingAverage || enrichedData.length === 0) return enrichedData
-    const half = Math.floor(maWindow / 2)
-    return enrichedData.map((point, i) => {
-      const start = Math.max(0, i - half)
-      const end = Math.min(enrichedData.length - 1, i + half)
-      const values: number[] = []
-      for (let j = start; j <= end; j++) {
-        const v = enrichedData[j]!.flowValue
-        if (v != null) values.push(v)
+    const halfMs = maRangeMs / 2
+    const regionStart = maRegion?.startTs ?? -Infinity
+    const regionEnd = maRegion?.endTs ?? Infinity
+    const result: typeof enrichedData = new Array(enrichedData.length)
+    let lo = 0
+    let hi = 0
+    let sum = 0
+    let count = 0
+    for (let i = 0; i < enrichedData.length; i++) {
+      const ts = enrichedData[i]!.timestamp
+      if (ts < regionStart || ts > regionEnd) {
+        result[i] = enrichedData[i]!
+        continue
       }
-      if (values.length === 0) return point
-      const avg = values.reduce((a, b) => a + b, 0) / values.length
-      return { ...point, movingAvg: avg }
-    })
-  }, [enrichedData, showMovingAverage])
+      const minTs = Math.max(ts - halfMs, regionStart)
+      const maxTs = Math.min(ts + halfMs, regionEnd)
+      while (hi < enrichedData.length && enrichedData[hi]!.timestamp <= maxTs) {
+        const v = enrichedData[hi]!.flowValue
+        if (v != null) { sum += v; count++ }
+        hi++
+      }
+      while (lo < enrichedData.length && enrichedData[lo]!.timestamp < minTs) {
+        const v = enrichedData[lo]!.flowValue
+        if (v != null) { sum -= v; count-- }
+        lo++
+      }
+      if (count === 0) {
+        result[i] = enrichedData[i]!
+      } else {
+        result[i] = { ...enrichedData[i]!, movingAvg: sum / count }
+      }
+    }
+    return result
+  }, [enrichedData, showMovingAverage, maRangeMs, maRegion])
+
+  const maRegionStats = useMemo(() => {
+    if (!showMovingAverage || !maRegion || enrichedDataWithMA.length === 0) return null
+    const flowValues: number[] = []
+    let maSum = 0
+    let maCount = 0
+    for (const point of enrichedDataWithMA) {
+      if (point.timestamp < maRegion.startTs || point.timestamp > maRegion.endTs) continue
+      if (point.flowValue != null) flowValues.push(point.flowValue)
+      const ma = (point as Record<string, unknown>).movingAvg as number | undefined
+      if (ma != null) { maSum += ma; maCount++ }
+    }
+    if (flowValues.length === 0) return null
+    const directAvg = flowValues.reduce((a, b) => a + b, 0) / flowValues.length
+    let varianceSum = 0
+    for (const v of flowValues) { const d = v - directAvg; varianceSum += d * d }
+    const directVariance = varianceSum / flowValues.length
+    return {
+      directAvg,
+      directVariance,
+      maAvg: maCount > 0 ? maSum / maCount : null,
+    }
+  }, [showMovingAverage, maRegion, enrichedDataWithMA])
 
   const handleSaveTag = useCallback(async () => {
     if (!tagFormTimestamp || !tagTitle.trim()) return
@@ -784,9 +882,14 @@ export default function Reports() {
             </button>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               <button
-                onClick={() => setShowMovingAverage((v) => !v)}
+                onClick={() => {
+                  setShowMovingAverage((v) => {
+                    if (v) { setMaSelectMode(false); setMaRegion(null) }
+                    return !v
+                  })
+                }}
                 className={`rounded-md border px-2 py-1 text-[11px] font-medium transition-colors sm:px-2.5 sm:text-xs ${
                   showMovingAverage
                     ? 'border-orange-300 bg-orange-50 text-orange-600 dark:border-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
@@ -797,20 +900,43 @@ export default function Reports() {
                 MA
               </button>
               {showMovingAverage && (
-                <div className="flex items-center gap-1.5">
-                  <input
-                    type="range"
-                    min={MA_WINDOW_MIN}
-                    max={MA_WINDOW_MAX}
-                    value={maWindow}
-                    onChange={(e) => setMaWindow(Number(e.target.value))}
-                    className="h-1 w-16 cursor-pointer appearance-none rounded-full bg-orange-200 accent-orange-500 dark:bg-orange-900/40 sm:w-24"
-                    title={`Window: ${maWindow} points`}
-                  />
-                  <span className="w-7 text-right text-[11px] tabular-nums text-orange-600 dark:text-orange-400 sm:w-9 sm:text-xs">
-                    {maWindow}
-                  </span>
-                </div>
+                <>
+                  <div className="inline-flex overflow-x-auto rounded-md border border-orange-200 bg-orange-50 p-0.5 dark:border-orange-800 dark:bg-orange-900/20">
+                    {MA_RANGE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setMaRangeMs(opt.value)}
+                        className={`rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors sm:px-2 sm:py-0.5 sm:text-xs ${
+                          maRangeMs === opt.value
+                            ? 'bg-orange-500 text-white'
+                            : 'text-orange-600 hover:bg-orange-100 dark:text-orange-400 dark:hover:bg-orange-900/40'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => { setMaSelectMode(true); setMaRegion(null) }}
+                    className={`rounded-md border px-2 py-0.5 text-[11px] font-medium transition-colors sm:px-2.5 sm:text-xs ${
+                      maSelectMode
+                        ? 'border-orange-400 bg-orange-500 text-white'
+                        : 'border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100 dark:border-orange-700 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-orange-900/40'
+                    }`}
+                    title="Drag on chart to select MA region"
+                  >
+                    {maSelectMode ? 'Selecting…' : 'Select'}
+                  </button>
+                  {maRegion && (
+                    <button
+                      onClick={() => setMaRegion(null)}
+                      className="rounded-md border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-600 transition-colors hover:bg-orange-100 dark:border-orange-700 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-orange-900/40 sm:px-2.5 sm:text-xs"
+                      title="Clear selected region — MA will apply to full chart"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </>
               )}
             </div>
             {isZoomed && (
@@ -826,6 +952,35 @@ export default function Reports() {
             </span>
           </div>
         </div>
+
+        {maRegionStats && (
+          <div className="mb-3 flex flex-wrap items-center gap-4 rounded-lg border border-orange-200 bg-orange-50/60 px-3 py-2 dark:border-orange-800 dark:bg-orange-900/15">
+            <span className="text-[11px] font-medium text-orange-700 dark:text-orange-300 sm:text-xs">
+              Selected range:
+            </span>
+            <span className="text-[11px] text-gray-600 dark:text-gray-300 sm:text-xs">
+              Direct avg:{' '}
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {toLph(maRegionStats.directAvg).toFixed(1)} L/h
+              </span>
+            </span>
+            <span className="text-[11px] text-gray-600 dark:text-gray-300 sm:text-xs">
+              Variance:{' '}
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {(toLph(Math.sqrt(maRegionStats.directVariance))).toFixed(2)} L/h
+              </span>
+              <span className="ml-0.5 text-gray-400 dark:text-gray-500">(σ)</span>
+            </span>
+            {maRegionStats.maAvg != null && (
+              <span className="text-[11px] text-gray-600 dark:text-gray-300 sm:text-xs">
+                MA avg:{' '}
+                <span className="font-semibold" style={{ color: MA_COLOR }}>
+                  {toLph(maRegionStats.maAvg).toFixed(1)} L/h
+                </span>
+              </span>
+            )}
+          </div>
+        )}
 
         {signalTypeIds.length > 0 && (
           <div className="mb-3 flex flex-wrap items-center gap-3">
@@ -880,6 +1035,18 @@ export default function Reports() {
           </div>
         )}
 
+        {maSelectMode && (
+          <div className="mb-3 flex items-center gap-2 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-700 dark:border-orange-800 dark:bg-orange-900/20 dark:text-orange-300">
+            <span className="font-medium">Drag on the chart to select the MA region</span>
+            <button
+              onClick={() => setMaSelectMode(false)}
+              className="ml-auto rounded px-2 py-0.5 font-medium transition-colors hover:bg-orange-100 dark:hover:bg-orange-900/40"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
         {reportsLoading ? (
           <div className="flex h-80 items-center justify-center text-gray-500 dark:text-gray-400">
             Loading chart…
@@ -891,15 +1058,15 @@ export default function Reports() {
         ) : (
           <div
             ref={chartWrapperRef}
-            className="h-[280px] select-none sm:h-[400px]"
-            onMouseLeave={cancelSelection}
+            className={`h-[280px] select-none sm:h-[400px] ${maSelectMode ? 'cursor-crosshair' : ''}`}
+            onMouseLeave={chartMouseLeave}
           >
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={enrichedDataWithMA}
-                onMouseDown={onChartMouseDown}
-                onMouseMove={onChartMouseMove}
-                onMouseUp={onChartMouseUp}
+                onMouseDown={chartMouseDown}
+                onMouseMove={chartMouseMove}
+                onMouseUp={chartMouseUp}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
                 <XAxis
@@ -942,6 +1109,28 @@ export default function Reports() {
                       fillOpacity={0.15}
                     />
                   )}
+                {maRefLeft !== null &&
+                  maRefRight !== null &&
+                  maRefLeft !== maRefRight && (
+                    <ReferenceArea
+                      x1={Math.min(maRefLeft, maRefRight)}
+                      x2={Math.max(maRefLeft, maRefRight)}
+                      strokeOpacity={0.4}
+                      fill="#f97316"
+                      fillOpacity={0.15}
+                    />
+                  )}
+                {showMovingAverage && maRegion && (
+                  <ReferenceArea
+                    x1={timeline.toCompressed(maRegion.startTs)}
+                    x2={timeline.toCompressed(maRegion.endTs)}
+                    strokeOpacity={0.3}
+                    fill="#f97316"
+                    fillOpacity={0.08}
+                    stroke="#f97316"
+                    strokeDasharray="4 3"
+                  />
+                )}
                 {visibleTags.map((tag) => (
                   <ReferenceLine
                     key={tag.id}
