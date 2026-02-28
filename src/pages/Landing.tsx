@@ -71,7 +71,7 @@ export default function Landing() {
             }
           }}
           autoPlay loop muted playsInline
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover opacity-50"
         >
           <source src={heroVideo} type="video/mp4" />
         </video>
