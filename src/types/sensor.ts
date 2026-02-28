@@ -10,6 +10,9 @@ export interface Sensor {
   name: string | null
   location: string | null
   mappings: SensorMappings | null
+  floor_number: number | null
+  location_on_floor: { x: number; y: number } | null
+  area_covered: Array<{ x: number; y: number }> | null
   building?: Building
   reports?: Report[]
 }

@@ -156,7 +156,7 @@ function generateTicks(
   return ticks
 }
 
-export function useReportsPage() {
+export function useReportsPage(initialSensorId?: number | null) {
   const {
     data: sensorsData,
     loading: sensorsLoading,
@@ -177,7 +177,9 @@ export function useReportsPage() {
     update_sensor_by_pk: { id: number; mappings: SensorMappings }
   }>(UPDATE_SENSOR_MAPPINGS)
 
-  const [selectedSensorId, setSelectedSensorId] = useState<number | null>(null)
+  const [selectedSensorId, setSelectedSensorId] = useState<number | null>(
+    initialSensorId ?? null,
+  )
   const [timeRange, setTimeRange] = useState<TimeRange>('15m')
   const [isLive, setIsLive] = useState(true)
   const [liveChartData, setLiveChartData] = useState<ChartPoint[]>([])

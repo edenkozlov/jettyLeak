@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import type { Props as RechartLabelProps } from 'recharts/types/component/Label'
 import type { TooltipProps } from 'recharts'
 import {
@@ -343,6 +344,9 @@ function CustomTooltip({ active, payload, colors }: CustomTooltipProps) {
 export default function Reports() {
   const { mode } = useTheme()
   const colors = CHART_COLORS[mode]
+  const [searchParams] = useSearchParams()
+  const sensorParam = searchParams.get('sensor')
+  const initialSensorId = sensorParam ? Number(sensorParam) : null
 
   const {
     sensors,
@@ -365,7 +369,7 @@ export default function Reports() {
     handleToggleLive,
     handlePreviousPeriod,
     handleNextPeriod,
-  } = useReportsPage()
+  } = useReportsPage(initialSensorId)
 
   const periodLabel = useMemo(() => {
     if (periodOffset === 0 || timeRange === 'all') return null

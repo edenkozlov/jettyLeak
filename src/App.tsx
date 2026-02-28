@@ -6,6 +6,7 @@ import { Provider } from 'react-redux'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import AuthLayout from '@/layouts/AuthLayout'
 import DashboardLayout from '@/layouts/DashboardLayout'
+import BuildingDetail from '@/pages/BuildingDetail'
 import Buildings from '@/pages/Buildings'
 import Clients from '@/pages/Clients'
 import Home from '@/pages/Home'
@@ -47,6 +48,7 @@ export default function App() {
               <Route path="home" element={<Home />} />
               <Route path="clients" element={<Clients />} />
               <Route path="buildings" element={<Buildings />} />
+              <Route path="buildings/:id" element={<BuildingDetail />} />
               <Route path="sensors" element={<Sensors />} />
               <Route path="reports" element={<Reports />} />
             </Route>

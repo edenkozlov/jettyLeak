@@ -9,6 +9,8 @@ export interface Building {
   latitude: number | null
   longitude: number | null
   client_id: string | null
+  footprint: Array<{ lat: number; lon: number }> | null
+  number_of_floors: number | null
   client?: Client
   sensors?: Sensor[]
 }

@@ -5,6 +5,7 @@ import App from './App'
 import { initSentry } from '@/lib/sentry'
 
 import '@/lib/i18n'
+import 'mapbox-gl/dist/mapbox-gl.css'
 import './index.css'
 
 initSentry()

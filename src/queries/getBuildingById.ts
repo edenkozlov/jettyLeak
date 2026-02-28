@@ -8,6 +8,8 @@ export const GET_BUILDING_BY_ID = `
       latitude
       longitude
       client_id
+      footprint
+      number_of_floors
       client {
         id
         first_name
@@ -18,6 +20,9 @@ export const GET_BUILDING_BY_ID = `
         id
         name
         location
+        floor_number
+        location_on_floor
+        area_covered
       }
     }
   }

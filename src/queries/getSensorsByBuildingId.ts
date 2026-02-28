@@ -9,6 +9,8 @@ export const GET_SENSORS_BY_BUILDING_ID = `
       name
       location
       building_id
+      floor_number
+      location_on_floor
     }
   }
 `
