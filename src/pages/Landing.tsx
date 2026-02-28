@@ -60,7 +60,7 @@ export default function Landing() {
       </nav>
 
       {/* ━━━ HERO ━━━ */}
-      <section className="relative flex min-h-screen items-center justify-center bg-gray-900 text-white">
+      <section className="relative flex min-h-screen items-center justify-center bg-white">
         <video
           ref={(el) => {
             if (el && !el.dataset.started) {
@@ -71,31 +71,30 @@ export default function Landing() {
             }
           }}
           autoPlay loop muted playsInline
-          className="absolute inset-0 h-full w-full object-cover opacity-80"
+          className="absolute inset-0 h-full w-full object-cover"
         >
           <source src={heroVideo} type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-black/20" />
 
         <div className="relative z-10 mx-auto w-full max-w-5xl px-4 pt-24 pb-16 sm:px-6 sm:pt-28 sm:pb-20">
           <div className="flex flex-col items-center text-center">
-            <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm animate-slide-up">
+            <div className="mb-8 inline-flex items-center gap-2.5 rounded-full border border-gray-200 bg-white/60 px-4 py-2 backdrop-blur-sm animate-slide-up">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
               </span>
-              <span className="text-[13px] font-medium text-white">Built for Canadian homes &amp; buildings</span>
+              <span className="text-[13px] font-medium text-gray-700">Built for Canadian homes &amp; buildings</span>
             </div>
 
-            <h1 className="max-w-4xl text-[36px] leading-[1.08] font-bold tracking-tight animate-slide-up sm:text-5xl md:text-6xl lg:text-[76px]" style={{ animationDelay: '0.1s' }}>
+            <h1 className="max-w-4xl text-[36px] leading-[1.08] font-bold tracking-tight text-gray-900 animate-slide-up sm:text-5xl md:text-6xl lg:text-[76px]" style={{ animationDelay: '0.1s' }}>
               Your pipes don't warn you.
               <br />
-              <span className="bg-gradient-to-r from-indigo-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
                 We do.
               </span>
             </h1>
 
-            <p className="mx-auto mt-5 max-w-xl text-[17px] leading-relaxed text-white animate-slide-up sm:mt-6 sm:text-[20px]" style={{ animationDelay: '0.2s' }}>
+            <p className="mx-auto mt-5 max-w-xl text-[17px] leading-relaxed text-gray-800 animate-slide-up sm:mt-6 sm:text-[20px]" style={{ animationDelay: '0.2s' }}>
               Continuous flow tracking and instant leak alerts for homes and buildings using non-invasive sensors.
             </p>
 
@@ -108,7 +107,7 @@ export default function Landing() {
               </a>
               <Link
                 to="/demo"
-                className="w-full rounded-full border border-white/25 bg-white/10 px-8 py-3.5 text-center text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/40 hover:bg-white/20 sm:w-auto"
+                className="w-full rounded-full border border-gray-300 bg-white/70 px-8 py-3.5 text-center text-sm font-semibold text-gray-900 backdrop-blur-sm transition hover:border-gray-400 hover:bg-white/90 sm:w-auto"
               >
                 View Live Demo
               </Link>
