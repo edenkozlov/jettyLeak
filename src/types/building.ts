@@ -1,4 +1,5 @@
 import type { Client } from './client'
+import type { Fixture } from './fixture'
 import type { Sensor } from './sensor'
 
 export interface Building {
@@ -13,4 +14,5 @@ export interface Building {
   number_of_floors: number | null
   client?: Client
   sensors?: Sensor[]
+  fixtures?: Fixture[]
 }

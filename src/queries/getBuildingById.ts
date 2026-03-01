@@ -24,6 +24,14 @@ export const GET_BUILDING_BY_ID = `
         location_on_floor
         area_covered
       }
+      fixtures {
+        id
+        created_at
+        type
+        floor_number
+        location_on_floor
+        sensor_id
+      }
     }
   }
 `

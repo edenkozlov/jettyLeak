@@ -1,5 +1,7 @@
 export type { Building } from './building'
 export type { Client } from './client'
+export type { Fixture, FixtureType } from './fixture'
+export { FIXTURE_COLORS } from './fixture'
 export type { Report } from './report'
 export type { Sensor, SensorMappings } from './sensor'
 export type { Signal, SignalValue } from './signal'

@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import type { BuildingFootprint as FootprintData } from '@/hooks/useBuildingFootprint'
-import type { Sensor } from '@/types'
+import type { Fixture, FixtureType, Sensor } from '@/types'
+import { FIXTURE_COLORS } from '@/types'
 
 interface BuildingFootprintProps {
   footprints: FootprintData[]
@@ -20,6 +21,10 @@ interface BuildingFootprintProps {
     sensorId: number,
     area: Array<{ x: number; y: number }>,
   ) => void
+  fixtures?: Fixture[]
+  onFixtureCreate?: (type: FixtureType, floor: number) => void
+  onFixturePlaced?: (fixtureId: number, position: { x: number; y: number }) => void
+  onFixtureRemoved?: (fixtureId: number) => void
   className?: string
 }
 
@@ -90,6 +95,10 @@ export default function BuildingFootprint({
   onSensorCreate,
   onSensorRemoved,
   onAreaDrawn,
+  fixtures = [],
+  onFixtureCreate,
+  onFixturePlaced,
+  onFixtureRemoved,
   className = '',
 }: BuildingFootprintProps) {
   const navigate = useNavigate()
@@ -98,13 +107,22 @@ export default function BuildingFootprint({
   const [panStart, setPanStart] = useState({ x: 0, y: 0 })
   const [viewBox, setViewBox] = useState<ViewBox | null>(null)
   const [selectedFloor, setSelectedFloor] = useState(1)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [isAddingSensor, setIsAddingSensor] = useState(false)
   const [newSensorName, setNewSensorName] = useState('')
+  const [showFixtureMenu, setShowFixtureMenu] = useState(false)
+  const [expandedSensors, setExpandedSensors] = useState<Set<number>>(new Set())
   const [draggingSensorId, setDraggingSensorId] = useState<number | null>(null)
   const [dragSvgPos, setDragSvgPos] = useState<{
     x: number
     y: number
   } | null>(null)
+
+  // Fixture state
+  const [selectedFixtureId, setSelectedFixtureId] = useState<number | null>(null)
+  const [draggingFixtureId, setDraggingFixtureId] = useState<number | null>(null)
+  const [dragFixtureSvgPos, setDragFixtureSvgPos] = useState<{ x: number; y: number } | null>(null)
+  const fixtureMouseDownPos = useRef<{ x: number; y: number } | null>(null)
 
   // Drawing mode state
   const [selectedSensorId, setSelectedSensorId] = useState<number | null>(null)
@@ -170,7 +188,35 @@ export default function BuildingFootprint({
         (s) => s.floor_number === selectedFloor && s.location_on_floor != null,
       ),
     [sensors, selectedFloor],
+
   )
+
+  // Fixtures on the current floor
+  const floorFixtures = useMemo(
+    () => fixtures.filter((f) => f.floor_number === selectedFloor),
+    [fixtures, selectedFloor],
+  )
+
+  // Group fixtures by sensor
+  const fixturesBySensor = useMemo(() => {
+    const grouped = new Map<number | null, Fixture[]>()
+    for (const f of floorFixtures) {
+      const key = f.sensor_id
+      const list = grouped.get(key) ?? []
+      list.push(f)
+      grouped.set(key, list)
+    }
+    return grouped
+  }, [floorFixtures])
+
+  const toggleSensorExpanded = useCallback((sensorId: number) => {
+    setExpandedSensors((prev) => {
+      const next = new Set(prev)
+      if (next.has(sensorId)) next.delete(sensorId)
+      else next.add(sensorId)
+      return next
+    })
+  }, [])
 
   // Cancel drawing on Escape
   useEffect(() => {
@@ -216,11 +262,11 @@ export default function BuildingFootprint({
   // SVG click — either add drawing point or start pan
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      if (isDrawing || draggingSensorId != null) return
+      if (isDrawing || draggingSensorId != null || draggingFixtureId != null) return
       setIsPanning(true)
       setPanStart({ x: e.clientX, y: e.clientY })
     },
-    [isDrawing, draggingSensorId],
+    [isDrawing, draggingSensorId, draggingFixtureId],
   )
 
   const handleClick = useCallback(
@@ -283,6 +329,12 @@ export default function BuildingFootprint({
         setDragSvgPos(pos)
         return
       }
+      // Dragging a fixture within SVG
+      if (draggingFixtureId != null && activeViewBox && svgRef.current) {
+        const pos = clientToSvg(e.clientX, e.clientY, svgRef.current, activeViewBox)
+        setDragFixtureSvgPos(pos)
+        return
+      }
       // Panning
       if (!isPanning || !activeViewBox || !svgRef.current) return
       const rect = svgRef.current.getBoundingClientRect()
@@ -297,7 +349,7 @@ export default function BuildingFootprint({
       })
       setPanStart({ x: e.clientX, y: e.clientY })
     },
-    [isDrawing, draggingSensorId, isPanning, activeViewBox, panStart],
+    [isDrawing, draggingSensorId, draggingFixtureId, isPanning, activeViewBox, panStart],
   )
 
   const handleMouseUp = useCallback(
@@ -309,6 +361,23 @@ export default function BuildingFootprint({
         svgRef.current &&
         defaultViewBox
       ) {
+        // Check if it was a click (barely moved) vs a drag
+        const downPos = sensorMouseDownPos.current
+        const dist = downPos
+          ? Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y)
+          : Infinity
+        sensorMouseDownPos.current = null
+
+        if (dist < 5) {
+          // It was a click — toggle selection instead of repositioning
+          setSelectedSensorId((prev) =>
+            prev === draggingSensorId ? null : draggingSensorId,
+          )
+          setDraggingSensorId(null)
+          setDragSvgPos(null)
+          return
+        }
+
         const pos = clientToSvg(
           e.clientX,
           e.clientY,
@@ -321,35 +390,69 @@ export default function BuildingFootprint({
         setDragSvgPos(null)
         return
       }
+      // Fixture drag/click
+      if (
+        draggingFixtureId != null &&
+        activeViewBox &&
+        svgRef.current &&
+        defaultViewBox
+      ) {
+        const downPos = fixtureMouseDownPos.current
+        const dist = downPos
+          ? Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y)
+          : Infinity
+        fixtureMouseDownPos.current = null
+
+        if (dist < 5) {
+          setSelectedFixtureId((prev) =>
+            prev === draggingFixtureId ? null : draggingFixtureId,
+          )
+          setDraggingFixtureId(null)
+          setDragFixtureSvgPos(null)
+          return
+        }
+
+        const pos = clientToSvg(e.clientX, e.clientY, svgRef.current, activeViewBox)
+        const pct = svgToPercent(pos.x, pos.y, defaultViewBox)
+        onFixturePlaced?.(draggingFixtureId, pct)
+        setDraggingFixtureId(null)
+        setDragFixtureSvgPos(null)
+        return
+      }
       setIsPanning(false)
     },
     [
       isDrawing,
       draggingSensorId,
+      draggingFixtureId,
       activeViewBox,
       defaultViewBox,
       selectedFloor,
       onSensorPlaced,
+      onFixturePlaced,
     ],
   )
 
-  // External drop from sensor list
+  // External drop from sensor/fixture list
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault()
-      const sensorId = Number(e.dataTransfer.getData('text/plain'))
-      if (!sensorId || !activeViewBox || !svgRef.current || !defaultViewBox)
-        return
-      const pos = clientToSvg(
-        e.clientX,
-        e.clientY,
-        svgRef.current,
-        activeViewBox,
-      )
+      if (!activeViewBox || !svgRef.current || !defaultViewBox) return
+      const pos = clientToSvg(e.clientX, e.clientY, svgRef.current, activeViewBox)
       const pct = svgToPercent(pos.x, pos.y, defaultViewBox)
-      onSensorPlaced?.(sensorId, selectedFloor, pct)
+
+      const fixtureId = Number(e.dataTransfer.getData('fixture'))
+      if (fixtureId) {
+        onFixturePlaced?.(fixtureId, pct)
+        return
+      }
+
+      const sensorId = Number(e.dataTransfer.getData('text/plain'))
+      if (sensorId) {
+        onSensorPlaced?.(sensorId, selectedFloor, pct)
+      }
     },
-    [activeViewBox, defaultViewBox, selectedFloor, onSensorPlaced],
+    [activeViewBox, defaultViewBox, selectedFloor, onSensorPlaced, onFixturePlaced],
   )
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -357,12 +460,16 @@ export default function BuildingFootprint({
     e.dataTransfer.dropEffect = 'move'
   }, [])
 
+  // Track whether a sensor mousedown resulted in a drag vs a click
+  const sensorMouseDownPos = useRef<{ x: number; y: number } | null>(null)
+
   // Start dragging an already-placed sensor within SVG
   const handleSensorMouseDown = useCallback(
     (e: React.MouseEvent, sensorId: number) => {
       if (isDrawing) return
       e.stopPropagation()
       if (!activeViewBox || !svgRef.current) return
+      sensorMouseDownPos.current = { x: e.clientX, y: e.clientY }
       setDraggingSensorId(sensorId)
       const pos = clientToSvg(
         e.clientX,
@@ -371,6 +478,20 @@ export default function BuildingFootprint({
         activeViewBox,
       )
       setDragSvgPos(pos)
+    },
+    [isDrawing, activeViewBox],
+  )
+
+  // Start dragging an already-placed fixture within SVG
+  const handleFixtureMouseDown = useCallback(
+    (e: React.MouseEvent, fixtureId: number) => {
+      if (isDrawing) return
+      e.stopPropagation()
+      if (!activeViewBox || !svgRef.current) return
+      fixtureMouseDownPos.current = { x: e.clientX, y: e.clientY }
+      setDraggingFixtureId(fixtureId)
+      const pos = clientToSvg(e.clientX, e.clientY, svgRef.current, activeViewBox)
+      setDragFixtureSvgPos(pos)
     },
     [isDrawing, activeViewBox],
   )
@@ -405,8 +526,9 @@ export default function BuildingFootprint({
     )
   }
 
-  const circleR = activeViewBox.width * 0.015
-  const dotR = activeViewBox.width * 0.006
+  const baseWidth = defaultViewBox?.width ?? activeViewBox.width
+  const circleR = baseWidth * 0.012
+  const dotR = baseWidth * 0.005
 
   // Build the drawing preview polyline
   const drawingPreview = (() => {
@@ -472,13 +594,36 @@ export default function BuildingFootprint({
         )}
       </div>
 
-      {/* Main area: SVG + sensor list */}
-      <div className="flex min-h-0 flex-1">
+      {/* Main area: SVG + floating sidebar */}
+      <div className="relative min-h-0 flex-1">
+        {/* Legend */}
+        {floorFixtures.length > 0 && (
+          <div className="absolute left-2 top-2 z-10 rounded-md border border-gray-200 bg-white/90 px-2 py-1.5 shadow-sm backdrop-blur dark:border-gray-600 dark:bg-gray-800/90">
+            <div className="flex flex-col gap-1">
+              {[...new Set(floorFixtures.map((f) => f.type).filter(Boolean))].map(
+                (type) => {
+                  const colors = FIXTURE_COLORS[type!]
+                  return (
+                    <div key={type} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colors.fill }} />
+                      {colors.label}
+                    </div>
+                  )
+                },
+              )}
+              <div className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" />
+                Sensor
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* SVG */}
         <svg
           ref={svgRef}
           viewBox={`${activeViewBox.x} ${activeViewBox.y} ${activeViewBox.width} ${activeViewBox.height}`}
-          className="h-full flex-1"
+          className="h-full w-full"
           style={{
             cursor: isDrawing
               ? 'crosshair'
@@ -499,6 +644,10 @@ export default function BuildingFootprint({
             if (draggingSensorId != null) {
               setDraggingSensorId(null)
               setDragSvgPos(null)
+            }
+            if (draggingFixtureId != null) {
+              setDraggingFixtureId(null)
+              setDragFixtureSvgPos(null)
             }
           }}
           onDrop={handleDrop}
@@ -591,6 +740,48 @@ export default function BuildingFootprint({
             )
           })}
 
+          {/* Placed fixtures */}
+          {floorFixtures.map((fixture) => {
+            if (!fixture.location_on_floor || !defaultViewBox || !fixture.type) return null
+            const colors = FIXTURE_COLORS[fixture.type]
+            const isDragging = draggingFixtureId === fixture.id
+            const isSelected = selectedFixtureId === fixture.id
+            const pos =
+              isDragging && dragFixtureSvgPos
+                ? dragFixtureSvgPos
+                : percentToSvg(
+                    fixture.location_on_floor.x,
+                    fixture.location_on_floor.y,
+                    defaultViewBox,
+                  )
+            return (
+              <g key={`fix-${fixture.id}`}>
+                {isSelected && (
+                  <circle
+                    cx={pos.x}
+                    cy={pos.y}
+                    r={circleR * 1.6}
+                    fill="none"
+                    stroke={colors.stroke}
+                    strokeWidth={activeViewBox.width * 0.003}
+                    strokeDasharray={`${activeViewBox.width * 0.006}`}
+                    style={{ pointerEvents: 'none' }}
+                  />
+                )}
+                <circle
+                  cx={pos.x}
+                  cy={pos.y}
+                  r={circleR * 0.8}
+                  fill={colors.fill}
+                  stroke={colors.stroke}
+                  strokeWidth={activeViewBox.width * 0.003}
+                  style={{ cursor: isDrawing ? 'crosshair' : 'grab' }}
+                  onMouseDown={(e) => handleFixtureMouseDown(e, fixture.id)}
+                />
+              </g>
+            )
+          })}
+
           {/* Ghost circle while dragging from list */}
           {draggingSensorId != null &&
             dragSvgPos &&
@@ -657,8 +848,18 @@ export default function BuildingFootprint({
           )}
         </svg>
 
-        {/* Sensor list */}
-        <div className="flex w-36 shrink-0 flex-col border-l border-gray-200 p-2 dark:border-gray-700 sm:w-44">
+        {/* Sidebar toggle */}
+        <button
+          onClick={() => setSidebarOpen((v) => !v)}
+          className="absolute right-2 top-2 z-10 rounded-md border border-gray-200 bg-white/90 px-2 py-1 text-xs font-medium text-gray-500 shadow-sm backdrop-blur hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800/90 dark:text-gray-400 dark:hover:bg-gray-700"
+        >
+          {sidebarOpen ? 'Close' : 'Panel'}
+        </button>
+
+        {/* Floating sensor/fixture list */}
+        {sidebarOpen && (
+        <div className="absolute right-2 top-10 z-10 flex max-h-[calc(100%-3rem)] w-40 flex-col overflow-hidden rounded-lg border border-gray-200 bg-white/95 shadow-lg backdrop-blur dark:border-gray-600 dark:bg-gray-800/95 sm:w-48">
+          <div className="flex-1 overflow-y-auto p-2">
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
             Sensors
           </p>
@@ -809,7 +1010,187 @@ export default function BuildingFootprint({
               )}
             </div>
           )}
+
+          {/* Fixtures grouped by sensor */}
+          <div className="mt-2 border-t border-gray-200 pt-2 dark:border-gray-700">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+              Fixtures
+            </p>
+
+            {/* Fixtures under each sensor */}
+            {sensors
+              .filter((s) => s.floor_number === selectedFloor && s.area_covered)
+              .map((sensor) => {
+                const sensorFixtures = fixturesBySensor.get(sensor.id) ?? []
+                const isExpanded = expandedSensors.has(sensor.id)
+                return (
+                  <div key={`sf-${sensor.id}`} className="mb-1">
+                    <button
+                      onClick={() => toggleSensorExpanded(sensor.id)}
+                      className="flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                    >
+                      <svg
+                        className={`h-3 w-3 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-green-500" />
+                      <span className="truncate">{sensor.name ?? `Sensor ${sensor.id}`}</span>
+                      <span className="ml-auto text-gray-400">{sensorFixtures.length}</span>
+                    </button>
+                    {isExpanded && (
+                      <div className="ml-3 mt-0.5 space-y-0.5 border-l border-gray-200 pl-2 dark:border-gray-700">
+                        {sensorFixtures.length === 0 ? (
+                          <p className="py-1 text-xs text-gray-400">No fixtures</p>
+                        ) : (
+                          sensorFixtures.map((fixture) => {
+                            if (!fixture.type) return null
+                            const colors = FIXTURE_COLORS[fixture.type]
+                            const isSelected = selectedFixtureId === fixture.id
+                            return (
+                              <div key={fixture.id}>
+                                <div
+                                  onClick={() => {
+                                    if (isDrawing) return
+                                    setSelectedFixtureId(isSelected ? null : fixture.id)
+                                    setSelectedSensorId(null)
+                                  }}
+                                  className={`flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-xs ${
+                                    isSelected
+                                      ? 'bg-gray-100 dark:bg-gray-800'
+                                      : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                                  }`}
+                                  style={isSelected ? { outline: `2px solid ${colors.stroke}`, outlineOffset: '-1px', borderRadius: '6px' } : undefined}
+                                >
+                                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colors.fill }} />
+                                  <span className="truncate text-gray-600 dark:text-gray-400">{colors.label}</span>
+                                </div>
+                                {isSelected && onFixtureRemoved && (
+                                  <button
+                                    onClick={() => { onFixtureRemoved(fixture.id); setSelectedFixtureId(null) }}
+                                    className="ml-6 mt-0.5 rounded-md px-2 py-0.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                  >
+                                    Remove
+                                  </button>
+                                )}
+                              </div>
+                            )
+                          })
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+            {/* Unassigned fixtures */}
+            {(() => {
+              const unassigned = fixturesBySensor.get(null) ?? []
+              if (unassigned.length === 0 && floorFixtures.length > 0) return null
+              return (
+                <>
+                  {unassigned.length > 0 && (
+                    <div className="mb-1">
+                      <p className="px-2 py-1 text-xs text-gray-400">Unassigned</p>
+                      <div className="space-y-0.5">
+                        {unassigned.map((fixture) => {
+                          if (!fixture.type) return null
+                          const colors = FIXTURE_COLORS[fixture.type]
+                          const placed = fixture.location_on_floor != null
+                          const isSelected = selectedFixtureId === fixture.id
+                          return (
+                            <div key={fixture.id}>
+                              <div
+                                draggable={!placed && !isDrawing}
+                                onDragStart={(e) => {
+                                  e.dataTransfer.setData('fixture', String(fixture.id))
+                                  e.dataTransfer.effectAllowed = 'move'
+                                }}
+                                onClick={() => {
+                                  if (isDrawing) return
+                                  setSelectedFixtureId(isSelected ? null : fixture.id)
+                                  setSelectedSensorId(null)
+                                }}
+                                className={`flex items-center gap-2 rounded-md px-2 py-1 text-xs ${
+                                  !placed ? 'cursor-grab ' : 'cursor-pointer '}${
+                                  isSelected
+                                    ? 'bg-gray-100 dark:bg-gray-800'
+                                    : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                                }`}
+                                style={isSelected ? { outline: `2px solid ${colors.stroke}`, outlineOffset: '-1px', borderRadius: '6px' } : undefined}
+                              >
+                                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colors.fill }} />
+                                <span className="truncate text-gray-600 dark:text-gray-400">{colors.label}</span>
+                              </div>
+                              {isSelected && onFixtureRemoved && (
+                                <button
+                                  onClick={() => { onFixtureRemoved(fixture.id); setSelectedFixtureId(null) }}
+                                  className="ml-6 mt-0.5 rounded-md px-2 py-0.5 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
+
+            {floorFixtures.length === 0 && (
+              <p className="py-1 text-center text-xs text-gray-400">
+                No fixtures on this floor
+              </p>
+            )}
+          </div>
+
+          {/* Add fixture */}
+          {onFixtureCreate && (
+            <div className="mt-2 border-t border-gray-200 pt-2 dark:border-gray-700">
+              {showFixtureMenu ? (
+                <div className="flex flex-col gap-1 rounded-md border border-gray-200 bg-white p-1.5 dark:border-gray-600 dark:bg-gray-800">
+                  {(Object.keys(FIXTURE_COLORS) as FixtureType[]).map((type) => {
+                    const colors = FIXTURE_COLORS[type]
+                    return (
+                      <button
+                        key={type}
+                        onClick={() => {
+                          onFixtureCreate(type, selectedFloor)
+                          setShowFixtureMenu(false)
+                        }}
+                        className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+                      >
+                        <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colors.fill }} />
+                        {colors.label}
+                      </button>
+                    )
+                  })}
+                  <button
+                    onClick={() => setShowFixtureMenu(false)}
+                    className="rounded-md px-2 py-1 text-xs text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowFixtureMenu(true)}
+                  className="w-full rounded-md px-2 py-1.5 text-xs text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                >
+                  + Add fixture
+                </button>
+              )}
+            </div>
+          )}
+          </div>
         </div>
+        )}
       </div>
     </div>
   )

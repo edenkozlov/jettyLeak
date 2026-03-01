@@ -17,11 +17,35 @@ import {
   UPDATE_BUILDING_NAME,
 } from '@/mutations/buildingMutations'
 import {
+  CREATE_FIXTURE,
+  DELETE_FIXTURE,
+  UPDATE_FIXTURE_POSITION,
+} from '@/mutations/fixtureMutations'
+import {
   CREATE_SENSOR,
   UPDATE_SENSOR_AREA,
   UPDATE_SENSOR_POSITION,
 } from '@/mutations/sensorMutations'
-import type { Sensor } from '@/types'
+import type { Fixture, FixtureType, Sensor } from '@/types'
+
+// Ray-casting point-in-polygon test
+function pointInPolygon(
+  point: { x: number; y: number },
+  polygon: Array<{ x: number; y: number }>,
+): boolean {
+  let inside = false
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i]!.x, yi = polygon[i]!.y
+    const xj = polygon[j]!.x, yj = polygon[j]!.y
+    if (
+      yi > point.y !== yj > point.y &&
+      point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi
+    ) {
+      inside = !inside
+    }
+  }
+  return inside
+}
 
 export default function BuildingDetail() {
   const { id } = useParams<{ id: string }>()
@@ -49,11 +73,17 @@ export default function BuildingDetail() {
   const [localSensors, setLocalSensors] = useState<Sensor[] | null>(null)
   const sensors = localSensors ?? building?.sensors ?? []
 
+  // Local fixture state for optimistic updates
+  const [localFixtures, setLocalFixtures] = useState<Fixture[] | null>(null)
+  const fixtures = localFixtures ?? building?.fixtures ?? []
+
   const [localFloors, setLocalFloors] = useState<number | null>(null)
   const numberOfFloors = localFloors ?? building?.number_of_floors ?? 1
 
   const [localName, setLocalName] = useState<string | null | undefined>(undefined)
   const displayName = localName !== undefined ? localName : building?.name ?? null
+
+  const [footprintExpanded, setFootprintExpanded] = useState(false)
 
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState('')
@@ -76,6 +106,11 @@ export default function BuildingDetail() {
     insert_sensor_one: Sensor
   }>(CREATE_SENSOR)
   const { executeQuery: updateSensorArea } = useGraphQL(UPDATE_SENSOR_AREA)
+  const { executeQuery: createFixture } = useGraphQL<{
+    insert_fixtures_one: Fixture
+  }>(CREATE_FIXTURE)
+  const { executeQuery: updateFixturePosition } = useGraphQL(UPDATE_FIXTURE_POSITION)
+  const { executeQuery: deleteFixture } = useGraphQL(DELETE_FIXTURE)
 
   // Geocode address if building has no coordinates
   useEffect(() => {
@@ -113,6 +148,16 @@ export default function BuildingDetail() {
       cancelled = true
     }
   }, [building, updateBuildingCoordinates])
+
+  // Escape key closes expanded footprint
+  useEffect(() => {
+    if (!footprintExpanded) return
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setFootprintExpanded(false)
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [footprintExpanded])
 
   const handleBuildingSelect = useCallback(
     (footprint: FootprintData) => {
@@ -214,6 +259,69 @@ export default function BuildingDetail() {
       updateSensorArea({ id: sensorId, area_covered: null })
     },
     [building?.sensors, updateSensorPosition, updateSensorArea],
+  )
+
+  const handleFixtureCreate = useCallback(
+    async (type: FixtureType, floor: number) => {
+      if (!building) return
+      const result = await createFixture({
+        building_id: building.id,
+        floor_number: floor,
+        type,
+      })
+      if (result?.insert_fixtures_one) {
+        setLocalFixtures((prev) => [
+          ...(prev ?? building.fixtures ?? []),
+          result.insert_fixtures_one,
+        ])
+      }
+    },
+    [building, createFixture],
+  )
+
+  const handleFixturePlaced = useCallback(
+    (fixtureId: number, position: { x: number; y: number }) => {
+      // Find the fixture to get its floor
+      const allFixtures = localFixtures ?? building?.fixtures ?? []
+      const fixture = allFixtures.find((f) => f.id === fixtureId)
+      const floor = fixture?.floor_number
+
+      // Find sensor whose area contains this position on the same floor
+      const matchingSensor = sensors.find(
+        (s) =>
+          s.floor_number === floor &&
+          s.area_covered &&
+          s.area_covered.length >= 3 &&
+          pointInPolygon(position, s.area_covered),
+      )
+      const sensorId = matchingSensor?.id ?? null
+
+      setLocalFixtures((prev) => {
+        const list = prev ?? building?.fixtures ?? []
+        return list.map((f) =>
+          f.id === fixtureId
+            ? { ...f, location_on_floor: position, sensor_id: sensorId }
+            : f,
+        )
+      })
+      updateFixturePosition({
+        id: fixtureId,
+        location_on_floor: position,
+        sensor_id: sensorId,
+      })
+    },
+    [building?.fixtures, localFixtures, sensors, updateFixturePosition],
+  )
+
+  const handleFixtureRemoved = useCallback(
+    (fixtureId: number) => {
+      setLocalFixtures((prev) => {
+        const list = prev ?? building?.fixtures ?? []
+        return list.filter((f) => f.id !== fixtureId)
+      })
+      deleteFixture({ id: fixtureId })
+    },
+    [building?.fixtures, deleteFixture],
   )
 
   // Priority: user selection > saved in DB > Overpass API result
@@ -352,36 +460,95 @@ export default function BuildingDetail() {
         </div>
 
         {/* 2D Footprint View with sensor placement */}
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Building Footprint
-            <span className="ml-2 font-normal text-gray-400">
-              Drag sensors onto the floor plan
-            </span>
-          </h2>
-          {footprintLoading && !selectedFootprint && !building.footprint ? (
-            <div className="flex h-72 items-center justify-center rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 sm:h-96">
-              <p className="text-sm text-gray-400">Loading footprint…</p>
+        {!footprintExpanded && (
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Building Footprint
+                <span className="ml-2 font-normal text-gray-400">
+                  Drag sensors onto the floor plan
+                </span>
+              </h2>
+              <button
+                onClick={() => setFootprintExpanded(true)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                title="Expand"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                </svg>
+              </button>
             </div>
-          ) : footprintError && !selectedFootprint && !building.footprint ? (
-            <div className="flex h-72 items-center justify-center rounded-xl border border-gray-200 bg-red-50 dark:border-gray-700 dark:bg-red-900/20 sm:h-96">
-              <p className="text-sm text-red-500">{footprintError}</p>
-            </div>
-          ) : (
-            <BuildingFootprint
-              footprints={displayFootprints}
-              sensors={sensors}
-              numberOfFloors={numberOfFloors}
-              onSensorPlaced={handleSensorPlaced}
-              onFloorsChange={handleFloorsChange}
-              onSensorCreate={handleSensorCreate}
-              onSensorRemoved={handleSensorRemoved}
-              onAreaDrawn={handleAreaDrawn}
-              className="h-72 sm:h-96"
-            />
-          )}
-        </div>
+            {footprintLoading && !selectedFootprint && !building.footprint ? (
+              <div className="flex h-72 items-center justify-center rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 sm:h-96">
+                <p className="text-sm text-gray-400">Loading footprint…</p>
+              </div>
+            ) : footprintError && !selectedFootprint && !building.footprint ? (
+              <div className="flex h-72 items-center justify-center rounded-xl border border-gray-200 bg-red-50 dark:border-gray-700 dark:bg-red-900/20 sm:h-96">
+                <p className="text-sm text-red-500">{footprintError}</p>
+              </div>
+            ) : (
+              <BuildingFootprint
+                footprints={displayFootprints}
+                sensors={sensors}
+                numberOfFloors={numberOfFloors}
+                onSensorPlaced={handleSensorPlaced}
+                onFloorsChange={handleFloorsChange}
+                onSensorCreate={handleSensorCreate}
+                onSensorRemoved={handleSensorRemoved}
+                onAreaDrawn={handleAreaDrawn}
+                fixtures={fixtures}
+                onFixtureCreate={handleFixtureCreate}
+                onFixturePlaced={handleFixturePlaced}
+                onFixtureRemoved={handleFixtureRemoved}
+                className="h-72 sm:h-96"
+              />
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Expanded footprint overlay */}
+      {footprintExpanded && (
+        <div className="fixed inset-0 z-20 lg:left-64">
+          <div className="flex h-full flex-col bg-gray-50 dark:bg-gray-900">
+            <div className="flex items-center justify-between px-4 py-3">
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Building Footprint
+                <span className="ml-2 font-normal text-gray-400">
+                  Drag sensors onto the floor plan
+                </span>
+              </h2>
+              <button
+                onClick={() => setFootprintExpanded(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                title="Collapse"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 9L4 4m0 0v4m0-4h4m7 9l5 5m0 0v-4m0 4h-4M9 15l-5 5m0 0h4m-4 0v-4m11-7l5-5m0 0h-4m4 0v4" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 px-4 pb-4">
+              <BuildingFootprint
+                footprints={displayFootprints}
+                sensors={sensors}
+                numberOfFloors={numberOfFloors}
+                onSensorPlaced={handleSensorPlaced}
+                onFloorsChange={handleFloorsChange}
+                onSensorCreate={handleSensorCreate}
+                onSensorRemoved={handleSensorRemoved}
+                onAreaDrawn={handleAreaDrawn}
+                fixtures={fixtures}
+                onFixtureCreate={handleFixtureCreate}
+                onFixturePlaced={handleFixturePlaced}
+                onFixtureRemoved={handleFixtureRemoved}
+                className="h-full"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
