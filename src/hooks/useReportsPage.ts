@@ -237,7 +237,7 @@ export function useReportsPage(initialSensorId?: number | null) {
 
   useEffect(() => {
     if (sensorsData?.sensor?.length && selectedSensorId === null) {
-      setSelectedSensorId(sensorsData.sensor[0]!.id)
+      setSelectedSensorId(sensorsData.sensor[sensorsData.sensor.length - 1]!.id)
     }
   }, [sensorsData, selectedSensorId])
 
