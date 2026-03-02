@@ -11,6 +11,7 @@ import {
 } from '@/queries/getMagDataByBuildingId'
 import { UPDATE_SENSOR_MAPPINGS } from '@/mutations/sensorMutations'
 import { LATEST_REPORT_SUBSCRIPTION } from '@/queries/reportSubscription'
+import { LATEST_MAG_REPORT_SUBSCRIPTION } from '@/queries/magReportSubscription'
 
 import type { MagReport, Report, Sensor, Signal, SensorMappings } from '@/types'
 import { parseSignalValue } from '@/types'
@@ -36,6 +37,10 @@ interface MagSensorsResponse {
 }
 
 interface MagReportsResponse {
+  mag_report: MagReport[]
+}
+
+interface MagSubscriptionResponse {
   mag_report: MagReport[]
 }
 
@@ -298,9 +303,12 @@ export function useReportsPage(initialSensorId?: number | null) {
     lastSeenIdRef.current = null
   }, [reportsData])
 
-  // --- Mag data fetch ---
+  // --- Mag data fetch + subscription ---
 
   const [magSensorIds, setMagSensorIds] = useState<number[]>([])
+  const [liveMagData, setLiveMagData] = useState<MagChartPoint[]>([])
+  const magBufferRef = useRef<MagChartPoint[]>([])
+  const lastMagIdRef = useRef<number | null>(null)
 
   const selectedBuildingId = useMemo(() => {
     if (selectedSensorId === null || !sensorsData?.sensor) return null
@@ -328,16 +336,90 @@ export function useReportsPage(initialSensorId?: number | null) {
     fetchMagReports({ sensorIds: magSensorIds, since, until })
   }, [magSensorIds, timeRange, periodOffset, fetchMagReports])
 
-  const magChartData = useMemo<MagChartPoint[]>(() => {
-    if (!magReportsData?.mag_report?.length) return []
-    return magReportsData.mag_report.map((r) => ({
-      timestamp: new Date(r.created_at).getTime(),
-      x: r.x_axis_reading,
-      y: r.y_axis_reading,
-      z: r.z_axis_reading,
-      total: r.total_magnitude,
-    }))
+  // Seed live mag data from historical fetch
+  useEffect(() => {
+    if (!magReportsData?.mag_report) return
+    const points = [...magReportsData.mag_report]
+      .sort(
+        (a, b) =>
+          new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      )
+      .map((r) => ({
+        timestamp: new Date(r.created_at).getTime(),
+        x: r.x_axis_reading,
+        y: r.y_axis_reading,
+        z: r.z_axis_reading,
+        total: r.total_magnitude,
+      }))
+    setLiveMagData(points)
+    magBufferRef.current = []
+    lastMagIdRef.current = null
   }, [magReportsData])
+
+  // Mag subscription
+  const magSubVars = useMemo(
+    () => (magSensorIds.length > 0 ? { sensorIds: magSensorIds } : undefined),
+    [magSensorIds],
+  )
+
+  const { data: magSubData } = useSubscription<MagSubscriptionResponse>(
+    LATEST_MAG_REPORT_SUBSCRIPTION,
+    magSubVars,
+    isLive && magSensorIds.length > 0 && timeRange !== 'all' && periodOffset === 0,
+  )
+
+  useEffect(() => {
+    if (!magSubData?.mag_report?.length) return
+    const report = magSubData.mag_report[0]!
+    if (report.id === lastMagIdRef.current) return
+    lastMagIdRef.current = report.id
+    magBufferRef.current.push({
+      timestamp: new Date(report.created_at).getTime(),
+      x: report.x_axis_reading,
+      y: report.y_axis_reading,
+      z: report.z_axis_reading,
+      total: report.total_magnitude,
+    })
+  }, [magSubData])
+
+  // Flush mag buffer on interval (same as flow)
+  useEffect(() => {
+    if (!isLive || timeRange === 'all') return
+
+    const interval = setInterval(() => {
+      const pending = magBufferRef.current
+      if (pending.length === 0) return
+      magBufferRef.current = []
+
+      setLiveMagData((prev) => {
+        const merged = [...prev, ...pending]
+        if (timeRangeRef.current === 'all') return merged
+        const cutoff = Date.now() - RANGE_MS[timeRangeRef.current] * FETCH_BUFFER
+        return merged.filter((p) => p.timestamp >= cutoff)
+      })
+    }, FLUSH_INTERVAL_MS)
+
+    return () => clearInterval(interval)
+  }, [isLive, timeRange])
+
+  const magChartData = useMemo<MagChartPoint[]>(() => {
+    if (!isLive || timeRange === 'all' || periodOffset > 0) {
+      if (!magReportsData?.mag_report?.length) return []
+      return [...magReportsData.mag_report]
+        .sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+        )
+        .map((r) => ({
+          timestamp: new Date(r.created_at).getTime(),
+          x: r.x_axis_reading,
+          y: r.y_axis_reading,
+          z: r.z_axis_reading,
+          total: r.total_magnitude,
+        }))
+    }
+    return liveMagData
+  }, [isLive, timeRange, periodOffset, magReportsData, liveMagData])
 
   // --- Computed ---
 

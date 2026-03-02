@@ -14,6 +14,7 @@ import {
   YAxis,
 } from 'recharts'
 
+import { computeWaveFrequency } from '@/utils/fft'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useChartTags } from '@/hooks/useChartTags'
 import { useChartZoomPan } from '@/hooks/useChartZoomPan'
@@ -28,6 +29,7 @@ import {
 } from '@/hooks/useReportsPage'
 
 const RAW_TO_LPH = 1000
+
 
 const MA_RANGE_OPTIONS = [
   { value: 10_000, label: '10s' },
@@ -563,6 +565,49 @@ export default function Reports() {
     if (magChartData.length === 0 || timeline.points.length === 0) return []
     const [left, right] = domain
     return magChartData
+      .map((p) => ({ ...p, cx: timeline.toCompressed(p.timestamp) }))
+      .filter((p) => p.cx >= left && p.cx <= right)
+  }, [magChartData, timeline, domain])
+
+  const totalMagYDomain = useMemo<[number, number]>(() => {
+    const totals = compressedMagData
+      .map((p) => p.total)
+      .filter((v): v is number => v != null)
+    if (totals.length === 0) return [0, 1]
+    let min = totals[0]!
+    let max = totals[0]!
+    for (const v of totals) {
+      if (v < min) min = v
+      if (v > max) max = v
+    }
+    const pad = Math.max((max - min) * 0.15, 0.05)
+    return [min - pad, max + pad]
+  }, [compressedMagData])
+
+  const xAxisYDomain = useMemo<[number, number]>(() => {
+    const vals = compressedMagData
+      .map((p) => p.x)
+      .filter((v): v is number => v != null)
+    if (vals.length === 0) return [0, 1]
+    let min = vals[0]!
+    let max = vals[0]!
+    for (const v of vals) {
+      if (v < min) min = v
+      if (v > max) max = v
+    }
+    const pad = Math.max((max - min) * 0.15, 0.05)
+    return [min - pad, max + pad]
+  }, [compressedMagData])
+
+  const compressedWaveFreqData = useMemo(() => {
+    if (magChartData.length < 3 || timeline.points.length === 0) return []
+    const samples = magChartData
+      .filter((p) => p.total != null)
+      .map((p) => ({ timestamp: p.timestamp, value: p.total! }))
+    if (samples.length < 3) return []
+    const freqPoints = computeWaveFrequency(samples, 5000)
+    const [left, right] = domain
+    return freqPoints
       .map((p) => ({ ...p, cx: timeline.toCompressed(p.timestamp) }))
       .filter((p) => p.cx >= left && p.cx <= right)
   }, [magChartData, timeline, domain])
@@ -1213,6 +1258,228 @@ export default function Reports() {
                 )}
               </LineChart>
             </ResponsiveContainer>
+          </div>
+        )}
+
+        {compressedWaveFreqData.length > 0 && (
+          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Mag Activity (5 s window)
+            </h3>
+            <div className="h-[160px] w-full sm:h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={compressedWaveFreqData}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={colors.grid}
+                  />
+                  <XAxis
+                    dataKey="cx"
+                    type="number"
+                    domain={domain}
+                    allowDataOverflow
+                    ticks={zoomTicks}
+                    tickFormatter={(cx: number) =>
+                      formatTick(timeline.toReal(cx), realVisibleRange)
+                    }
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      border: `1px solid ${colors.tooltipBorder}`,
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: colors.tooltipText,
+                    }}
+                    formatter={(value, name) => [
+                      typeof value === 'number'
+                        ? value.toFixed(3)
+                        : '—',
+                      name ?? '',
+                    ]}
+                    labelFormatter={(cx: unknown) => {
+                      const realTs = timeline.toReal(Number(cx))
+                      return new Date(realTs).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false,
+                      })
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="activity"
+                    name="Activity"
+                    stroke="#8b5cf6"
+                    strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {compressedMagData.length > 0 && (
+          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Total Magnitude (zoomed)
+            </h3>
+            <div className="h-[200px] w-full sm:h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={compressedMagData}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={colors.grid}
+                  />
+                  <XAxis
+                    dataKey="cx"
+                    type="number"
+                    domain={domain}
+                    allowDataOverflow
+                    ticks={zoomTicks}
+                    tickFormatter={(cx: number) =>
+                      formatTick(timeline.toReal(cx), realVisibleRange)
+                    }
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <YAxis
+                    domain={totalMagYDomain}
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                    tickFormatter={(v: number) => v.toFixed(2)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      border: `1px solid ${colors.tooltipBorder}`,
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: colors.tooltipText,
+                    }}
+                    formatter={(value, name) => [
+                      typeof value === 'number' ? value.toFixed(3) : '—',
+                      name ?? '',
+                    ]}
+                    labelFormatter={(cx: unknown) => {
+                      const realTs = timeline.toReal(Number(cx))
+                      return new Date(realTs).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false,
+                      })
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    name="Total Magnitude"
+                    stroke="#f59e0b"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {compressedMagData.length > 0 && (
+          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              X Axis (zoomed)
+            </h3>
+            <div className="h-[200px] w-full sm:h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={compressedMagData}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={colors.grid}
+                  />
+                  <XAxis
+                    dataKey="cx"
+                    type="number"
+                    domain={domain}
+                    allowDataOverflow
+                    ticks={zoomTicks}
+                    tickFormatter={(cx: number) =>
+                      formatTick(timeline.toReal(cx), realVisibleRange)
+                    }
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <YAxis
+                    domain={xAxisYDomain}
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                    tickFormatter={(v: number) => v.toFixed(2)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      border: `1px solid ${colors.tooltipBorder}`,
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: colors.tooltipText,
+                    }}
+                    formatter={(value, name) => [
+                      typeof value === 'number' ? value.toFixed(3) : '—',
+                      name ?? '',
+                    ]}
+                    labelFormatter={(cx: unknown) => {
+                      const realTs = timeline.toReal(Number(cx))
+                      return new Date(realTs).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false,
+                      })
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="x"
+                    name="X Axis"
+                    stroke="#f43f5e"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
