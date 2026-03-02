@@ -5,10 +5,14 @@ import { useSubscription } from '@/hooks/useSubscription'
 import { GET_SENSORS } from '@/queries/getSensors'
 import { GET_REPORTS_BY_SENSOR_ID } from '@/queries/getReportsBySensorId'
 import { GET_SIGNALS_BY_SENSOR_ID } from '@/queries/getSignalsBySensorId'
+import {
+  GET_MAG_SENSORS_BY_BUILDING_ID,
+  GET_MAG_REPORTS_BY_SENSOR_IDS,
+} from '@/queries/getMagDataByBuildingId'
 import { UPDATE_SENSOR_MAPPINGS } from '@/mutations/sensorMutations'
 import { LATEST_REPORT_SUBSCRIPTION } from '@/queries/reportSubscription'
 
-import type { Report, Sensor, Signal, SensorMappings } from '@/types'
+import type { MagReport, Report, Sensor, Signal, SensorMappings } from '@/types'
 import { parseSignalValue } from '@/types'
 
 interface SensorsResponse {
@@ -25,6 +29,22 @@ interface SignalsResponse {
 
 interface SubscriptionResponse {
   report: Report[]
+}
+
+interface MagSensorsResponse {
+  mag_to_building: { mag_id: number }[]
+}
+
+interface MagReportsResponse {
+  mag_report: MagReport[]
+}
+
+export interface MagChartPoint {
+  timestamp: number
+  x: number | null
+  y: number | null
+  z: number | null
+  total: number | null
 }
 
 export const SIGNAL_COLORS = [
@@ -173,6 +193,12 @@ export function useReportsPage(initialSensorId?: number | null) {
   const { data: signalsData, executeQuery: fetchSignals } =
     useGraphQL<SignalsResponse>(GET_SIGNALS_BY_SENSOR_ID)
 
+  const { executeQuery: fetchMagSensors } =
+    useGraphQL<MagSensorsResponse>(GET_MAG_SENSORS_BY_BUILDING_ID)
+
+  const { data: magReportsData, executeQuery: fetchMagReports } =
+    useGraphQL<MagReportsResponse>(GET_MAG_REPORTS_BY_SENSOR_IDS)
+
   const { executeQuery: executeMappingsUpdate } = useGraphQL<{
     update_sensor_by_pk: { id: number; mappings: SensorMappings }
   }>(UPDATE_SENSOR_MAPPINGS)
@@ -271,6 +297,47 @@ export function useReportsPage(initialSensorId?: number | null) {
     bufferRef.current = []
     lastSeenIdRef.current = null
   }, [reportsData])
+
+  // --- Mag data fetch ---
+
+  const [magSensorIds, setMagSensorIds] = useState<number[]>([])
+
+  const selectedBuildingId = useMemo(() => {
+    if (selectedSensorId === null || !sensorsData?.sensor) return null
+    const sensor = sensorsData.sensor.find((s) => s.id === selectedSensorId)
+    return sensor?.building_id ?? null
+  }, [selectedSensorId, sensorsData])
+
+  useEffect(() => {
+    if (selectedBuildingId === null) {
+      setMagSensorIds([])
+      return
+    }
+    fetchMagSensors({ buildingId: selectedBuildingId }).then((result) => {
+      if (!result?.mag_to_building?.length) {
+        setMagSensorIds([])
+        return
+      }
+      setMagSensorIds(result.mag_to_building.map((m) => m.mag_id))
+    })
+  }, [selectedBuildingId, fetchMagSensors])
+
+  useEffect(() => {
+    if (magSensorIds.length === 0) return
+    const { since, until } = computeTimeWindow(timeRange, periodOffset)
+    fetchMagReports({ sensorIds: magSensorIds, since, until })
+  }, [magSensorIds, timeRange, periodOffset, fetchMagReports])
+
+  const magChartData = useMemo<MagChartPoint[]>(() => {
+    if (!magReportsData?.mag_report?.length) return []
+    return magReportsData.mag_report.map((r) => ({
+      timestamp: new Date(r.created_at).getTime(),
+      x: r.x_axis_reading,
+      y: r.y_axis_reading,
+      z: r.z_axis_reading,
+      total: r.total_magnitude,
+    }))
+  }, [magReportsData])
 
   // --- Computed ---
 
@@ -402,6 +469,7 @@ export function useReportsPage(initialSensorId?: number | null) {
     sensorsLoading,
     reportsLoading,
     reportsError,
+    magChartData,
     parsedSignals,
     signalTypeIds,
     sensorMappings,

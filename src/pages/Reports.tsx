@@ -360,6 +360,7 @@ export default function Reports() {
     sensorsLoading,
     reportsLoading,
     reportsError,
+    magChartData,
     parsedSignals,
     signalTypeIds,
     sensorMappings,
