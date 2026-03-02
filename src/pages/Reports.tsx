@@ -559,6 +559,14 @@ export default function Reports() {
     })
   }, [tags, domain, timeline])
 
+  const compressedMagData = useMemo(() => {
+    if (magChartData.length === 0 || timeline.points.length === 0) return []
+    const [left, right] = domain
+    return magChartData
+      .map((p) => ({ ...p, cx: timeline.toCompressed(p.timestamp) }))
+      .filter((p) => p.cx >= left && p.cx <= right)
+  }, [magChartData, timeline, domain])
+
   const enrichedData = useMemo(
     () => buildEnrichedData(visibleData, parsedSignals),
     [visibleData, parsedSignals],
@@ -1205,6 +1213,119 @@ export default function Reports() {
                 )}
               </LineChart>
             </ResponsiveContainer>
+          </div>
+        )}
+
+        {compressedMagData.length > 0 && (
+          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Building Mag Data
+            </h3>
+            <div className="h-[200px] w-full sm:h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={compressedMagData}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={colors.grid}
+                  />
+                  <XAxis
+                    dataKey="cx"
+                    type="number"
+                    domain={domain}
+                    allowDataOverflow
+                    ticks={zoomTicks}
+                    tickFormatter={(cx: number) =>
+                      formatTick(timeline.toReal(cx), realVisibleRange)
+                    }
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      border: `1px solid ${colors.tooltipBorder}`,
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: colors.tooltipText,
+                    }}
+                    formatter={(value, name) => [
+                      typeof value === 'number' ? value.toFixed(2) : '—',
+                      name ?? '',
+                    ]}
+                    labelFormatter={(cx: unknown) => {
+                      const realTs = timeline.toReal(Number(cx))
+                      return new Date(realTs).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false,
+                      })
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="x"
+                    name="X Axis"
+                    stroke="#f43f5e"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="y"
+                    name="Y Axis"
+                    stroke="#10b981"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="z"
+                    name="Z Axis"
+                    stroke="#3b82f6"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    name="Total Magnitude"
+                    stroke="#f59e0b"
+                    strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2 w-2 rounded-full bg-[#f43f5e]" /> X Axis
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2 w-2 rounded-full bg-[#10b981]" /> Y Axis
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2 w-2 rounded-full bg-[#3b82f6]" /> Z Axis
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2 w-2 rounded-full bg-[#f59e0b]" /> Total Magnitude
+              </span>
+            </div>
           </div>
         )}
 
