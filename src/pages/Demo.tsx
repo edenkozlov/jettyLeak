@@ -14,7 +14,11 @@ import {
 import { Link } from 'react-router'
 
 import logo from '@/assets/logoTransparent.png'
+import BuildingFootprint from '@/components/BuildingFootprint'
+import BuildingMap3D from '@/components/BuildingMap3D'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useBuildingDetail } from '@/hooks/useBuildingDetail'
+import { useBuildingFootprint } from '@/hooks/useBuildingFootprint'
 import { useChartZoomPan } from '@/hooks/useChartZoomPan'
 import {
   getSignalColorByType,
@@ -202,6 +206,7 @@ export default function Demo() {
     connected,
     sensorsLoading,
     reportsLoading,
+    magChartData,
     parsedSignals,
     signalTypeIds,
     sensorMappings,
@@ -209,6 +214,14 @@ export default function Demo() {
     handleTimeRangeChange,
     handleToggleLive,
   } = useReportsPage()
+
+  const { building } = useBuildingDetail('1')
+  const bLat = building?.latitude ?? null
+  const bLon = building?.longitude ?? null
+  const { footprints } = useBuildingFootprint(bLat, bLon)
+  const displayFootprints = building?.footprint
+    ? [{ id: building.id, coordinates: building.footprint }]
+    : footprints
 
   const timeline = useMemo(() => compressTimeline(chartData), [chartData])
 
@@ -270,6 +283,14 @@ export default function Demo() {
     return ticks
   }, [visibleData, realVisibleRange, timeline])
 
+  const compressedMagData = useMemo(() => {
+    if (magChartData.length === 0 || timeline.points.length === 0) return []
+    const [left, right] = domain
+    return magChartData
+      .map((p) => ({ ...p, cx: timeline.toCompressed(p.timestamp) }))
+      .filter((p) => p.cx >= left && p.cx <= right)
+  }, [magChartData, timeline, domain])
+
   const enrichedData = useMemo(() => buildEnrichedData(timeline.points, parsedSignals), [timeline, parsedSignals])
 
   const allLineKeys = useMemo(() => {
@@ -316,179 +337,291 @@ export default function Demo() {
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10">
-        {/* Context */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">Live Water Flow</h1>
-            {isLive && connected && (
-              <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
-                </span>
-                Live
-              </span>
-            )}
-          </div>
-          <p className="mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-            Real data streaming from Flomo sensors installed at our Montreal office and warehouse.
-          </p>
-        </div>
+      <div className="mx-auto max-w-7xl px-3 py-3 sm:px-4 sm:py-4 lg:h-[calc(100vh-4rem)] lg:overflow-hidden">
+        <div className="grid gap-3 sm:gap-4 lg:grid-cols-2 lg:grid-rows-2 lg:h-full">
 
-        {/* Graph card */}
-        <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
-          {/* Controls */}
-          <div className="mb-4 space-y-3">
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+          {/* Live Water Flow chart */}
+          <div className="flex flex-col rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:min-h-0">
+            <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 px-3 py-2 dark:border-gray-700 sm:px-4 sm:py-3">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white">Live Water Flow</h2>
+              {isLive && connected && (
+                <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-green-500" />
+                  </span>
+                  Live
+                </span>
+              )}
               {selectedSensorName && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
-                  Sensor: <span className="font-medium text-gray-900 dark:text-white">{selectedSensorName}</span>
-                  {isLive && <span className="ml-1 text-xs text-gray-400">({chartData.length} pts)</span>}
-                </p>
+                <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                  {selectedSensorName}
+                </span>
               )}
               {chartData.length >= 2 && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
-                  Total:{' '}
-                  <span className="font-semibold text-gray-900 dark:text-white">
-                    {totalLiters < 1 ? totalLiters.toFixed(2) : totalLiters.toFixed(1)} L
-                  </span>
-                </p>
+                <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                  · <span className="font-semibold text-gray-900 dark:text-white">{totalLiters < 1 ? totalLiters.toFixed(2) : totalLiters.toFixed(1)} L</span>
+                </span>
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex overflow-x-auto rounded-lg border border-gray-200 bg-gray-100 p-0.5 text-[11px] font-medium dark:border-gray-700 dark:bg-gray-900 sm:p-1 sm:text-xs">
-                {TIME_RANGE_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => onTimeRangeChange(opt.value as TimeRange)}
-                    className={`rounded-md px-2 py-1 transition-colors sm:px-3 sm:py-1.5 ${rangeButtonClass(timeRange === opt.value)}`}
-                  >
-                    {opt.label}
+            <div className="space-y-2 px-3 pt-2 sm:px-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex overflow-x-auto rounded-lg border border-gray-200 bg-gray-100 p-0.5 text-[10px] font-medium dark:border-gray-700 dark:bg-gray-900 sm:text-[11px]">
+                  {TIME_RANGE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => onTimeRangeChange(opt.value as TimeRange)}
+                      className={`rounded-md px-2 py-0.5 transition-colors sm:px-2.5 sm:py-1 ${rangeButtonClass(timeRange === opt.value)}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={handleToggleLive}
+                  className={`rounded-lg px-2 py-0.5 text-[10px] font-medium transition-colors sm:px-2.5 sm:py-1 sm:text-[11px] ${
+                    isLive ? 'bg-green-600 text-white hover:bg-green-500' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'
+                  }`}
+                >
+                  {isLive ? 'Pause' : 'Resume'}
+                </button>
+
+                <select
+                  value={selectedSensorId ?? ''}
+                  onChange={onSensorChange}
+                  className="min-w-0 truncate rounded-lg border border-gray-300 bg-white px-2 py-0.5 text-[10px] text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:px-2.5 sm:py-1 sm:text-[11px]"
+                >
+                  {sensors.map((sensor) => (
+                    <option key={sensor.id} value={sensor.id}>
+                      {sensor.name ?? `Sensor #${sensor.id}`}
+                      {sensor.building?.name ? ` — ${sensor.building.name}` : ''}
+                    </option>
+                  ))}
+                </select>
+
+                <div className="inline-flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-700 dark:bg-gray-900">
+                  {[
+                    { fn: panLeft, icon: '◀', title: 'Pan left' },
+                    { fn: zoomOut, icon: '−', title: 'Zoom out' },
+                    { fn: zoomIn, icon: '+', title: 'Zoom in' },
+                    { fn: panRight, icon: '▶', title: 'Pan right' },
+                  ].map((b) => (
+                    <button key={b.title} onClick={b.fn} className="rounded-md px-1 py-0.5 text-[10px] text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:px-1.5 sm:text-xs" title={b.title}>
+                      {b.icon}
+                    </button>
+                  ))}
+                </div>
+                {isZoomed && (
+                  <button onClick={resetZoom} className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-medium text-indigo-600 transition-colors hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 sm:text-[11px]">
+                    Reset
                   </button>
-                ))}
+                )}
               </div>
 
-              <button
-                onClick={handleToggleLive}
-                className={`rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors sm:px-3 sm:py-1.5 sm:text-xs ${
-                  isLive ? 'bg-green-600 text-white hover:bg-green-500' : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'
-                }`}
-              >
-                {isLive ? 'Pause' : 'Resume'}
-              </button>
-
-              <select
-                value={selectedSensorId ?? ''}
-                onChange={onSensorChange}
-                className="min-w-0 truncate rounded-lg border border-gray-300 bg-white px-2 py-1 text-[11px] text-gray-900 focus:border-indigo-500 focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:px-3 sm:py-1.5 sm:text-xs"
-              >
-                {sensors.map((sensor) => (
-                  <option key={sensor.id} value={sensor.id}>
-                    {sensor.name ?? `Sensor #${sensor.id}`}
-                    {sensor.building?.name ? ` — ${sensor.building.name}` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          {/* Chart controls */}
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-700 dark:bg-gray-900">
-              {[
-                { fn: panLeft, icon: '◀', title: 'Pan left' },
-                { fn: zoomOut, icon: '−', title: 'Zoom out' },
-                { fn: zoomIn, icon: '+', title: 'Zoom in' },
-                { fn: panRight, icon: '▶', title: 'Pan right' },
-              ].map((b) => (
-                <button key={b.title} onClick={b.fn} className="rounded-md px-1.5 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:px-2 sm:text-sm" title={b.title}>
-                  {b.icon}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              {isZoomed && (
-                <button onClick={resetZoom} className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] font-medium text-indigo-600 transition-colors hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 sm:px-2.5 sm:text-xs">
-                  Reset
-                </button>
-              )}
-              <span className="hidden text-xs text-gray-400 sm:inline">Drag to zoom · Scroll to zoom</span>
-            </div>
-          </div>
-
-          {/* Signal legend */}
-          {signalTypeIds.length > 0 && (
-            <div className="mb-3 flex flex-wrap items-center gap-3">
-              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Signals:</span>
-              {signalTypeIds.map((typeId) => (
-                <div key={typeId} className="flex items-center gap-1.5">
-                  <span className="inline-block h-0.5 w-4 rounded-full" style={{ backgroundColor: getSignalColorByType(typeId) }} />
-                  <span className="text-xs text-gray-600 dark:text-gray-300">{getSignalLabel(typeId, sensorMappings)}</span>
+              {signalTypeIds.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">Signals:</span>
+                  {signalTypeIds.map((typeId) => (
+                    <div key={typeId} className="flex items-center gap-1">
+                      <span className="inline-block h-0.5 w-3 rounded-full" style={{ backgroundColor: getSignalColorByType(typeId) }} />
+                      <span className="text-[10px] text-gray-600 dark:text-gray-300">{getSignalLabel(typeId, sensorMappings)}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
             </div>
-          )}
 
-          {/* Chart */}
-          {reportsLoading ? (
-            <div className="flex h-[280px] items-center justify-center text-gray-500 dark:text-gray-400 sm:h-[400px]">Loading chart…</div>
-          ) : chartData.length === 0 ? (
-            <div className="flex h-[280px] items-center justify-center text-gray-400 sm:h-[400px]">No data for this time range</div>
-          ) : (
-            <div ref={chartWrapperRef} className="h-[280px] select-none sm:h-[400px]" onMouseLeave={cancelSelection}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={enrichedData} onMouseDown={onChartMouseDown} onMouseMove={onChartMouseMove} onMouseUp={onChartMouseUp}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
-                  <XAxis
-                    dataKey="cx"
-                    type="number"
-                    domain={domain}
-                    allowDataOverflow
-                    ticks={zoomTicks}
-                    tickFormatter={(cx: number) => formatTick(timeline.toReal(cx), realVisibleRange)}
-                    tick={{ fontSize: 11, fill: colors.axis }}
-                    tickLine={{ stroke: colors.grid }}
-                    axisLine={{ stroke: colors.grid }}
-                  />
-                  <YAxis
-                    domain={['auto', 'auto']}
-                    tickFormatter={(v: number) => toLph(v).toFixed(0)}
-                    tick={{ fontSize: 11, fill: colors.axis }}
-                    tickLine={{ stroke: colors.grid }}
-                    axisLine={{ stroke: colors.grid }}
-                    label={{ value: 'L/h', angle: -90, position: 'insideLeft', style: { fontSize: 12, fill: colors.axis } }}
-                  />
-                  <Tooltip content={<CustomTooltip colors={colors} />} />
-                  {refAreaLeft !== null && refAreaRight !== null && refAreaLeft !== refAreaRight && (
-                    <ReferenceArea x1={refAreaLeft} x2={refAreaRight} strokeOpacity={0.3} fill={colors.line} fillOpacity={0.15} />
-                  )}
-                  {allLineKeys.map((key) => {
-                    const typeMatch = key.match(/^flow_type_(\d+)$/)
-                    const color = typeMatch ? getSignalColorByType(Number(typeMatch[1])) : colors.line
-                    return (
-                      <Line
-                        key={key}
-                        type="monotone"
-                        dataKey={key}
-                        name={key}
-                        stroke={color}
-                        strokeWidth={1.5}
-                        dot={false}
-                        activeDot={{ r: 3 }}
-                        label={(lp: RechartLabelProps) => renderValueLabel(lp, enrichedData.length, color)}
-                        isAnimationActive={false}
-                        connectNulls={false}
+            <div className="min-h-0 flex-1 px-3 pb-3 pt-1 sm:px-4 sm:pb-4">
+              {reportsLoading ? (
+                <div className="flex h-full min-h-[200px] items-center justify-center text-gray-500 dark:text-gray-400">Loading chart…</div>
+              ) : chartData.length === 0 ? (
+                <div className="flex h-full min-h-[200px] items-center justify-center text-gray-400">No data for this time range</div>
+              ) : (
+                <div ref={chartWrapperRef} className="h-full min-h-[200px] select-none" onMouseLeave={cancelSelection}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={enrichedData} onMouseDown={onChartMouseDown} onMouseMove={onChartMouseMove} onMouseUp={onChartMouseUp}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
+                      <XAxis
+                        dataKey="cx"
+                        type="number"
+                        domain={domain}
+                        allowDataOverflow
+                        ticks={zoomTicks}
+                        tickFormatter={(cx: number) => formatTick(timeline.toReal(cx), realVisibleRange)}
+                        tick={{ fontSize: 10, fill: colors.axis }}
+                        tickLine={{ stroke: colors.grid }}
+                        axisLine={{ stroke: colors.grid }}
                       />
-                    )
-                  })}
-                </LineChart>
-              </ResponsiveContainer>
+                      <YAxis
+                        domain={['auto', 'auto']}
+                        tickFormatter={(v: number) => toLph(v).toFixed(0)}
+                        tick={{ fontSize: 10, fill: colors.axis }}
+                        tickLine={{ stroke: colors.grid }}
+                        axisLine={{ stroke: colors.grid }}
+                        label={{ value: 'L/h', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: colors.axis } }}
+                      />
+                      <Tooltip content={<CustomTooltip colors={colors} />} />
+                      {refAreaLeft !== null && refAreaRight !== null && refAreaLeft !== refAreaRight && (
+                        <ReferenceArea x1={refAreaLeft} x2={refAreaRight} strokeOpacity={0.3} fill={colors.line} fillOpacity={0.15} />
+                      )}
+                      {allLineKeys.map((key) => {
+                        const typeMatch = key.match(/^flow_type_(\d+)$/)
+                        const color = typeMatch ? getSignalColorByType(Number(typeMatch[1])) : colors.line
+                        return (
+                          <Line
+                            key={key}
+                            type="monotone"
+                            dataKey={key}
+                            name={key}
+                            stroke={color}
+                            strokeWidth={1.5}
+                            dot={false}
+                            activeDot={{ r: 3 }}
+                            label={(lp: RechartLabelProps) => renderValueLabel(lp, enrichedData.length, color)}
+                            isAnimationActive={false}
+                            connectNulls={false}
+                          />
+                        )
+                      })}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </div>
 
+          {/* 3D Building View */}
+          <div className="flex flex-col rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:min-h-0">
+            <div className="border-b border-gray-200 px-3 py-2 dark:border-gray-700 sm:px-4 sm:py-3">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white">
+                3D View
+                {building?.name && <span className="ml-2 font-normal text-gray-400">· {building.name}</span>}
+              </h2>
+            </div>
+            <div className="min-h-0 flex-1">
+              {bLat != null && bLon != null ? (
+                <BuildingMap3D
+                  latitude={bLat}
+                  longitude={bLon}
+                  className="h-full min-h-[240px] rounded-b-xl"
+                  savedFootprint={building?.footprint}
+                />
+              ) : (
+                <div className="flex h-full min-h-[240px] items-center justify-center rounded-b-xl">
+                  <p className="text-sm text-gray-400">{building ? 'No coordinates available' : 'Loading building…'}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Building Footprint */}
+          <div className="flex flex-col rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:min-h-0">
+            <div className="border-b border-gray-200 px-3 py-2 dark:border-gray-700 sm:px-4 sm:py-3">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white">
+                Building Footprint
+                {building?.full_address && <span className="ml-2 font-normal text-gray-400">· {building.full_address}</span>}
+              </h2>
+            </div>
+            <div className="min-h-0 flex-1">
+              {displayFootprints.length > 0 ? (
+                <BuildingFootprint
+                  footprints={displayFootprints}
+                  sensors={building?.sensors ?? []}
+                  numberOfFloors={building?.number_of_floors ?? 1}
+                  fixtures={building?.fixtures ?? []}
+                  className="h-full min-h-[240px] rounded-b-xl"
+                />
+              ) : (
+                <div className="flex h-full min-h-[240px] items-center justify-center rounded-b-xl">
+                  <p className="text-sm text-gray-400">{building ? 'No footprint available' : 'Loading building…'}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Magnetometer data */}
+          <div className="flex flex-col rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 lg:min-h-0">
+            <div className="flex items-center justify-between border-b border-gray-200 px-3 py-2 dark:border-gray-700 sm:px-4 sm:py-3">
+              <h2 className="text-sm font-bold text-gray-900 dark:text-white">Building Mag Data</h2>
+              <div className="flex flex-wrap gap-2 text-[10px] text-gray-500 dark:text-gray-400">
+                <span className="flex items-center gap-1">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#f43f5e]" /> X
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#10b981]" /> Y
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#3b82f6]" /> Z
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#f59e0b]" /> Total
+                </span>
+              </div>
+            </div>
+            <div className="min-h-0 flex-1 px-3 pb-3 pt-1 sm:px-4 sm:pb-4">
+              {compressedMagData.length > 0 ? (
+                <div className="h-full min-h-[200px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={compressedMagData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
+                      <XAxis
+                        dataKey="cx"
+                        type="number"
+                        domain={domain}
+                        allowDataOverflow
+                        ticks={zoomTicks}
+                        tickFormatter={(cx: number) => formatTick(timeline.toReal(cx), realVisibleRange)}
+                        tick={{ fontSize: 10, fill: colors.axis }}
+                        tickLine={{ stroke: colors.grid }}
+                        axisLine={{ stroke: colors.grid }}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10, fill: colors.axis }}
+                        tickLine={{ stroke: colors.grid }}
+                        axisLine={{ stroke: colors.grid }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: colors.tooltipBg,
+                          border: `1px solid ${colors.tooltipBorder}`,
+                          borderRadius: 8,
+                          fontSize: 11,
+                          color: colors.tooltipText,
+                        }}
+                        formatter={(value, name) => [
+                          typeof value === 'number' ? value.toFixed(2) : '—',
+                          name ?? '',
+                        ]}
+                        labelFormatter={(cx: unknown) => {
+                          const realTs = timeline.toReal(Number(cx))
+                          return new Date(realTs).toLocaleString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit',
+                            hour12: false,
+                          })
+                        }}
+                      />
+                      <Line type="monotone" dataKey="x" name="X Axis" stroke="#f43f5e" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                      <Line type="monotone" dataKey="y" name="Y Axis" stroke="#10b981" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                      <Line type="monotone" dataKey="z" name="Z Axis" stroke="#3b82f6" strokeWidth={1.5} dot={false} isAnimationActive={false} />
+                      <Line type="monotone" dataKey="total" name="Total Magnitude" stroke="#f59e0b" strokeWidth={2} dot={false} isAnimationActive={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="flex h-full min-h-[200px] items-center justify-center text-gray-400">
+                  No magnetometer data
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   )
