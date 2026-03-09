@@ -427,6 +427,17 @@ export function useReportsPage(initialSensorId?: number | null) {
 
   const sensors = useMemo(() => sensorsData?.sensor ?? [], [sensorsData])
 
+  const selectedSensor = useMemo(
+    () => sensors.find((s) => s.id === selectedSensorId) ?? null,
+    [sensors, selectedSensorId],
+  )
+
+  const sensorMultiplier = useMemo(
+    () => selectedSensor?.multiplier ?? 1,
+    [selectedSensor],
+  )
+  multiplierRef.current = sensorMultiplier
+
   const rawChartData = useMemo(() => {
     if (!isLive || timeRange === 'all' || periodOffset > 0) {
       if (!reportsData?.report?.length) return []
@@ -476,17 +487,6 @@ export function useReportsPage(initialSensorId?: number | null) {
     unique.sort((a, b) => a - b)
     return unique
   }, [parsedSignals])
-
-  const selectedSensor = useMemo(
-    () => sensors.find((s) => s.id === selectedSensorId) ?? null,
-    [sensors, selectedSensorId],
-  )
-
-  const sensorMultiplier = useMemo(
-    () => selectedSensor?.multiplier ?? 1,
-    [selectedSensor],
-  )
-  multiplierRef.current = sensorMultiplier
 
   const sensorMappings = useMemo(
     () => selectedSensor?.mappings ?? null,
