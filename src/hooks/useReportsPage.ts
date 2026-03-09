@@ -144,10 +144,10 @@ function computeTimeWindow(
   }
 }
 
-function reportToPoint(r: Report): ChartPoint {
+function reportToPoint(r: Report, multiplier: number): ChartPoint {
   return {
     timestamp: new Date(r.created_at).getTime(),
-    flowValue: r.flow_value != null ? -r.flow_value : r.flow_value,
+    flowValue: r.flow_value != null ? -r.flow_value * multiplier : r.flow_value,
   }
 }
 
@@ -220,6 +220,7 @@ export function useReportsPage(initialSensorId?: number | null) {
   const lastSeenIdRef = useRef<number | null>(null)
   const timeRangeRef = useRef(timeRange)
   timeRangeRef.current = timeRange
+  const multiplierRef = useRef(1)
 
   // --- Subscription ---
 
@@ -240,7 +241,7 @@ export function useReportsPage(initialSensorId?: number | null) {
     const report = subData.report[0]!
     if (report.id === lastSeenIdRef.current) return
     lastSeenIdRef.current = report.id
-    bufferRef.current.push(reportToPoint(report))
+    bufferRef.current.push(reportToPoint(report, multiplierRef.current))
   }, [subData])
 
   useEffect(() => {
@@ -292,12 +293,13 @@ export function useReportsPage(initialSensorId?: number | null) {
 
   useEffect(() => {
     if (!reportsData?.report) return
+    const m = multiplierRef.current
     const points = [...reportsData.report]
       .sort(
         (a, b) =>
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
       )
-      .map(reportToPoint)
+      .map((r) => reportToPoint(r, m))
     setLiveChartData(points)
     bufferRef.current = []
     lastSeenIdRef.current = null
@@ -434,10 +436,10 @@ export function useReportsPage(initialSensorId?: number | null) {
             new Date(a.created_at).getTime() -
             new Date(b.created_at).getTime(),
         )
-        .map(reportToPoint)
+        .map((r) => reportToPoint(r, sensorMultiplier))
     }
     return liveChartData
-  }, [isLive, timeRange, periodOffset, reportsData, liveChartData])
+  }, [isLive, timeRange, periodOffset, reportsData, liveChartData, sensorMultiplier])
 
   const chartData = useMemo(
     () => downsample(rawChartData, MAX_CHART_POINTS),
@@ -479,6 +481,12 @@ export function useReportsPage(initialSensorId?: number | null) {
     () => sensors.find((s) => s.id === selectedSensorId) ?? null,
     [sensors, selectedSensorId],
   )
+
+  const sensorMultiplier = useMemo(
+    () => selectedSensor?.multiplier ?? 1,
+    [selectedSensor],
+  )
+  multiplierRef.current = sensorMultiplier
 
   const sensorMappings = useMemo(
     () => selectedSensor?.mappings ?? null,
