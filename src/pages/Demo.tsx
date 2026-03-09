@@ -304,7 +304,7 @@ export default function Demo() {
   }, [enrichedData])
 
 
-  const onSensorChange = (e: React.ChangeEvent<HTMLSelectElement>) => handleSensorChange(e)
+  const onSensorChange = (e: React.ChangeEvent<HTMLSelectElement>) => handleSensorChange(Number(e.target.value))
   const onTimeRangeChange = (range: TimeRange) => handleTimeRangeChange(range)
 
   if (sensorsLoading) {
