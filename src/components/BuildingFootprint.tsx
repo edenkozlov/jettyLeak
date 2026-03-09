@@ -911,7 +911,7 @@ export default function BuildingFootprint({
                       <button
                         onClick={() =>
                           navigate(
-                            `/dashboard/reports?sensor=${sensor.id}`,
+                            `/dashboard/reports/${sensor.id}`,
                           )
                         }
                         className="w-full rounded-md bg-indigo-600 px-2 py-1 text-xs text-white hover:bg-indigo-700"

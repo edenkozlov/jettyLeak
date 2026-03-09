@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router'
 import type { Props as RechartLabelProps } from 'recharts/types/component/Label'
 import type { TooltipProps } from 'recharts'
 import {
@@ -346,9 +346,9 @@ function CustomTooltip({ active, payload, colors }: CustomTooltipProps) {
 export default function Reports() {
   const { mode } = useTheme()
   const colors = CHART_COLORS[mode]
-  const [searchParams] = useSearchParams()
-  const sensorParam = searchParams.get('sensor')
-  const initialSensorId = sensorParam ? Number(sensorParam) : null
+  const navigate = useNavigate()
+  const { sensorId: sensorIdParam } = useParams<{ sensorId: string }>()
+  const paramSensorId = sensorIdParam ? Number(sensorIdParam) : null
 
   const {
     sensors,
@@ -372,7 +372,14 @@ export default function Reports() {
     handleToggleLive,
     handlePreviousPeriod,
     handleNextPeriod,
-  } = useReportsPage(initialSensorId)
+  } = useReportsPage(paramSensorId)
+
+  useEffect(() => {
+    if (paramSensorId === null && sensors.length > 0) {
+      const defaultId = sensors[sensors.length - 1]!.id
+      navigate(`/dashboard/reports/${defaultId}`, { replace: true })
+    }
+  }, [paramSensorId, sensors, navigate])
 
   const periodLabel = useMemo(() => {
     if (periodOffset === 0 || timeRange === 'all') return null
@@ -508,11 +515,13 @@ export default function Reports() {
 
   const onSensorChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const newId = Number(e.target.value)
       resetZoom()
       setSelectedTag(null)
-      handleSensorChange(e)
+      handleSensorChange(newId)
+      navigate(`/dashboard/reports/${newId}`)
     },
-    [resetZoom, setSelectedTag, handleSensorChange],
+    [resetZoom, setSelectedTag, handleSensorChange, navigate],
   )
 
   const visibleData = useMemo(() => {

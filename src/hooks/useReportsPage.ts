@@ -222,6 +222,16 @@ export function useReportsPage(initialSensorId?: number | null) {
   timeRangeRef.current = timeRange
   const multiplierRef = useRef(1)
 
+  useEffect(() => {
+    if (initialSensorId != null && initialSensorId !== selectedSensorId) {
+      setSelectedSensorId(initialSensorId)
+      setPeriodOffset(0)
+      setLiveChartData([])
+      bufferRef.current = []
+      lastSeenIdRef.current = null
+    }
+  }, [initialSensorId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // --- Subscription ---
 
   const subscriptionVars = useMemo(
@@ -501,9 +511,10 @@ export function useReportsPage(initialSensorId?: number | null) {
   // --- Handlers ---
 
   const handleSensorChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      setSelectedSensorId(Number(e.target.value))
+    (sensorId: number) => {
+      setSelectedSensorId(sensorId)
       setPeriodOffset(0)
+      setLiveChartData([])
       bufferRef.current = []
       lastSeenIdRef.current = null
     },
