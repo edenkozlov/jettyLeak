@@ -12,6 +12,11 @@ export const LATEST_MAG_REPORT_SUBSCRIPTION = `
       z_axis_reading
       total_magnitude
       sensor_id
+      band_energy_10s
+      band_energy_60s
+      band_energy_5m
+      dominant_freq_hz
+      vibration_rpm
     }
   }
 `

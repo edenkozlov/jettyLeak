@@ -7,6 +7,7 @@ export const LATEST_REPORT_SUBSCRIPTION = `
     ) {
       id
       created_at
+      sensor_id
       flow_value
       temp_value
     }

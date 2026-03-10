@@ -50,8 +50,7 @@ export default function App() {
               <Route path="buildings" element={<Buildings />} />
               <Route path="buildings/:id" element={<BuildingDetail />} />
               <Route path="sensors" element={<Sensors />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="reports/:sensorId" element={<Reports />} />
+              <Route path="reports/:sensorId?" element={<Reports />} />
             </Route>
           </Routes>
         </BrowserRouter>

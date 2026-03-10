@@ -25,11 +25,15 @@ export function useSubscription<T = Record<string, unknown>>(
 
   useEffect(() => {
     if (!enabled) {
+      setData(null)
+      setError(null)
       setConnected(false)
       return
     }
 
+    setData(null)
     setError(null)
+    setConnected(false)
 
     const parsedVars = JSON.parse(varsKey) as Record<string, unknown>
 

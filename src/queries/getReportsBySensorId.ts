@@ -1,11 +1,12 @@
 export const GET_REPORTS_BY_SENSOR_ID = `
-  query GetReportsBySensorId($sensorId: bigint!, $since: timestamptz!, $until: timestamptz!) {
+  query GetReportsBySensorId($sensorId: bigint!, $since: timestamptz!, $until: timestamptz!, $limit: Int) {
     report(
       where: {
         sensor_id: { _eq: $sensorId }
         created_at: { _gte: $since, _lte: $until }
       }
       order_by: { created_at: asc }
+      limit: $limit
     ) {
       id
       created_at

@@ -3,11 +3,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGraphQL } from '@/hooks/useGraphQL'
 import { useSubscription } from '@/hooks/useSubscription'
 import { GET_SENSORS } from '@/queries/getSensors'
-import { GET_REPORTS_BY_SENSOR_ID } from '@/queries/getReportsBySensorId'
-import { GET_SIGNALS_BY_SENSOR_ID } from '@/queries/getSignalsBySensorId'
+import { GET_SENSOR_DATA } from '@/queries/getSensorData'
 import {
   GET_MAG_SENSORS_BY_BUILDING_ID,
-  GET_MAG_REPORTS_BY_SENSOR_IDS,
 } from '@/queries/getMagDataByBuildingId'
 import { UPDATE_SENSOR_MAPPINGS } from '@/mutations/sensorMutations'
 import { LATEST_REPORT_SUBSCRIPTION } from '@/queries/reportSubscription'
@@ -20,12 +18,10 @@ interface SensorsResponse {
   sensor: Sensor[]
 }
 
-interface ReportsResponse {
+interface SensorDataResponse {
   report: Report[]
-}
-
-interface SignalsResponse {
   signal: Signal[]
+  mag_report: MagReport[]
 }
 
 interface SubscriptionResponse {
@@ -34,10 +30,6 @@ interface SubscriptionResponse {
 
 interface MagSensorsResponse {
   mag_to_building: { mag_id: number }[]
-}
-
-interface MagReportsResponse {
-  mag_report: MagReport[]
 }
 
 interface MagSubscriptionResponse {
@@ -50,6 +42,12 @@ export interface MagChartPoint {
   y: number | null
   z: number | null
   total: number | null
+  angle: number | null
+  bandEnergy10s: number | null
+  bandEnergy60s: number | null
+  bandEnergy5m: number | null
+  dominantFreqHz: number | null
+  vibrationRpm: number | null
 }
 
 export const SIGNAL_COLORS = [
@@ -88,7 +86,7 @@ export interface ChartPoint {
   flowValue: number | null
 }
 
-export type TimeRange = '1m' | '5m' | '15m' | '1h' | '6h' | '24h' | 'all'
+export type TimeRange = '1m' | '5m' | '15m' | '1h' | '6h' | '12h' | '24h' | 'all' | 'custom'
 
 export const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
   { value: '1m', label: '1 min' },
@@ -96,6 +94,7 @@ export const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
   { value: '15m', label: '15 min' },
   { value: '1h', label: '1 hour' },
   { value: '6h', label: '6 hours' },
+  { value: '12h', label: '12 hours' },
   { value: '24h', label: '24 hours' },
   { value: 'all', label: 'All' },
 ]
@@ -106,8 +105,10 @@ export const RANGE_MS: Record<TimeRange, number> = {
   '15m': 15 * 60_000,
   '1h': 60 * 60_000,
   '6h': 6 * 60 * 60_000,
+  '12h': 12 * 60 * 60_000,
   '24h': 24 * 60 * 60_000,
   all: 0,
+  custom: 0,
 }
 
 export const TICK_INTERVAL_MS: Record<TimeRange, number> = {
@@ -116,19 +117,36 @@ export const TICK_INTERVAL_MS: Record<TimeRange, number> = {
   '15m': 5 * 60_000,
   '1h': 10 * 60_000,
   '6h': 60 * 60_000,
+  '12h': 2 * 60 * 60_000,
   '24h': 3 * 60 * 60_000,
   all: 6 * 60 * 60_000,
+  custom: 0, // computed dynamically
 }
 
-const FETCH_BUFFER = 2
+function pickTickInterval(rangeMs: number): number {
+  if (rangeMs <= 60_000) return 10_000
+  if (rangeMs <= 5 * 60_000) return 60_000
+  if (rangeMs <= 15 * 60_000) return 5 * 60_000
+  if (rangeMs <= 60 * 60_000) return 10 * 60_000
+  if (rangeMs <= 6 * 60 * 60_000) return 60 * 60_000
+  if (rangeMs <= 12 * 60 * 60_000) return 2 * 60 * 60_000
+  if (rangeMs <= 24 * 60 * 60_000) return 3 * 60 * 60_000
+  return 6 * 60 * 60_000
+}
+
 const MAX_CHART_POINTS = 1500
 const FLUSH_INTERVAL_MS = 500
+
 
 function computeTimeWindow(
   range: TimeRange,
   offset: number,
+  customWindow?: { since: string; until: string },
 ): { since: string; until: string } {
-  if (range === 'all') {
+  if (range === 'custom' && customWindow) {
+    return customWindow
+  }
+  if (range === 'all' || range === 'custom') {
     return {
       since: '1970-01-01T00:00:00Z',
       until: new Date(Date.now() + 86_400_000).toISOString(),
@@ -151,16 +169,44 @@ function reportToPoint(r: Report, multiplier: number): ChartPoint {
   }
 }
 
-function trimToWindow(points: ChartPoint[], range: TimeRange): ChartPoint[] {
-  if (range === 'all') return points
-  const cutoff = Date.now() - RANGE_MS[range] * FETCH_BUFFER
-  return points.filter((p) => p.timestamp >= cutoff)
+function magToPoint(r: MagReport): MagChartPoint {
+  return {
+    timestamp: new Date(r.created_at).getTime(),
+    x: r.x_axis_reading,
+    y: r.y_axis_reading,
+    z: r.z_axis_reading,
+    total: r.total_magnitude,
+    angle:
+      r.x_axis_reading != null && r.y_axis_reading != null
+        ? (Math.atan2(r.y_axis_reading, r.x_axis_reading) * 180) / Math.PI
+        : null,
+    bandEnergy10s: r.band_energy_10s,
+    bandEnergy60s: r.band_energy_60s,
+    bandEnergy5m: r.band_energy_5m,
+    dominantFreqHz: r.dominant_freq_hz,
+    vibrationRpm: r.vibration_rpm,
+  }
 }
 
-function downsample(points: ChartPoint[], maxPoints: number): ChartPoint[] {
+function filterPointsToWindow<T extends { timestamp: number }>(
+  points: T[],
+  range: TimeRange,
+  offset: number,
+  customWindow?: { since: string; until: string },
+): T[] {
+  if (range === 'all') return points
+
+  const { since, until } = computeTimeWindow(range, offset, customWindow)
+  const sinceMs = new Date(since).getTime()
+  const untilMs = new Date(until).getTime()
+
+  return points.filter((point) => point.timestamp >= sinceMs && point.timestamp <= untilMs)
+}
+
+function downsample<T>(points: T[], maxPoints: number): T[] {
   if (points.length <= maxPoints) return points
   const step = (points.length - 1) / (maxPoints - 1)
-  const result: ChartPoint[] = []
+  const result: T[] = []
   for (let i = 0; i < maxPoints; i++) {
     result.push(points[Math.round(i * step)]!)
   }
@@ -172,7 +218,9 @@ function generateTicks(
   dataMin: number,
   dataMax: number,
 ): number[] {
-  const step = TICK_INTERVAL_MS[range]
+  const step = range === 'custom'
+    ? pickTickInterval(dataMax - dataMin)
+    : TICK_INTERVAL_MS[range]
   const start = Math.ceil(dataMin / step) * step
   const ticks: number[] = []
   for (let t = start; t <= dataMax; t += step) {
@@ -189,20 +237,19 @@ export function useReportsPage(initialSensorId?: number | null) {
   } = useGraphQL<SensorsResponse>(GET_SENSORS)
 
   const {
-    data: reportsData,
-    loading: reportsLoading,
-    error: reportsError,
-    executeQuery: fetchReports,
-  } = useGraphQL<ReportsResponse>(GET_REPORTS_BY_SENSOR_ID)
+    data: sensorData,
+    loading: sensorDataLoading,
+    error: sensorDataError,
+    executeQuery: fetchSensorData,
+  } = useGraphQL<SensorDataResponse>(GET_SENSOR_DATA)
 
-  const { data: signalsData, executeQuery: fetchSignals } =
-    useGraphQL<SignalsResponse>(GET_SIGNALS_BY_SENSOR_ID)
+  // Separate hook for mag-data supplement so its requestIdRef
+  // can never discard the primary report/signal fetch.
+  const { data: magSupplementData, executeQuery: fetchMagSupplement } =
+    useGraphQL<SensorDataResponse>(GET_SENSOR_DATA)
 
   const { executeQuery: fetchMagSensors } =
     useGraphQL<MagSensorsResponse>(GET_MAG_SENSORS_BY_BUILDING_ID)
-
-  const { data: magReportsData, executeQuery: fetchMagReports } =
-    useGraphQL<MagReportsResponse>(GET_MAG_REPORTS_BY_SENSOR_IDS)
 
   const { executeQuery: executeMappingsUpdate } = useGraphQL<{
     update_sensor_by_pk: { id: number; mappings: SensorMappings }
@@ -212,8 +259,9 @@ export function useReportsPage(initialSensorId?: number | null) {
     initialSensorId ?? null,
   )
   const [timeRange, setTimeRange] = useState<TimeRange>('15m')
+  const [customWindow, setCustomWindow] = useState<{ since: string; until: string } | null>(null)
   const [isLive, setIsLive] = useState(true)
-  const [liveChartData, setLiveChartData] = useState<ChartPoint[]>([])
+  const [liveBuffer, setLiveBuffer] = useState<ChartPoint[]>([])
   const [periodOffset, setPeriodOffset] = useState(0)
 
   const bufferRef = useRef<ChartPoint[]>([])
@@ -226,9 +274,12 @@ export function useReportsPage(initialSensorId?: number | null) {
     if (initialSensorId != null && initialSensorId !== selectedSensorId) {
       setSelectedSensorId(initialSensorId)
       setPeriodOffset(0)
-      setLiveChartData([])
+      setLiveBuffer([])
       bufferRef.current = []
       lastSeenIdRef.current = null
+      setLiveMagData([])
+      magBufferRef.current = []
+      lastMagIdRef.current = null
     }
   }, [initialSensorId]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -243,29 +294,39 @@ export function useReportsPage(initialSensorId?: number | null) {
   const { data: subData, connected } = useSubscription<SubscriptionResponse>(
     LATEST_REPORT_SUBSCRIPTION,
     subscriptionVars,
-    isLive && selectedSensorId !== null && timeRange !== 'all' && periodOffset === 0,
+    isLive && selectedSensorId !== null && timeRange !== 'all' && timeRange !== 'custom' && periodOffset === 0,
   )
 
   useEffect(() => {
     if (!subData?.report?.length) return
     const report = subData.report[0]!
+    if (
+      report.sensor_id != null &&
+      selectedSensorId != null &&
+      Number(report.sensor_id) !== selectedSensorId
+    ) {
+      return
+    }
     if (report.id === lastSeenIdRef.current) return
     lastSeenIdRef.current = report.id
+    // Only buffer points within the current time window (ignore stale subscription data)
+    const range = timeRangeRef.current
+    if (range !== 'all' && range !== 'custom') {
+      const cutoff = Date.now() - RANGE_MS[range] * 2
+      if (new Date(report.created_at).getTime() < cutoff) return
+    }
     bufferRef.current.push(reportToPoint(report, multiplierRef.current))
-  }, [subData])
+  }, [subData, selectedSensorId])
 
   useEffect(() => {
-    if (!isLive || timeRange === 'all') return
+    if (!isLive || timeRange === 'all' || timeRange === 'custom') return
 
     const interval = setInterval(() => {
       const pending = bufferRef.current
       if (pending.length === 0) return
       bufferRef.current = []
 
-      setLiveChartData((prev) => {
-        const merged = [...prev, ...pending]
-        return trimToWindow(merged, timeRangeRef.current)
-      })
+      setLiveBuffer((prev) => [...prev, ...pending])
     }, FLUSH_INTERVAL_MS)
 
     return () => clearInterval(interval)
@@ -283,44 +344,14 @@ export function useReportsPage(initialSensorId?: number | null) {
     }
   }, [sensorsData, selectedSensorId])
 
-  // --- Historical fetch ---
-
-  useEffect(() => {
-    if (selectedSensorId !== null) {
-      const { since, until } = computeTimeWindow(timeRange, periodOffset)
-      fetchReports({
-        sensorId: selectedSensorId,
-        since,
-        until,
-      })
-      fetchSignals({
-        sensorId: selectedSensorId,
-        since,
-        until,
-      })
-    }
-  }, [selectedSensorId, timeRange, periodOffset, fetchReports, fetchSignals])
-
-  useEffect(() => {
-    if (!reportsData?.report) return
-    const m = multiplierRef.current
-    const points = [...reportsData.report]
-      .sort(
-        (a, b) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-      )
-      .map((r) => reportToPoint(r, m))
-    setLiveChartData(points)
-    bufferRef.current = []
-    lastSeenIdRef.current = null
-  }, [reportsData])
-
-  // --- Mag data fetch + subscription ---
+  // --- Mag sensor IDs (lightweight lookup, cached in state) ---
 
   const [magSensorIds, setMagSensorIds] = useState<number[]>([])
   const [liveMagData, setLiveMagData] = useState<MagChartPoint[]>([])
   const magBufferRef = useRef<MagChartPoint[]>([])
   const lastMagIdRef = useRef<number | null>(null)
+
+  const sensorsLoaded = !!sensorsData?.sensor?.length
 
   const selectedBuildingId = useMemo(() => {
     if (selectedSensorId === null || !sensorsData?.sensor) return null
@@ -329,6 +360,8 @@ export function useReportsPage(initialSensorId?: number | null) {
   }, [selectedSensorId, sensorsData])
 
   useEffect(() => {
+    // Don't resolve yet if sensors haven't loaded — we can't know the building ID
+    if (!sensorsLoaded) return
     if (selectedBuildingId === null) {
       setMagSensorIds([])
       return
@@ -336,37 +369,55 @@ export function useReportsPage(initialSensorId?: number | null) {
     fetchMagSensors({ buildingId: selectedBuildingId }).then((result) => {
       if (!result?.mag_to_building?.length) {
         setMagSensorIds([])
-        return
+      } else {
+        setMagSensorIds(result.mag_to_building.map((m) => m.mag_id))
       }
-      setMagSensorIds(result.mag_to_building.map((m) => m.mag_id))
     })
-  }, [selectedBuildingId, fetchMagSensors])
+  }, [selectedBuildingId, sensorsLoaded, fetchMagSensors])
+
+  // --- Historical fetch (reports + signals) ---
+
+  const prevFetchKeyRef = useRef('')
 
   useEffect(() => {
-    if (magSensorIds.length === 0) return
-    const { since, until } = computeTimeWindow(timeRange, periodOffset)
-    fetchMagReports({ sensorIds: magSensorIds, since, until })
-  }, [magSensorIds, timeRange, periodOffset, fetchMagReports])
+    if (selectedSensorId === null) return
+    if (timeRange === 'custom' && !customWindow) return
 
-  // Seed live mag data from historical fetch
-  useEffect(() => {
-    if (!magReportsData?.mag_report) return
-    const points = [...magReportsData.mag_report]
-      .sort(
-        (a, b) =>
-          new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-      )
-      .map((r) => ({
-        timestamp: new Date(r.created_at).getTime(),
-        x: r.x_axis_reading,
-        y: r.y_axis_reading,
-        z: r.z_axis_reading,
-        total: r.total_magnitude,
-      }))
-    setLiveMagData(points)
+    const fetchKey = `${selectedSensorId}-${timeRange}-${periodOffset}-${customWindow?.since}-${customWindow?.until}`
+    if (fetchKey === prevFetchKeyRef.current) return
+    prevFetchKeyRef.current = fetchKey
+
+    setLiveBuffer([])
+    bufferRef.current = []
+    lastSeenIdRef.current = null
+    setLiveMagData([])
     magBufferRef.current = []
     lastMagIdRef.current = null
-  }, [magReportsData])
+
+    const { since, until } = computeTimeWindow(timeRange, periodOffset, customWindow ?? undefined)
+    fetchSensorData({
+      sensorId: selectedSensorId,
+      since,
+      until,
+      magSensorIds: [],
+    })
+  }, [selectedSensorId, timeRange, periodOffset, customWindow, fetchSensorData])
+
+  // --- Mag historical fetch (separate hook, can never discard the report fetch) ---
+
+  useEffect(() => {
+    if (selectedSensorId === null) return
+    if (magSensorIds.length === 0) return
+    if (timeRange === 'custom' && !customWindow) return
+
+    const { since, until } = computeTimeWindow(timeRange, periodOffset, customWindow ?? undefined)
+    fetchMagSupplement({
+      sensorId: selectedSensorId,
+      since,
+      until,
+      magSensorIds,
+    })
+  }, [selectedSensorId, timeRange, periodOffset, magSensorIds, customWindow, fetchMagSupplement])
 
   // Mag subscription
   const magSubVars = useMemo(
@@ -377,61 +428,67 @@ export function useReportsPage(initialSensorId?: number | null) {
   const { data: magSubData } = useSubscription<MagSubscriptionResponse>(
     LATEST_MAG_REPORT_SUBSCRIPTION,
     magSubVars,
-    isLive && magSensorIds.length > 0 && timeRange !== 'all' && periodOffset === 0,
+    isLive && magSensorIds.length > 0 && timeRange !== 'all' && timeRange !== 'custom' && periodOffset === 0,
   )
 
   useEffect(() => {
     if (!magSubData?.mag_report?.length) return
     const report = magSubData.mag_report[0]!
+    if (
+      report.sensor_id != null &&
+      magSensorIds.length > 0 &&
+      !magSensorIds.includes(Number(report.sensor_id))
+    ) {
+      return
+    }
     if (report.id === lastMagIdRef.current) return
     lastMagIdRef.current = report.id
-    magBufferRef.current.push({
-      timestamp: new Date(report.created_at).getTime(),
-      x: report.x_axis_reading,
-      y: report.y_axis_reading,
-      z: report.z_axis_reading,
-      total: report.total_magnitude,
-    })
-  }, [magSubData])
+    const range = timeRangeRef.current
+    if (range !== 'all' && range !== 'custom') {
+      const cutoff = Date.now() - RANGE_MS[range] * 2
+      if (new Date(report.created_at).getTime() < cutoff) return
+    }
+    magBufferRef.current.push(magToPoint(report))
+  }, [magSubData, magSensorIds])
 
   // Flush mag buffer on interval (same as flow)
   useEffect(() => {
-    if (!isLive || timeRange === 'all') return
+    if (!isLive || timeRange === 'all' || timeRange === 'custom') return
 
     const interval = setInterval(() => {
       const pending = magBufferRef.current
       if (pending.length === 0) return
       magBufferRef.current = []
 
-      setLiveMagData((prev) => {
-        const merged = [...prev, ...pending]
-        if (timeRangeRef.current === 'all') return merged
-        const cutoff = Date.now() - RANGE_MS[timeRangeRef.current] * FETCH_BUFFER
-        return merged.filter((p) => p.timestamp >= cutoff)
-      })
+      setLiveMagData((prev) => [...prev, ...pending])
     }, FLUSH_INTERVAL_MS)
 
     return () => clearInterval(interval)
   }, [isLive, timeRange])
 
   const magChartData = useMemo<MagChartPoint[]>(() => {
-    if (!isLive || timeRange === 'all' || periodOffset > 0) {
-      if (!magReportsData?.mag_report?.length) return []
-      return [...magReportsData.mag_report]
-        .sort(
-          (a, b) =>
-            new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-        )
-        .map((r) => ({
-          timestamp: new Date(r.created_at).getTime(),
-          x: r.x_axis_reading,
-          y: r.y_axis_reading,
-          z: r.z_axis_reading,
-          total: r.total_magnitude,
-        }))
+    const magReports = magSupplementData?.mag_report ?? []
+    const base: MagChartPoint[] = magReports.length
+      ? [...magReports]
+          .sort(
+            (a, b) =>
+              new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+          )
+          .map(magToPoint)
+      : []
+    if (!isLive || timeRange === 'all' || timeRange === 'custom' || periodOffset > 0 || liveMagData.length === 0) {
+      return filterPointsToWindow(base, timeRange, periodOffset, customWindow ?? undefined)
     }
-    return liveMagData
-  }, [isLive, timeRange, periodOffset, magReportsData, liveMagData])
+    const lastBaseTs = base.length > 0 ? base[base.length - 1]!.timestamp : 0
+    const newPoints = liveMagData.filter((p) => p.timestamp > lastBaseTs)
+    const merged = newPoints.length === 0 ? base : [...base, ...newPoints]
+    return filterPointsToWindow(merged, timeRange, periodOffset, customWindow ?? undefined)
+  }, [isLive, timeRange, periodOffset, customWindow, magSupplementData, liveMagData])
+
+  const downsampledMagChartData = useMemo(
+    () => downsample(magChartData, MAX_CHART_POINTS),
+    [magChartData],
+  )
 
   // --- Computed ---
 
@@ -449,18 +506,35 @@ export function useReportsPage(initialSensorId?: number | null) {
   multiplierRef.current = sensorMultiplier
 
   const rawChartData = useMemo(() => {
-    if (!isLive || timeRange === 'all' || periodOffset > 0) {
-      if (!reportsData?.report?.length) return []
-      return [...reportsData.report]
-        .sort(
-          (a, b) =>
-            new Date(a.created_at).getTime() -
-            new Date(b.created_at).getTime(),
-        )
-        .map((r) => reportToPoint(r, sensorMultiplier))
+    const allReports = sensorData?.report ?? []
+    const filtered = allReports.filter((r) => r.sensor_id == null || Number(r.sensor_id) === selectedSensorId)
+    console.log('[rawChartData]', {
+      allReports: allReports.length,
+      filtered: filtered.length,
+      sensorDataRef: sensorData,
+      liveBuffer: liveBuffer.length,
+      selectedSensorId,
+      sensorMultiplier,
+      isLive,
+    })
+    const base: ChartPoint[] = filtered.length
+      ? [...filtered]
+          .sort(
+            (a, b) =>
+              new Date(a.created_at).getTime() -
+              new Date(b.created_at).getTime(),
+          )
+          .map((r) => reportToPoint(r, sensorMultiplier))
+      : []
+    if (!isLive || timeRange === 'all' || timeRange === 'custom' || periodOffset > 0 || liveBuffer.length === 0) {
+      return filterPointsToWindow(base, timeRange, periodOffset, customWindow ?? undefined)
     }
-    return liveChartData
-  }, [isLive, timeRange, periodOffset, reportsData, liveChartData, sensorMultiplier])
+    // In live mode, append subscription points that are newer than the fetched data
+    const lastBaseTs = base.length > 0 ? base[base.length - 1]!.timestamp : 0
+    const newPoints = liveBuffer.filter((p) => p.timestamp > lastBaseTs)
+    const merged = newPoints.length === 0 ? base : [...base, ...newPoints]
+    return filterPointsToWindow(merged, timeRange, periodOffset, customWindow ?? undefined)
+  }, [isLive, timeRange, periodOffset, customWindow, sensorData, liveBuffer, sensorMultiplier, selectedSensorId])
 
   const chartData = useMemo(
     () => downsample(rawChartData, MAX_CHART_POINTS),
@@ -475,7 +549,7 @@ export function useReportsPage(initialSensorId?: number | null) {
   }, [chartData, timeRange])
 
   const parsedSignals = useMemo<ParsedSignal[]>(() => {
-    const raw = signalsData?.signal ?? []
+    const raw = sensorData?.signal ?? []
     const result: ParsedSignal[] = []
     for (const s of raw) {
       const parsed = parseSignalValue(s.value)
@@ -490,7 +564,7 @@ export function useReportsPage(initialSensorId?: number | null) {
       }
     }
     return result
-  }, [signalsData])
+  }, [sensorData])
 
   const signalTypeIds = useMemo(() => {
     const unique = [...new Set(parsedSignals.map((s) => s.signalType))]
@@ -514,15 +588,27 @@ export function useReportsPage(initialSensorId?: number | null) {
     (sensorId: number) => {
       setSelectedSensorId(sensorId)
       setPeriodOffset(0)
-      setLiveChartData([])
+      setLiveBuffer([])
       bufferRef.current = []
       lastSeenIdRef.current = null
+      setLiveMagData([])
+      magBufferRef.current = []
+      lastMagIdRef.current = null
     },
     [],
   )
 
   const handleTimeRangeChange = useCallback((range: TimeRange) => {
     setTimeRange(range)
+    if (range !== 'custom') setCustomWindow(null)
+    setPeriodOffset(0)
+    bufferRef.current = []
+    lastSeenIdRef.current = null
+  }, [])
+
+  const handleCustomRange = useCallback((since: string, until: string) => {
+    setTimeRange('custom')
+    setCustomWindow({ since, until })
     setPeriodOffset(0)
     bufferRef.current = []
     lastSeenIdRef.current = null
@@ -568,15 +654,17 @@ export function useReportsPage(initialSensorId?: number | null) {
     isLive,
     connected,
     sensorsLoading,
-    reportsLoading,
-    reportsError,
-    magChartData,
+    reportsLoading: sensorDataLoading,
+    reportsError: sensorDataError,
+    magChartData: downsampledMagChartData,
     parsedSignals,
     signalTypeIds,
     sensorMappings,
     updateMapping,
     handleSensorChange,
+    customWindow,
     handleTimeRangeChange,
+    handleCustomRange,
     handleToggleLive,
     handlePreviousPeriod,
     handleNextPeriod,

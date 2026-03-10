@@ -7,13 +7,14 @@ export const GET_MAG_SENSORS_BY_BUILDING_ID = `
 `
 
 export const GET_MAG_REPORTS_BY_SENSOR_IDS = `
-  query GetMagReportsBySensorIds($sensorIds: [bigint!]!, $since: timestamptz!, $until: timestamptz!) {
+  query GetMagReportsBySensorIds($sensorIds: [bigint!]!, $since: timestamptz!, $until: timestamptz!, $limit: Int) {
     mag_report(
       where: {
         sensor_id: { _in: $sensorIds }
         created_at: { _gte: $since, _lte: $until }
       }
       order_by: { created_at: asc }
+      limit: $limit
     ) {
       id
       created_at

@@ -367,8 +367,10 @@ export default function Reports() {
     signalTypeIds,
     sensorMappings,
     updateMapping,
+    customWindow,
     handleSensorChange,
     handleTimeRangeChange,
+    handleCustomRange,
     handleToggleLive,
     handlePreviousPeriod,
     handleNextPeriod,
@@ -382,7 +384,7 @@ export default function Reports() {
   }, [paramSensorId, sensors, navigate])
 
   const periodLabel = useMemo(() => {
-    if (periodOffset === 0 || timeRange === 'all') return null
+    if (periodOffset === 0 || timeRange === 'all' || timeRange === 'custom') return null
     const rangeMs = RANGE_MS[timeRange]
     const now = Date.now()
     const untilMs = now - rangeMs * periodOffset
@@ -408,7 +410,7 @@ export default function Reports() {
       : 0
 
   const homeMin = useMemo(() => {
-    if (timeRange === 'all' || dataMax === 0) return dataMin
+    if (timeRange === 'all' || timeRange === 'custom' || dataMax === 0) return dataMin
     const realMax =
       chartData.length > 0
         ? chartData[chartData.length - 1]!.timestamp
@@ -513,6 +515,19 @@ export default function Reports() {
     [resetZoom, handleTimeRangeChange],
   )
 
+  const [showCustomPicker, setShowCustomPicker] = useState(false)
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo, setCustomTo] = useState('')
+
+  const applyCustomRange = useCallback(() => {
+    if (!customFrom || !customTo) return
+    const since = new Date(customFrom).toISOString()
+    const until = new Date(customTo).toISOString()
+    resetZoom()
+    handleCustomRange(since, until)
+    setShowCustomPicker(false)
+  }, [customFrom, customTo, resetZoom, handleCustomRange])
+
   const onSensorChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
       const newId = Number(e.target.value)
@@ -608,11 +623,47 @@ export default function Reports() {
     return [min - pad, max + pad]
   }, [compressedMagData])
 
+  const yAxisYDomain = useMemo<[number, number]>(() => {
+    const vals = compressedMagData
+      .map((p) => p.y)
+      .filter((v): v is number => v != null)
+    if (vals.length === 0) return [0, 1]
+    let min = vals[0]!
+    let max = vals[0]!
+    for (const v of vals) {
+      if (v < min) min = v
+      if (v > max) max = v
+    }
+    const pad = Math.max((max - min) * 0.15, 0.05)
+    return [min - pad, max + pad]
+  }, [compressedMagData])
+
+  const zAxisYDomain = useMemo<[number, number]>(() => {
+    const vals = compressedMagData
+      .map((p) => p.z)
+      .filter((v): v is number => v != null)
+    if (vals.length === 0) return [0, 1]
+    let min = vals[0]!
+    let max = vals[0]!
+    for (const v of vals) {
+      if (v < min) min = v
+      if (v > max) max = v
+    }
+    const pad = Math.max((max - min) * 0.15, 0.05)
+    return [min - pad, max + pad]
+  }, [compressedMagData])
+  const vibrationData = useMemo(() => {
+    if (compressedMagData.length === 0) return []
+    return compressedMagData.filter(
+      (p) => p.bandEnergy10s != null || p.bandEnergy60s != null || p.bandEnergy5m != null,
+    )
+  }, [compressedMagData])
+
   const compressedWaveFreqData = useMemo(() => {
     if (magChartData.length < 3 || timeline.points.length === 0) return []
     const samples = magChartData
-      .filter((p) => p.total != null)
-      .map((p) => ({ timestamp: p.timestamp, value: p.total! }))
+      .filter((p) => p.x != null)
+      .map((p) => ({ timestamp: p.timestamp, value: p.x! }))
     if (samples.length < 3) return []
     const freqPoints = computeWaveFrequency(samples, 5000)
     const [left, right] = domain
@@ -880,9 +931,53 @@ export default function Reports() {
                   {opt.label}
                 </button>
               ))}
+              <button
+                onClick={() => setShowCustomPicker((v) => !v)}
+                className={`rounded-md px-2 py-1 transition-colors sm:px-3 sm:py-1.5 ${rangeButtonClass(timeRange === 'custom')}`}
+              >
+                Custom
+              </button>
             </div>
 
-            {timeRange !== 'all' && (
+            {showCustomPicker && (
+              <div className="flex flex-wrap items-end gap-2 rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
+                <label className="flex flex-col gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+                  From
+                  <input
+                    type="datetime-local"
+                    value={customFrom}
+                    onChange={(e) => setCustomFrom(e.target.value)}
+                    className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+                  To
+                  <input
+                    type="datetime-local"
+                    value={customTo}
+                    onChange={(e) => setCustomTo(e.target.value)}
+                    className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                  />
+                </label>
+                <button
+                  onClick={applyCustomRange}
+                  disabled={!customFrom || !customTo}
+                  className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+
+            {timeRange === 'custom' && customWindow && !showCustomPicker && (
+              <span className="text-[11px] text-gray-500 dark:text-gray-400 sm:text-xs">
+                {new Date(customWindow.since).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
+                {' – '}
+                {new Date(customWindow.until).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
+              </span>
+            )}
+
+            {timeRange !== 'all' && timeRange !== 'custom' && (
               <div className="inline-flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-700 dark:bg-gray-900 sm:gap-1 sm:p-1">
                 <button
                   onClick={handlePreviousPeriod}
@@ -1114,7 +1209,7 @@ export default function Reports() {
           </div>
         )}
 
-        {reportsLoading ? (
+        {reportsLoading && chartData.length === 0 ? (
           <div className="flex h-80 items-center justify-center text-gray-500 dark:text-gray-400">
             Loading chart…
           </div>
@@ -1131,6 +1226,7 @@ export default function Reports() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={enrichedDataWithMA}
+                margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
                 onMouseDown={chartMouseDown}
                 onMouseMove={chartMouseMove}
                 onMouseUp={chartMouseUp}
@@ -1150,6 +1246,7 @@ export default function Reports() {
                   axisLine={{ stroke: colors.grid }}
                 />
                 <YAxis
+                  width={50}
                   domain={['auto', 'auto']}
                   tickFormatter={(v: number) => toLph(v).toFixed(0)}
                   tick={{ fontSize: 11, fill: colors.axis }}
@@ -1273,7 +1370,7 @@ export default function Reports() {
         {compressedWaveFreqData.length > 0 && (
           <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Mag Activity (5 s window)
+              Vibration Intensity — X Axis (5s window)
             </h3>
             <div className="h-[160px] w-full sm:h-[200px]">
               <ResponsiveContainer width="100%" height="100%">
@@ -1299,6 +1396,7 @@ export default function Reports() {
                     axisLine={{ stroke: colors.grid }}
                   />
                   <YAxis
+                    width={50}
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
                     axisLine={{ stroke: colors.grid }}
@@ -1311,11 +1409,9 @@ export default function Reports() {
                       fontSize: 12,
                       color: colors.tooltipText,
                     }}
-                    formatter={(value, name) => [
-                      typeof value === 'number'
-                        ? value.toFixed(3)
-                        : '—',
-                      name ?? '',
+                    formatter={(value: unknown, name: unknown) => [
+                      typeof value === 'number' ? value.toFixed(3) : '—',
+                      String(name ?? ''),
                     ]}
                     labelFormatter={(cx: unknown) => {
                       const realTs = timeline.toReal(Number(cx))
@@ -1340,6 +1436,109 @@ export default function Reports() {
                   />
                 </LineChart>
               </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {vibrationData.length > 0 && (
+          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Vibration Intensity (10s / 60s / 5m)
+            </h3>
+            <div className="h-[200px] w-full sm:h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={vibrationData}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={colors.grid}
+                  />
+                  <XAxis
+                    dataKey="cx"
+                    type="number"
+                    domain={domain}
+                    allowDataOverflow
+                    ticks={zoomTicks}
+                    tickFormatter={(cx: number) =>
+                      formatTick(timeline.toReal(cx), realVisibleRange)
+                    }
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <YAxis
+                    width={50}
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                    tickFormatter={(v: number) => v.toFixed(3)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      border: `1px solid ${colors.tooltipBorder}`,
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: colors.tooltipText,
+                    }}
+                    formatter={(value: unknown, name: unknown) => [
+                      typeof value === 'number' ? value.toFixed(4) : '—',
+                      name === 'bandEnergy10s' ? '10s' : name === 'bandEnergy60s' ? '60s' : '5m',
+                    ]}
+                    labelFormatter={(cx: unknown) => {
+                      const realTs = timeline.toReal(Number(cx))
+                      return new Date(realTs).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false,
+                      })
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="bandEnergy10s"
+                    name="bandEnergy10s"
+                    stroke="#f43f5e"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="bandEnergy60s"
+                    name="bandEnergy60s"
+                    stroke="#8b5cf6"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="bandEnergy5m"
+                    name="bandEnergy5m"
+                    stroke="#10b981"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2 w-4 rounded bg-[#f43f5e]" /> 10s
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2 w-4 rounded bg-[#8b5cf6]" /> 60s
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-2 w-4 rounded bg-[#10b981]" /> 5m
+              </span>
             </div>
           </div>
         )}
@@ -1373,6 +1572,7 @@ export default function Reports() {
                     axisLine={{ stroke: colors.grid }}
                   />
                   <YAxis
+                    width={50}
                     domain={totalMagYDomain}
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
@@ -1447,6 +1647,7 @@ export default function Reports() {
                     axisLine={{ stroke: colors.grid }}
                   />
                   <YAxis
+                    width={50}
                     domain={xAxisYDomain}
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
@@ -1495,6 +1696,157 @@ export default function Reports() {
         {compressedMagData.length > 0 && (
           <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Y Axis (zoomed)
+            </h3>
+            <div className="h-[200px] w-full sm:h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={compressedMagData}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={colors.grid}
+                  />
+                  <XAxis
+                    dataKey="cx"
+                    type="number"
+                    domain={domain}
+                    allowDataOverflow
+                    ticks={zoomTicks}
+                    tickFormatter={(cx: number) =>
+                      formatTick(timeline.toReal(cx), realVisibleRange)
+                    }
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <YAxis
+                    width={50}
+                    domain={yAxisYDomain}
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                    tickFormatter={(v: number) => v.toFixed(2)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      border: `1px solid ${colors.tooltipBorder}`,
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: colors.tooltipText,
+                    }}
+                    formatter={(value, name) => [
+                      typeof value === 'number' ? value.toFixed(3) : '—',
+                      name ?? '',
+                    ]}
+                    labelFormatter={(cx: unknown) => {
+                      const realTs = timeline.toReal(Number(cx))
+                      return new Date(realTs).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false,
+                      })
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="y"
+                    name="Y Axis"
+                    stroke="#10b981"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {compressedMagData.length > 0 && (
+          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Z Axis (zoomed)
+            </h3>
+            <div className="h-[200px] w-full sm:h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={compressedMagData}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={colors.grid}
+                  />
+                  <XAxis
+                    dataKey="cx"
+                    type="number"
+                    domain={domain}
+                    allowDataOverflow
+                    ticks={zoomTicks}
+                    tickFormatter={(cx: number) =>
+                      formatTick(timeline.toReal(cx), realVisibleRange)
+                    }
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <YAxis
+                    width={50}
+                    domain={zAxisYDomain}
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                    tickFormatter={(v: number) => v.toFixed(2)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      border: `1px solid ${colors.tooltipBorder}`,
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: colors.tooltipText,
+                    }}
+                    formatter={(value, name) => [
+                      typeof value === 'number' ? value.toFixed(3) : '—',
+                      name ?? '',
+                    ]}
+                    labelFormatter={(cx: unknown) => {
+                      const realTs = timeline.toReal(Number(cx))
+                      return new Date(realTs).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false,
+                      })
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="z"
+                    name="Z Axis"
+                    stroke="#3b82f6"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+
+        {compressedMagData.length > 0 && (
+          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Building Mag Data
             </h3>
             <div className="h-[200px] w-full sm:h-[250px]">
@@ -1521,6 +1873,7 @@ export default function Reports() {
                     axisLine={{ stroke: colors.grid }}
                   />
                   <YAxis
+                    width={50}
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
                     axisLine={{ stroke: colors.grid }}

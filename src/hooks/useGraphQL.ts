@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { GRAPHQL_ENDPOINT, HASURA_ADMIN_SECRET } from '@/globals/constants'
@@ -23,9 +23,11 @@ export function useGraphQL<T = Record<string, unknown>>(
   const [data, setData] = useState<T | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
 
   const executeQuery = useCallback(
     async (variables?: Record<string, unknown>): Promise<T | null> => {
+      const thisRequestId = ++requestIdRef.current
       setLoading(true)
       setError(null)
 
@@ -54,6 +56,11 @@ export function useGraphQL<T = Record<string, unknown>>(
 
         const json: GraphQLResponse<T> = await response.json()
 
+        // Ignore stale responses — only accept the most recent request
+        if (thisRequestId !== requestIdRef.current) {
+          return json.data ?? null
+        }
+
         if (json.errors?.length) {
           const message = json.errors.map((e) => e.message).join(', ')
           logger.error('GRAPHQL', message, json.errors)
@@ -62,15 +69,19 @@ export function useGraphQL<T = Record<string, unknown>>(
         }
 
         const result = json.data ?? null
+        console.log('[useGraphQL] setData', { query: query.slice(0, 50), thisRequestId, keys: result ? Object.keys(result) : null, reportCount: (result as Record<string, unknown[]> | null)?.report?.length })
         setData(result)
         return result
       } catch (err) {
+        if (thisRequestId !== requestIdRef.current) return null
         const message = err instanceof Error ? err.message : 'Unknown error'
         logger.error('GRAPHQL', message, err)
         setError(message)
         return null
       } finally {
-        setLoading(false)
+        if (thisRequestId === requestIdRef.current) {
+          setLoading(false)
+        }
       }
     },
     [query, token],
