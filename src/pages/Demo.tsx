@@ -13,7 +13,7 @@ import {
 } from 'recharts'
 import { Link } from 'react-router'
 
-import logo from '@/assets/logoTransparent.png'
+import logo from '@/assets/belugaTransparent.png'
 import BuildingFootprint from '@/components/BuildingFootprint'
 import BuildingMap3D from '@/components/BuildingMap3D'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -321,7 +321,7 @@ export default function Demo() {
       <header className="border-b border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-16 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="Flomo" className="h-8 sm:h-9" />
+            <img src={logo} alt="Beluga" className="h-10 sm:h-12" />
             <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
               Live Demo
             </span>

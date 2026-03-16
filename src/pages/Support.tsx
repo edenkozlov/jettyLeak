@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import logo from '@/assets/logoTransparent.png'
+import logo from '@/assets/belugaTransparent.png'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
 
 export default function Support() {
@@ -7,7 +7,7 @@ export default function Support() {
     <div className="min-h-screen bg-white antialiased">
       <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white">
         <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-10">
-          <Link to="/"><img src={logo} alt="Flomo" className="h-7" /></Link>
+          <Link to="/"><img src={logo} alt="Beluga" className="h-8" /></Link>
           <Link to="/" className="text-[13px] text-gray-400 transition hover:text-gray-600">Back to Home</Link>
         </div>
       </nav>
@@ -17,7 +17,7 @@ export default function Support() {
 
         <div className="mt-8 space-y-6 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]">
           <p>
-            Need help with Flomo? We're here for you. Whether you have a question about your sensor, need help reading your dashboard, or want to report an issue — our team is happy to assist.
+            Need help with Beluga? We're here for you. Whether you have a question about your sensor, need help reading your dashboard, or want to report an issue — our team is happy to assist.
           </p>
 
           <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Contact us</h2>
@@ -25,7 +25,7 @@ export default function Support() {
             The fastest way to reach us is by email. Send us a message and we'll get back to you within one business day.
           </p>
           <p>
-            <a href="mailto:support@getflomo.com" className="font-medium text-indigo-600 hover:text-indigo-500">support@getflomo.com</a>
+            <a href="mailto:support@beluga.com" className="font-medium text-indigo-600 hover:text-indigo-500">support@beluga.com</a>
           </p>
 
           <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Common questions</h2>
@@ -33,7 +33,7 @@ export default function Support() {
           <div className="space-y-4">
             <div>
               <h3 className="font-semibold text-gray-900">How do I install the sensor?</h3>
-              <p className="mt-1">Flomo clamps onto the outside of your pipe — no cutting, no plumber needed. It works on copper, PEX, CPVC, and galvanized pipes.</p>
+              <p className="mt-1">Beluga clamps onto the outside of your pipe — no cutting, no plumber needed. It works on copper, PEX, CPVC, and galvanized pipes.</p>
             </div>
             <div>
               <h3 className="font-semibold text-gray-900">Does it need WiFi?</h3>

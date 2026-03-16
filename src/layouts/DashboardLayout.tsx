@@ -1,6 +1,6 @@
 import { Link, NavLink, Outlet } from 'react-router'
 
-import logo from '@/assets/logoTransparent.png'
+import logo from '@/assets/belugaLogo.png'
 import { useDashboardLayout } from '@/hooks/useDashboardLayout'
 
 const NAV_ITEMS = [
@@ -41,7 +41,7 @@ export default function DashboardLayout() {
         `}
       >
         <div className="flex h-16 items-center justify-between border-b border-gray-800 px-6">
-          <Link to="/"><img src={logo} alt="Flomo" className="h-8 brightness-0 invert" /></Link>
+          <Link to="/"><img src={logo} alt="Beluga" className="h-10 brightness-0 invert" /></Link>
           <button
             onClick={handleToggleSidebar}
             className="text-gray-400 hover:text-white lg:hidden"

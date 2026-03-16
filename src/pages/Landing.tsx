@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 
-import logo from '@/assets/logoTransparent.png'
+import logo from '@/assets/belugaTransparent.png'
 import heroVideo from '@/assets/water.mp4'
 import deviceImg from '@/assets/graph.png'
 import diagramImg from '@/assets/pipeillustration.png'
@@ -18,7 +18,7 @@ export default function Landing() {
       <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white">
         <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-10">
           <Link to="/">
-            <img src={logo} alt="Flomo" className="h-8 sm:h-9" />
+            <img src={logo} alt="Beluga" className="h-10 sm:h-12" />
           </Link>
           <div className="flex items-center gap-4 sm:gap-8">
             <div className="hidden gap-7 md:flex">
@@ -128,7 +128,7 @@ export default function Landing() {
               A sensor that learns<br className="hidden sm:block" /> your plumbing
             </h2>
             <p className="mt-3 text-[15px] leading-relaxed text-gray-500 sm:mt-4 sm:text-[16px]">
-              The longer it runs, the smarter it gets. Flomo learns your building's water patterns over time — every fixture, every baseline. When something changes, it doesn't just detect it. It triangulates where the issue is coming from.
+              The longer it runs, the smarter it gets. Beluga learns your building's water patterns over time — every fixture, every baseline. When something changes, it doesn't just detect it. It triangulates where the issue is coming from.
             </p>
           </div>
 
@@ -155,7 +155,7 @@ export default function Landing() {
                 },
                 {
                   title: 'Maps your plumbing',
-                  desc: "Over time, Flomo builds a digital map of your piping system. When a leak happens, it doesn't just detect it — it triangulates where the problem is coming from.",
+                  desc: "Over time, Beluga builds a digital map of your piping system. When a leak happens, it doesn't just detect it — it triangulates where the problem is coming from.",
                   icon: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></>,
                   gradient: 'from-amber-500 to-orange-500',
                 },
@@ -180,7 +180,7 @@ export default function Landing() {
 
             <div className="relative order-1 mx-auto lg:order-2 lg:mx-0">
               <div className="absolute -inset-4 rounded-2xl bg-gradient-to-br from-indigo-100 to-cyan-50 opacity-50 blur-2xl" />
-              <img src={deviceImg} alt="Flomo dashboard" className="relative w-full max-w-md rounded-2xl shadow-xl lg:max-w-[480px]" />
+              <img src={deviceImg} alt="Beluga dashboard" className="relative w-full max-w-md rounded-2xl shadow-xl lg:max-w-[480px]" />
             </div>
           </div>
         </div>
@@ -276,7 +276,7 @@ export default function Landing() {
             <div className="relative mx-auto max-w-sm lg:mx-0 lg:max-w-none">
               <div className="absolute -inset-6 rounded-[28px] bg-gradient-to-br from-red-100/60 via-indigo-100/40 to-cyan-50/60 blur-2xl sm:-inset-8 sm:rounded-[32px]" />
               <div className="relative overflow-hidden rounded-[20px] border border-gray-200/60 shadow-2xl shadow-gray-900/10 sm:rounded-[24px]">
-                <img src={leakImg} alt="Flomo app detecting a leak in real time" className="w-full" />
+                <img src={leakImg} alt="Beluga app detecting a leak in real time" className="w-full" />
               </div>
             </div>
 
@@ -286,7 +286,7 @@ export default function Landing() {
                 From leak detected<br className="hidden sm:block" /> to alert in seconds
               </h2>
               <p className="mt-4 text-[16px] leading-relaxed text-gray-500">
-                The moment abnormal flow is detected, Flomo identifies the location, severity, and sends a push notification — so you can act immediately, not after the damage is done.
+                The moment abnormal flow is detected, Beluga identifies the location, severity, and sends a push notification — so you can act immediately, not after the damage is done.
               </p>
 
               <div className="mt-10 space-y-5">
@@ -323,7 +323,7 @@ export default function Landing() {
                 See real water data.<br className="hidden sm:block" /> Right now.
               </h2>
               <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-gray-500 sm:mt-4 sm:text-[16px]">
-                This is live data streaming from Flomo sensors installed at our Montreal office and warehouse. Explore the same dashboard our customers across Canada use to monitor their buildings 24/7.
+                This is live data streaming from Beluga sensors installed at our Montreal office and warehouse. Explore the same dashboard our customers across Canada use to monitor their buildings 24/7.
               </p>
 
               <div className="mt-10 space-y-6">
@@ -396,7 +396,7 @@ export default function Landing() {
               From single homes<br className="hidden sm:block" /> to entire portfolios
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-white/40 sm:mt-4 sm:text-[16px]">
-              Whether you manage one property or hundreds, Flomo gives you visibility into every pipe — without tearing open a single wall.
+              Whether you manage one property or hundreds, Beluga gives you visibility into every pipe — without tearing open a single wall.
             </p>
           </div>
 
@@ -458,7 +458,7 @@ export default function Landing() {
       {/* ━━━ Footer ━━━ */}
       <footer className="border-t border-gray-100 bg-white py-8 sm:py-10">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 sm:gap-6 sm:px-6 md:flex-row">
-          <Link to="/"><img src={logo} alt="Flomo" className="h-7" /></Link>
+          <Link to="/"><img src={logo} alt="Beluga" className="h-8" /></Link>
           <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
             {['Product', 'Features'].map((l, i) => (
               <a key={l} href={['#product', '#features'][i]} className="text-[12px] text-gray-400 transition hover:text-gray-600">{l}</a>
@@ -472,7 +472,7 @@ export default function Landing() {
             <Link to="/privacy" className="text-[12px] text-gray-400 transition hover:text-gray-600">Privacy Policy</Link>
             <Link to="/terms" className="text-[12px] text-gray-400 transition hover:text-gray-600">Terms of Service</Link>
           </div>
-          <p className="text-[12px] text-gray-300">&copy; {new Date().getFullYear()} Flomo — Made in Canada</p>
+          <p className="text-[12px] text-gray-300">&copy; {new Date().getFullYear()} Beluga — Made in Canada</p>
         </div>
       </footer>
 
@@ -523,7 +523,7 @@ function InterestSection() {
 
           <div className="relative">
             <h2 className="text-[26px] leading-tight font-bold tracking-tight text-white sm:text-[34px] md:text-[46px]">
-              Get Flomo for your building
+              Get Beluga for your building
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-[14px] text-white/40 sm:mt-4 sm:text-[15px]">
               Leave your email and our team will reach out to get you set up.

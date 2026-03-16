@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import logo from '@/assets/logoTransparent.png'
+import logo from '@/assets/belugaTransparent.png'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
 
 export default function Privacy() {
@@ -7,7 +7,7 @@ export default function Privacy() {
     <div className="min-h-screen bg-white antialiased">
       <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white">
         <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-10">
-          <Link to="/"><img src={logo} alt="Flomo" className="h-7" /></Link>
+          <Link to="/"><img src={logo} alt="Beluga" className="h-8" /></Link>
           <Link to="/" className="text-[13px] text-gray-400 transition hover:text-gray-600">Back to Home</Link>
         </div>
       </nav>
@@ -18,12 +18,12 @@ export default function Privacy() {
 
         <div className="mt-8 space-y-6 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]">
           <p>
-            Flomo ("we", "our", "us") is committed to protecting your privacy. This policy explains how we collect, use, and safeguard your information when you use the Flomo app and services.
+            Beluga ("we", "our", "us") is committed to protecting your privacy. This policy explains how we collect, use, and safeguard your information when you use the Beluga app and services.
           </p>
 
           <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Information we collect</h2>
           <p>
-            When you use Flomo, we collect water flow data from the sensors installed in your building. This data includes flow rate, volume, and timing information. We also collect your email address and basic account information when you sign up.
+            When you use Beluga, we collect water flow data from the sensors installed in your building. This data includes flow rate, volume, and timing information. We also collect your email address and basic account information when you sign up.
           </p>
 
           <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">How we use your data</h2>
@@ -49,7 +49,7 @@ export default function Privacy() {
           <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Contact</h2>
           <p>
             If you have questions about this privacy policy or your data, contact us at{' '}
-            <a href="mailto:support@getflomo.com" className="font-medium text-indigo-600 hover:text-indigo-500">support@getflomo.com</a>.
+            <a href="mailto:support@beluga.com" className="font-medium text-indigo-600 hover:text-indigo-500">support@beluga.com</a>.
           </p>
         </div>
       </main>
