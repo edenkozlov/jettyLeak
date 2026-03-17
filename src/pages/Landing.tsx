@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 
-import logo from '@/assets/belugaTransparent.png'
+import logo from '@/assets/belugaLogo.png'
 import heroVideo from '@/assets/water.mp4'
 import deviceImg from '@/assets/graph.png'
 import diagramImg from '@/assets/pipeillustration.png'
@@ -17,8 +17,8 @@ export default function Landing() {
       {/* ─── Nav ─── */}
       <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white">
         <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-10">
-          <Link to="/">
-            <img src={logo} alt="Beluga" className="h-10 sm:h-12" />
+          <Link to="/" className="flex items-center gap-2">
+            <img src={logo} alt="Beluga" className="h-8 sm:h-9" /><span className="text-lg font-bold text-gray-900 sm:text-xl">Beluga</span>
           </Link>
           <div className="flex items-center gap-4 sm:gap-8">
             <div className="hidden gap-7 md:flex">
@@ -458,7 +458,7 @@ export default function Landing() {
       {/* ━━━ Footer ━━━ */}
       <footer className="border-t border-gray-100 bg-white py-8 sm:py-10">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 sm:gap-6 sm:px-6 md:flex-row">
-          <Link to="/"><img src={logo} alt="Beluga" className="h-8" /></Link>
+          <Link to="/" className="flex items-center gap-2"><img src={logo} alt="Beluga" className="h-7" /><span className="text-sm font-bold text-white">Beluga</span></Link>
           <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
             {['Product', 'Features'].map((l, i) => (
               <a key={l} href={['#product', '#features'][i]} className="text-[12px] text-gray-400 transition hover:text-gray-600">{l}</a>

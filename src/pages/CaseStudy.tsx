@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 
-import logo from '@/assets/belugaTransparent.png'
+import logo from '@/assets/belugaLogo.png'
 import cs1 from '@/assets/CS1.jpg'
 import cs2 from '@/assets/CS2.jpg'
 import cs3 from '@/assets/CS3.jpg'
@@ -14,8 +14,8 @@ export default function CaseStudy() {
       {/* Nav */}
       <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-xl">
         <div className="flex h-14 items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-10">
-          <Link to="/">
-            <img src={logo} alt="Beluga" className="h-10 sm:h-12" />
+          <Link to="/" className="flex items-center gap-2">
+            <img src={logo} alt="Beluga" className="h-8 sm:h-9" /><span className="text-lg font-bold text-gray-900 sm:text-xl">Beluga</span>
           </Link>
           <div className="flex items-center gap-4 sm:gap-8">
             <Link to="/" className="text-[13px] text-gray-400 transition hover:text-gray-700">Home</Link>
@@ -205,7 +205,7 @@ export default function CaseStudy() {
       {/* Footer */}
       <footer className="border-t border-gray-100 bg-white py-8 sm:py-10">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 sm:gap-6 sm:px-6 md:flex-row">
-          <Link to="/"><img src={logo} alt="Beluga" className="h-8" /></Link>
+          <Link to="/" className="flex items-center gap-2"><img src={logo} alt="Beluga" className="h-7" /><span className="text-sm font-bold text-white">Beluga</span></Link>
           <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
             <Link to="/" className="text-[12px] text-gray-400 transition hover:text-gray-600">Home</Link>
             <Link to="/demo" className="text-[12px] text-gray-400 transition hover:text-gray-600">Live Demo</Link>

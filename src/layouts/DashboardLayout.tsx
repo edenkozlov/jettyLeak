@@ -41,7 +41,7 @@ export default function DashboardLayout() {
         `}
       >
         <div className="flex h-16 items-center justify-between border-b border-gray-800 px-6">
-          <Link to="/"><img src={logo} alt="Beluga" className="h-10 brightness-0 invert" /></Link>
+          <Link to="/" className="flex items-center gap-2"><img src={logo} alt="Beluga" className="h-8 brightness-0 invert" /><span className="text-lg font-bold text-white">Beluga</span></Link>
           <button
             onClick={handleToggleSidebar}
             className="text-gray-400 hover:text-white lg:hidden"
