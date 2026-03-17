@@ -38,7 +38,7 @@ function toLph(raw: number): number {
 
 const CHART_COLORS = {
   light: {
-    line: '#4457c2',
+    line: '#0ea5e9',
     grid: '#e5e7eb',
     axis: '#6b7280',
     tooltipBg: '#ffffff',
@@ -46,7 +46,7 @@ const CHART_COLORS = {
     tooltipText: '#111827',
   },
   dark: {
-    line: '#6a7ed2',
+    line: '#38bdf8',
     grid: '#374151',
     axis: '#9ca3af',
     tooltipBg: '#1f2937',
@@ -100,7 +100,7 @@ function renderValueLabel(props: RechartLabelProps, totalPoints: number, color: 
 }
 
 function rangeButtonClass(isActive: boolean): string {
-  return isActive ? 'bg-indigo-600 text-white' : 'bg-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+  return isActive ? 'bg-indigo-500 text-white' : 'bg-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
 }
 
 interface CompressedPoint { timestamp: number; cx: number; flowValue: number | null }
@@ -329,7 +329,7 @@ export default function Demo() {
           <div className="flex items-center gap-3">
             <Link
               to="/login"
-              className="rounded-full bg-indigo-600 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-500 sm:px-5 sm:text-[13px]"
+              className="rounded-full bg-indigo-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-600 sm:px-5 sm:text-[13px]"
             >
               Get Started
             </Link>

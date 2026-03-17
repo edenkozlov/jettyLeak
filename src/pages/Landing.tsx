@@ -29,7 +29,7 @@ export default function Landing() {
               <Link to="/case-study" className="text-[13px] text-gray-400 transition hover:text-gray-700">Case Study</Link>
             </div>
             <Link to="/login" className="hidden text-[13px] text-gray-400 transition hover:text-gray-700 sm:block">Sign In</Link>
-            <a href="#interested" className="rounded-full bg-indigo-600 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-500 sm:px-5 sm:text-[13px]">
+            <a href="#interested" className="rounded-full bg-indigo-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-600 sm:px-5 sm:text-[13px]">
               Get Started
             </a>
             <button
@@ -89,7 +89,7 @@ export default function Landing() {
             <h1 className="max-w-4xl text-[36px] leading-[1.08] font-bold tracking-tight text-gray-900 animate-slide-up sm:text-5xl md:text-6xl lg:text-[76px]" style={{ animationDelay: '0.1s' }}>
               Your pipes don't warn you.
               <br />
-              <span className="bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-400 bg-clip-text text-transparent">
                 We do.
               </span>
             </h1>
@@ -101,7 +101,7 @@ export default function Landing() {
             <div className="mt-10 flex flex-col items-center gap-3 animate-slide-up sm:flex-row sm:gap-4" style={{ animationDelay: '0.3s' }}>
               <a
                 href="#interested"
-                className="w-full rounded-full bg-indigo-600 px-8 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition-all hover:bg-indigo-500 hover:shadow-xl hover:shadow-indigo-600/30 sm:w-auto"
+                className="w-full rounded-full bg-indigo-500 px-8 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-600 hover:shadow-xl hover:shadow-indigo-500/30 sm:w-auto"
               >
                 Start Monitoring
               </a>

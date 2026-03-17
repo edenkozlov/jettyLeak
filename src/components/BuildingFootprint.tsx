@@ -565,7 +565,7 @@ export default function BuildingFootprint({
             onClick={() => setSelectedFloor(floor)}
             className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
               selectedFloor === floor
-                ? 'bg-indigo-600 text-white'
+                ? 'bg-indigo-500 text-white'
                 : 'text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800'
             }`}
           >
@@ -914,7 +914,7 @@ export default function BuildingFootprint({
                             `/dashboard/reports/${sensor.id}`,
                           )
                         }
-                        className="w-full rounded-md bg-indigo-600 px-2 py-1 text-xs text-white hover:bg-indigo-700"
+                        className="w-full rounded-md bg-indigo-500 px-2 py-1 text-xs text-white hover:bg-indigo-600"
                       >
                         View Reports
                       </button>
@@ -984,7 +984,7 @@ export default function BuildingFootprint({
                   <div className="flex gap-1">
                     <button
                       type="submit"
-                      className="flex-1 rounded-md bg-indigo-600 px-2 py-1 text-xs text-white hover:bg-indigo-700"
+                      className="flex-1 rounded-md bg-indigo-500 px-2 py-1 text-xs text-white hover:bg-indigo-600"
                     >
                       Add
                     </button>

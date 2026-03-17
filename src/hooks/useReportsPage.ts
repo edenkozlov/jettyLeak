@@ -51,7 +51,7 @@ export interface MagChartPoint {
 }
 
 export const SIGNAL_COLORS = [
-  '#4457c2', // indigo
+  '#0ea5e9', // sky
   '#f43f5e', // rose
   '#10b981', // emerald
   '#f59e0b', // amber

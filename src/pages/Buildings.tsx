@@ -94,7 +94,7 @@ export default function Buildings() {
         <h1 className="text-xl font-bold sm:text-2xl">Buildings</h1>
         <button
           onClick={() => setShowForm((v) => !v)}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600"
         >
           {showForm ? 'Cancel' : '+ Add Building'}
         </button>
@@ -142,7 +142,7 @@ export default function Buildings() {
           <div className="mt-3 flex justify-end">
             <button
               type="submit"
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600"
             >
               Create Building
             </button>

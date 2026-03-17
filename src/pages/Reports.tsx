@@ -48,7 +48,7 @@ function toLph(raw: number): number {
 
 const CHART_COLORS = {
   light: {
-    line: '#4457c2',
+    line: '#0ea5e9',
     grid: '#e5e7eb',
     axis: '#6b7280',
     tooltipBg: '#ffffff',
@@ -56,7 +56,7 @@ const CHART_COLORS = {
     tooltipText: '#111827',
   },
   dark: {
-    line: '#6a7ed2',
+    line: '#38bdf8',
     grid: '#374151',
     axis: '#9ca3af',
     tooltipBg: '#1f2937',
@@ -146,7 +146,7 @@ function renderValueLabel(
 
 function rangeButtonClass(isActive: boolean): string {
   if (isActive) {
-    return 'bg-indigo-600 text-white'
+    return 'bg-indigo-500 text-white'
   }
   return 'bg-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
 }
@@ -962,7 +962,7 @@ export default function Reports() {
                 <button
                   onClick={applyCustomRange}
                   disabled={!customFrom || !customTo}
-                  className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="rounded-md bg-indigo-500 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Apply
                 </button>
@@ -2073,7 +2073,7 @@ export default function Reports() {
               <button
                 onClick={handleSaveTag}
                 disabled={!tagTitle.trim()}
-                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Save Tag
               </button>
@@ -2163,7 +2163,7 @@ export default function Reports() {
                   <button
                     onClick={handleSaveEdit}
                     disabled={!editTagTitle.trim()}
-                    className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Save
                   </button>

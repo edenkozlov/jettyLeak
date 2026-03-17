@@ -20,7 +20,7 @@ export default function CaseStudy() {
           <div className="flex items-center gap-4 sm:gap-8">
             <Link to="/" className="text-[13px] text-gray-400 transition hover:text-gray-700">Home</Link>
             <Link to="/demo" className="text-[13px] text-gray-400 transition hover:text-gray-700">Live Demo</Link>
-            <Link to="/login" className="rounded-full bg-indigo-600 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-500 sm:px-5 sm:text-[13px]">
+            <Link to="/login" className="rounded-full bg-indigo-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-600 sm:px-5 sm:text-[13px]">
               Get Started
             </Link>
           </div>
@@ -189,7 +189,7 @@ export default function CaseStudy() {
         <div className="mt-16 flex flex-col items-center gap-4 border-t border-gray-100 pt-16 text-center sm:mt-24 sm:flex-row sm:justify-center sm:gap-5 sm:pt-20">
           <Link
             to="/demo"
-            className="w-full rounded-full bg-indigo-600 px-8 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-600/25 transition-all hover:bg-indigo-500 hover:shadow-xl sm:w-auto"
+            className="w-full rounded-full bg-indigo-500 px-8 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-600 hover:shadow-xl sm:w-auto"
           >
             View Live Demo
           </Link>
