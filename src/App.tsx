@@ -17,6 +17,7 @@ import Login from '@/pages/Login'
 import Support from '@/pages/Support'
 import Privacy from '@/pages/Privacy'
 import Terms from '@/pages/Terms'
+import MagReports from '@/pages/MagReports'
 import Reports from '@/pages/Reports'
 import Sensors from '@/pages/Sensors'
 import { store } from '@/redux/store'
@@ -51,6 +52,7 @@ export default function App() {
               <Route path="buildings/:id" element={<BuildingDetail />} />
               <Route path="sensors" element={<Sensors />} />
               <Route path="reports/:sensorId?" element={<Reports />} />
+              <Route path="mag-reports/:buildingId?" element={<MagReports />} />
             </Route>
           </Routes>
         </BrowserRouter>

@@ -5,6 +5,7 @@ import { useDashboardLayout } from '@/hooks/useDashboardLayout'
 
 const NAV_ITEMS = [
   { label: 'Reports', path: '/dashboard' },
+  { label: 'Mag Reports', path: '/dashboard/mag-reports' },
   { label: 'Home', path: '/dashboard/home' },
   { label: 'Clients', path: '/dashboard/clients' },
   { label: 'Buildings', path: '/dashboard/buildings' },
