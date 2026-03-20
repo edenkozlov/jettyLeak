@@ -18,7 +18,6 @@ import {
 } from 'recharts'
 
 import { computeWaveFrequency } from '@/utils/fft'
-import { detectCycles } from '@/utils/signalProcessing'
 import { computeFlowFromPeaks, computeBucketedFlow, computePeakFlow } from '@/utils/flowComputation'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useChartTags } from '@/hooks/useChartTags'
@@ -463,104 +462,14 @@ export default function Reports() {
 
   const visibleRangeMsRef = useRef(0)
 
-  // Flow data derived from mag_report cycles + sensor multiplier
-  const magFlowChartData = useMemo(() => {
-    if (!sensorMultiplier || sensorMultiplier <= 0 || magChartData.length < 5) return []
-
-    const totalData = magChartData
-      .filter((p) => p.total != null)
-      .map((p) => ({ timestamp: p.timestamp, value: p.total! }))
-    if (totalData.length < 5) return []
-
-    const litresPerCycle = 1 / sensorMultiplier
-    const visRange = visibleRangeMsRef.current || RANGE_MS[timeRange] || 60_000
-    const windowMs = Math.max(10_000, Math.min(visRange / 10, 300_000))
-    const hopMs = windowMs / 2
-
-    const allPeakSet = new Set<number>()
-    const startTs = totalData[0]!.timestamp
-    const endTs = totalData[totalData.length - 1]!.timestamp
-
-    for (let winStart = startTs; winStart < endTs; winStart += hopMs) {
-      const winEnd = winStart + windowMs
-      const windowData = totalData.filter(
-        (d) => d.timestamp >= winStart && d.timestamp <= winEnd,
-      )
-      if (windowData.length < 5) continue
-
-      // Skip windows with low variance — no flow (just noise)
-      const vals = windowData.map((d) => d.value)
-      const mean = vals.reduce((s, v) => s + v, 0) / vals.length
-      const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length
-      if (variance < 20) continue
-
-      const result = detectCycles(windowData, { minProminence: 0.5 })
-      for (const peak of result.peaks) allPeakSet.add(peak.timestamp)
-    }
-
-    const sortedPeaks = [...allPeakSet].sort((a, b) => a - b)
-    const dedupedPeaks: number[] = []
-    for (const ts of sortedPeaks) {
-      if (dedupedPeaks.length === 0 || ts - dedupedPeaks[dedupedPeaks.length - 1]! > 500) {
-        dedupedPeaks.push(ts)
-      }
-    }
-
-    if (dedupedPeaks.length < 2) return []
-
-    // Compute median peak interval for sustained flow detection
-    const peakIntervals: number[] = []
-    for (let i = 1; i < dedupedPeaks.length; i++) {
-      const gap = dedupedPeaks[i]! - dedupedPeaks[i - 1]!
-      if (gap > 0) peakIntervals.push(gap)
-    }
-    if (peakIntervals.length === 0) return []
-    const sortedIntervals = [...peakIntervals].sort((a, b) => a - b)
-    const medianInterval = sortedIntervals[Math.floor(sortedIntervals.length / 2)]!
-    const sustainedGapThreshold = medianInterval * 3
-
-    const rawPoints: { timestamp: number; flowRateLph: number; accumulatedL: number }[] = []
-    for (let i = 1; i < dedupedPeaks.length; i++) {
-      const intervalMs = dedupedPeaks[i]! - dedupedPeaks[i - 1]!
-      if (intervalMs <= 0) continue
-      const flowRateLph = litresPerCycle / (intervalMs / 3_600_000)
-      if (!Number.isFinite(flowRateLph)) continue
-      rawPoints.push({
-        timestamp: dedupedPeaks[i]!,
-        flowRateLph: Math.round(flowRateLph * 100) / 100,
-        accumulatedL: Math.round(i * litresPerCycle * 10000) / 10000,
-      })
-    }
-    if (rawPoints.length === 0) return []
-
-    // Fill gaps during sustained flow
-    const flowPoints: typeof rawPoints = [rawPoints[0]!]
-    for (let i = 1; i < rawPoints.length; i++) {
-      const prev = rawPoints[i - 1]!
-      const curr = rawPoints[i]!
-      const gap = curr.timestamp - prev.timestamp
-
-      if (gap > sustainedGapThreshold && gap > 2000) {
-        flowPoints.push(curr)
-      } else if (gap > medianInterval * 1.5) {
-        const avgRate = (prev.flowRateLph + curr.flowRateLph) / 2
-        const numFill = Math.floor(gap / medianInterval) - 1
-        for (let j = 1; j <= numFill; j++) {
-          flowPoints.push({
-            timestamp: prev.timestamp + j * (gap / (numFill + 1)),
-            flowRateLph: Math.round(avgRate * 100) / 100,
-            accumulatedL: prev.accumulatedL,
-          })
-        }
-        flowPoints.push(curr)
-      } else {
-        flowPoints.push(curr)
-      }
-    }
-    return flowPoints
-  }, [magChartData, sensorMultiplier, timeRange])
-
-  const MIN_VIBRATION_FOR_FLOW = 5
+  const magFlowChartData = useMemo(
+    () => computeFlowFromPeaks(
+      magChartData,
+      sensorMultiplier ?? 0,
+      visibleRangeMsRef.current || RANGE_MS[timeRange] || 60_000,
+    ),
+    [magChartData, sensorMultiplier, timeRange],
+  )
 
   // Nice round bucket intervals per time range (in ms)
   const FLOW_BUCKET_MS: Record<TimeRange, number> = {
@@ -606,140 +515,24 @@ export default function Reports() {
   const chartWindowEnd = slotAnchor + bucketMs
   const chartWindowStart = chartWindowEnd - numFlowBuckets * bucketMs
 
-  const bucketedFlowData = useMemo(() => {
-    if (magChartData.length === 0) return []
+  const bucketedFlowData = useMemo(
+    () => magChartData.length === 0
+      ? []
+      : computeBucketedFlow(magChartData, magFlowChartData, bucketMs, chartWindowStart, numFlowBuckets),
+    [magChartData, magFlowChartData, bucketMs, chartWindowStart, numFlowBuckets, slotAnchor],
+  )
 
-    const now = Date.now()
-    const buckets: { timestamp: number; flowRateLph: number; partial: boolean }[] = []
-    for (let i = 0; i < numFlowBuckets; i++) {
-      const bStart = chartWindowStart + i * bucketMs
-      const bEnd = bStart + bucketMs
-      const bMid = bStart + bucketMs / 2
-      const isPartial = bStart <= now && now < bEnd
-
-      // Check vibration intensity in this bucket
-      let maxVibration = 0
-      for (const p of magChartData) {
-        if (p.timestamp >= bStart && p.timestamp < bEnd) {
-          const v = p.bandEnergy10s ?? p.bandEnergy60s ?? 0
-          if (v > maxVibration) maxVibration = v
-        }
-      }
-
-      let sum = 0
-      let count = 0
-      if (maxVibration >= MIN_VIBRATION_FOR_FLOW) {
-        for (const p of magFlowChartData) {
-          if (p.timestamp >= bStart && p.timestamp < bEnd) {
-            sum += p.flowRateLph
-            count++
-          }
-        }
-      }
-
-      buckets.push({
-        timestamp: bMid,
-        flowRateLph: count > 0 ? Math.round((sum / count) * 100) / 100 : 0,
-        partial: isPartial,
-      })
-    }
-
-    // Fixed min bar so zero-flow slots show a visible sliver
-    const minBar = 2
-    return buckets.map((b) => ({
-      ...b,
-      flowRateLph: b.flowRateLph === 0 ? minBar : b.flowRateLph,
-    }))
-  }, [magChartData, magFlowChartData, timeRange, bucketMs, slotAnchor])
-
-  // Per-peak flow rate: each point sits at a detected peak, value = flow rate
-  // derived from the interval to the previous peak. Zero when vibration < threshold.
-  const peakFlowData = useMemo(() => {
-    if (!sensorMultiplier || sensorMultiplier <= 0 || magChartData.length < 5) return []
-
-    const totalData = magChartData
-      .filter((p) => p.total != null)
-      .map((p) => ({ timestamp: p.timestamp, value: p.total! }))
-    if (totalData.length < 5) return []
-
-    const litresPerCycle = 1 / sensorMultiplier
-    const visRange = visibleRangeMsRef.current || RANGE_MS[timeRange] || 60_000
-    const windowMs = Math.max(10_000, Math.min(visRange / 10, 300_000))
-    const hopMs = windowMs / 2
-
-    const allPeakSet = new Set<number>()
-    const startTs = totalData[0]!.timestamp
-    const endTs = totalData[totalData.length - 1]!.timestamp
-
-    for (let winStart = startTs; winStart < endTs; winStart += hopMs) {
-      const winEnd = winStart + windowMs
-      const windowData = totalData.filter(
-        (d) => d.timestamp >= winStart && d.timestamp <= winEnd,
-      )
-      if (windowData.length < 5) continue
-      const vals = windowData.map((d) => d.value)
-      const mean = vals.reduce((s, v) => s + v, 0) / vals.length
-      const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length
-      if (variance < 20) continue
-
-      const result = detectCycles(windowData, { minProminence: 0.5 })
-      for (const peak of result.peaks) allPeakSet.add(peak.timestamp)
-    }
-
-    const sortedPeaks = [...allPeakSet].sort((a, b) => a - b)
-    const dedupedPeaks: number[] = []
-    for (const ts of sortedPeaks) {
-      if (dedupedPeaks.length === 0 || ts - dedupedPeaks[dedupedPeaks.length - 1]! > 500) {
-        dedupedPeaks.push(ts)
-      }
-    }
-
-    if (dedupedPeaks.length < 2) return []
-
-    // Build a lookup for vibration intensity at a given timestamp
-    const getVibration = (ts: number): number => {
-      let closest: typeof magChartData[number] | null = null
-      let closestDist = Infinity
-      for (const p of magChartData) {
-        const dist = Math.abs(p.timestamp - ts)
-        if (dist < closestDist) { closestDist = dist; closest = p }
-        if (p.timestamp > ts) break
-      }
-      if (!closest) return 0
-      return closest.bandEnergy10s ?? closest.bandEnergy60s ?? 0
-    }
-
-    const points: { timestamp: number; flowRateLph: number }[] = []
-    for (let i = 1; i < dedupedPeaks.length; i++) {
-      const ts = dedupedPeaks[i]!
-      const intervalMs = ts - dedupedPeaks[i - 1]!
-      if (intervalMs <= 0) continue
-
-      const vibration = getVibration(ts)
-      if (vibration < MIN_VIBRATION_FOR_FLOW) {
-        points.push({ timestamp: ts, flowRateLph: 0 })
-      } else {
-        const flowRateLph = litresPerCycle / (intervalMs / 3_600_000)
-        if (!Number.isFinite(flowRateLph)) continue
-        points.push({ timestamp: ts, flowRateLph: Math.round(flowRateLph * 100) / 100 })
-      }
-    }
-
-    // Also add zero-flow points during quiet periods (no peaks)
-    // by sampling at regular intervals where there are no peaks
-    const sampleInterval = Math.max(bucketMs / 2, 5000)
-    for (let t = chartWindowStart; t <= chartWindowEnd; t += sampleInterval) {
-      // Skip if near an existing peak point
-      const nearPeak = points.some((p) => Math.abs(p.timestamp - t) < sampleInterval * 0.4)
-      if (nearPeak) continue
-      const vibration = getVibration(t)
-      if (vibration < MIN_VIBRATION_FOR_FLOW) {
-        points.push({ timestamp: t, flowRateLph: 0 })
-      }
-    }
-
-    return points.sort((a, b) => a.timestamp - b.timestamp)
-  }, [magChartData, sensorMultiplier, timeRange, bucketMs, chartWindowStart, chartWindowEnd])
+  const peakFlowData = useMemo(
+    () => computePeakFlow(
+      magChartData,
+      sensorMultiplier ?? 0,
+      visibleRangeMsRef.current || RANGE_MS[timeRange] || 60_000,
+      Math.max(bucketMs / 2, 5000),
+      chartWindowStart,
+      chartWindowEnd,
+    ),
+    [magChartData, sensorMultiplier, timeRange, bucketMs, chartWindowStart, chartWindowEnd],
+  )
 
   const [tagFormTimestamp, setTagFormTimestamp] = useState<number | null>(null)
   const [tagTitle, setTagTitle] = useState('')
