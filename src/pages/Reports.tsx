@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router'
 import type { Props as RechartLabelProps } from 'recharts/types/component/Label'
 import type { TooltipProps } from 'recharts'
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
+  Cell,
   Line,
   LineChart,
   ReferenceArea,
@@ -15,6 +18,8 @@ import {
 } from 'recharts'
 
 import { computeWaveFrequency } from '@/utils/fft'
+import { detectCycles } from '@/utils/signalProcessing'
+import { computeFlowFromPeaks, computeBucketedFlow, computePeakFlow } from '@/utils/flowComputation'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useChartTags } from '@/hooks/useChartTags'
 import { useChartZoomPan } from '@/hooks/useChartZoomPan'
@@ -347,13 +352,18 @@ export default function Reports() {
   const { mode } = useTheme()
   const colors = CHART_COLORS[mode]
   const navigate = useNavigate()
-  const { sensorId: sensorIdParam } = useParams<{ sensorId: string }>()
+  const location = useLocation()
+  const { sensorId: sensorIdParam, timeWindow: timeWindowParam } = useParams<{ sensorId: string; timeWindow: string }>()
   const paramSensorId = sensorIdParam ? Number(sensorIdParam) : null
+  const validTimeRanges = new Set(['1m', '5m', '15m', '1h', '6h', '12h', '24h', 'all'])
+  const paramTimeRange = timeWindowParam && validTimeRanges.has(timeWindowParam) ? timeWindowParam as TimeRange : undefined
+  const showRawData = location.pathname.endsWith('/raw')
 
   const {
     sensors,
     selectedSensorId,
     selectedSensorName,
+    sensorMultiplier,
     chartData,
     timeRange,
     periodOffset,
@@ -363,6 +373,7 @@ export default function Reports() {
     reportsLoading,
     reportsError,
     magChartData,
+    refetchMag,
     parsedSignals,
     signalTypeIds,
     sensorMappings,
@@ -374,14 +385,30 @@ export default function Reports() {
     handleToggleLive,
     handlePreviousPeriod,
     handleNextPeriod,
-  } = useReportsPage(paramSensorId)
+  } = useReportsPage(paramSensorId, paramTimeRange)
+
+  const buildPath = useCallback((sensorId: number | string, range?: string, raw?: boolean) => {
+    let path = `/dashboard/reports/${sensorId}`
+    if (range && range !== 'custom') path += `/${range}`
+    if (raw) path += '/raw'
+    return path
+  }, [])
+
+  // Sync URL when time range changes via UI buttons
+  useEffect(() => {
+    if (selectedSensorId == null) return
+    const expectedPath = buildPath(selectedSensorId, timeRange, showRawData)
+    if (location.pathname !== expectedPath) {
+      navigate(expectedPath, { replace: true })
+    }
+  }, [selectedSensorId, timeRange, showRawData, buildPath, navigate, location.pathname])
 
   useEffect(() => {
     if (paramSensorId === null && sensors.length > 0) {
       const defaultId = sensors[sensors.length - 1]!.id
-      navigate(`/dashboard/reports/${defaultId}`, { replace: true })
+      navigate(buildPath(defaultId, timeRange), { replace: true })
     }
-  }, [paramSensorId, sensors, navigate])
+  }, [paramSensorId, sensors, navigate, buildPath, timeRange])
 
   const periodLabel = useMemo(() => {
     if (periodOffset === 0 || timeRange === 'all' || timeRange === 'custom') return null
@@ -434,6 +461,286 @@ export default function Reports() {
     return Math.abs(sum)
   }, [chartData])
 
+  const visibleRangeMsRef = useRef(0)
+
+  // Flow data derived from mag_report cycles + sensor multiplier
+  const magFlowChartData = useMemo(() => {
+    if (!sensorMultiplier || sensorMultiplier <= 0 || magChartData.length < 5) return []
+
+    const totalData = magChartData
+      .filter((p) => p.total != null)
+      .map((p) => ({ timestamp: p.timestamp, value: p.total! }))
+    if (totalData.length < 5) return []
+
+    const litresPerCycle = 1 / sensorMultiplier
+    const visRange = visibleRangeMsRef.current || RANGE_MS[timeRange] || 60_000
+    const windowMs = Math.max(10_000, Math.min(visRange / 10, 300_000))
+    const hopMs = windowMs / 2
+
+    const allPeakSet = new Set<number>()
+    const startTs = totalData[0]!.timestamp
+    const endTs = totalData[totalData.length - 1]!.timestamp
+
+    for (let winStart = startTs; winStart < endTs; winStart += hopMs) {
+      const winEnd = winStart + windowMs
+      const windowData = totalData.filter(
+        (d) => d.timestamp >= winStart && d.timestamp <= winEnd,
+      )
+      if (windowData.length < 5) continue
+
+      // Skip windows with low variance — no flow (just noise)
+      const vals = windowData.map((d) => d.value)
+      const mean = vals.reduce((s, v) => s + v, 0) / vals.length
+      const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length
+      if (variance < 20) continue
+
+      const result = detectCycles(windowData, { minProminence: 0.5 })
+      for (const peak of result.peaks) allPeakSet.add(peak.timestamp)
+    }
+
+    const sortedPeaks = [...allPeakSet].sort((a, b) => a - b)
+    const dedupedPeaks: number[] = []
+    for (const ts of sortedPeaks) {
+      if (dedupedPeaks.length === 0 || ts - dedupedPeaks[dedupedPeaks.length - 1]! > 500) {
+        dedupedPeaks.push(ts)
+      }
+    }
+
+    if (dedupedPeaks.length < 2) return []
+
+    // Compute median peak interval for sustained flow detection
+    const peakIntervals: number[] = []
+    for (let i = 1; i < dedupedPeaks.length; i++) {
+      const gap = dedupedPeaks[i]! - dedupedPeaks[i - 1]!
+      if (gap > 0) peakIntervals.push(gap)
+    }
+    if (peakIntervals.length === 0) return []
+    const sortedIntervals = [...peakIntervals].sort((a, b) => a - b)
+    const medianInterval = sortedIntervals[Math.floor(sortedIntervals.length / 2)]!
+    const sustainedGapThreshold = medianInterval * 3
+
+    const rawPoints: { timestamp: number; flowRateLph: number; accumulatedL: number }[] = []
+    for (let i = 1; i < dedupedPeaks.length; i++) {
+      const intervalMs = dedupedPeaks[i]! - dedupedPeaks[i - 1]!
+      if (intervalMs <= 0) continue
+      const flowRateLph = litresPerCycle / (intervalMs / 3_600_000)
+      if (!Number.isFinite(flowRateLph)) continue
+      rawPoints.push({
+        timestamp: dedupedPeaks[i]!,
+        flowRateLph: Math.round(flowRateLph * 100) / 100,
+        accumulatedL: Math.round(i * litresPerCycle * 10000) / 10000,
+      })
+    }
+    if (rawPoints.length === 0) return []
+
+    // Fill gaps during sustained flow
+    const flowPoints: typeof rawPoints = [rawPoints[0]!]
+    for (let i = 1; i < rawPoints.length; i++) {
+      const prev = rawPoints[i - 1]!
+      const curr = rawPoints[i]!
+      const gap = curr.timestamp - prev.timestamp
+
+      if (gap > sustainedGapThreshold && gap > 2000) {
+        flowPoints.push(curr)
+      } else if (gap > medianInterval * 1.5) {
+        const avgRate = (prev.flowRateLph + curr.flowRateLph) / 2
+        const numFill = Math.floor(gap / medianInterval) - 1
+        for (let j = 1; j <= numFill; j++) {
+          flowPoints.push({
+            timestamp: prev.timestamp + j * (gap / (numFill + 1)),
+            flowRateLph: Math.round(avgRate * 100) / 100,
+            accumulatedL: prev.accumulatedL,
+          })
+        }
+        flowPoints.push(curr)
+      } else {
+        flowPoints.push(curr)
+      }
+    }
+    return flowPoints
+  }, [magChartData, sensorMultiplier, timeRange])
+
+  const MIN_VIBRATION_FOR_FLOW = 5
+
+  // Nice round bucket intervals per time range (in ms)
+  const FLOW_BUCKET_MS: Record<TimeRange, number> = {
+    '1m':  5_000,           // 5s  → 12 buckets
+    '5m':  15_000,          // 15s → 20 buckets
+    '15m': 60_000,          // 1m  → 15 buckets
+    '1h':  5 * 60_000,      // 5m  → 12 buckets
+    '6h':  15 * 60_000,     // 15m → 24 buckets
+    '12h': 30 * 60_000,     // 30m → 24 buckets
+    '24h': 60 * 60_000,     // 1h  → 24 buckets
+    all:   60 * 60_000,     // 1h  fallback
+    custom: 60_000,         // 1m  fallback
+  }
+
+  const bucketMs = FLOW_BUCKET_MS[timeRange]
+
+  // Refetch mag data at each slot boundary so the flow chart updates discretely
+  const [slotAnchor, setSlotAnchor] = useState(() =>
+    Math.floor(Date.now() / bucketMs) * bucketMs,
+  )
+
+  useEffect(() => {
+    // Compute ms until the next slot boundary
+    const now = Date.now()
+    const nextBoundary = (Math.floor(now / bucketMs) + 1) * bucketMs
+    const delay = nextBoundary - now
+
+    const timeout = setTimeout(() => {
+      setSlotAnchor(Math.floor(Date.now() / bucketMs) * bucketMs)
+      refetchMag()
+    }, delay)
+
+    return () => clearTimeout(timeout)
+  }, [slotAnchor, bucketMs, refetchMag])
+
+  // Also reset anchor when time range changes
+  useEffect(() => {
+    setSlotAnchor(Math.floor(Date.now() / bucketMs) * bucketMs)
+  }, [bucketMs])
+
+  // Canonical time window shared by all charts
+  const numFlowBuckets = Math.round((RANGE_MS[timeRange] || 60_000) / bucketMs)
+  const chartWindowEnd = slotAnchor + bucketMs
+  const chartWindowStart = chartWindowEnd - numFlowBuckets * bucketMs
+
+  const bucketedFlowData = useMemo(() => {
+    if (magChartData.length === 0) return []
+
+    const now = Date.now()
+    const buckets: { timestamp: number; flowRateLph: number; partial: boolean }[] = []
+    for (let i = 0; i < numFlowBuckets; i++) {
+      const bStart = chartWindowStart + i * bucketMs
+      const bEnd = bStart + bucketMs
+      const bMid = bStart + bucketMs / 2
+      const isPartial = bStart <= now && now < bEnd
+
+      // Check vibration intensity in this bucket
+      let maxVibration = 0
+      for (const p of magChartData) {
+        if (p.timestamp >= bStart && p.timestamp < bEnd) {
+          const v = p.bandEnergy10s ?? p.bandEnergy60s ?? 0
+          if (v > maxVibration) maxVibration = v
+        }
+      }
+
+      let sum = 0
+      let count = 0
+      if (maxVibration >= MIN_VIBRATION_FOR_FLOW) {
+        for (const p of magFlowChartData) {
+          if (p.timestamp >= bStart && p.timestamp < bEnd) {
+            sum += p.flowRateLph
+            count++
+          }
+        }
+      }
+
+      buckets.push({
+        timestamp: bMid,
+        flowRateLph: count > 0 ? Math.round((sum / count) * 100) / 100 : 0,
+        partial: isPartial,
+      })
+    }
+
+    // Fixed min bar so zero-flow slots show a visible sliver
+    const minBar = 2
+    return buckets.map((b) => ({
+      ...b,
+      flowRateLph: b.flowRateLph === 0 ? minBar : b.flowRateLph,
+    }))
+  }, [magChartData, magFlowChartData, timeRange, bucketMs, slotAnchor])
+
+  // Per-peak flow rate: each point sits at a detected peak, value = flow rate
+  // derived from the interval to the previous peak. Zero when vibration < threshold.
+  const peakFlowData = useMemo(() => {
+    if (!sensorMultiplier || sensorMultiplier <= 0 || magChartData.length < 5) return []
+
+    const totalData = magChartData
+      .filter((p) => p.total != null)
+      .map((p) => ({ timestamp: p.timestamp, value: p.total! }))
+    if (totalData.length < 5) return []
+
+    const litresPerCycle = 1 / sensorMultiplier
+    const visRange = visibleRangeMsRef.current || RANGE_MS[timeRange] || 60_000
+    const windowMs = Math.max(10_000, Math.min(visRange / 10, 300_000))
+    const hopMs = windowMs / 2
+
+    const allPeakSet = new Set<number>()
+    const startTs = totalData[0]!.timestamp
+    const endTs = totalData[totalData.length - 1]!.timestamp
+
+    for (let winStart = startTs; winStart < endTs; winStart += hopMs) {
+      const winEnd = winStart + windowMs
+      const windowData = totalData.filter(
+        (d) => d.timestamp >= winStart && d.timestamp <= winEnd,
+      )
+      if (windowData.length < 5) continue
+      const vals = windowData.map((d) => d.value)
+      const mean = vals.reduce((s, v) => s + v, 0) / vals.length
+      const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length
+      if (variance < 20) continue
+
+      const result = detectCycles(windowData, { minProminence: 0.5 })
+      for (const peak of result.peaks) allPeakSet.add(peak.timestamp)
+    }
+
+    const sortedPeaks = [...allPeakSet].sort((a, b) => a - b)
+    const dedupedPeaks: number[] = []
+    for (const ts of sortedPeaks) {
+      if (dedupedPeaks.length === 0 || ts - dedupedPeaks[dedupedPeaks.length - 1]! > 500) {
+        dedupedPeaks.push(ts)
+      }
+    }
+
+    if (dedupedPeaks.length < 2) return []
+
+    // Build a lookup for vibration intensity at a given timestamp
+    const getVibration = (ts: number): number => {
+      let closest: typeof magChartData[number] | null = null
+      let closestDist = Infinity
+      for (const p of magChartData) {
+        const dist = Math.abs(p.timestamp - ts)
+        if (dist < closestDist) { closestDist = dist; closest = p }
+        if (p.timestamp > ts) break
+      }
+      if (!closest) return 0
+      return closest.bandEnergy10s ?? closest.bandEnergy60s ?? 0
+    }
+
+    const points: { timestamp: number; flowRateLph: number }[] = []
+    for (let i = 1; i < dedupedPeaks.length; i++) {
+      const ts = dedupedPeaks[i]!
+      const intervalMs = ts - dedupedPeaks[i - 1]!
+      if (intervalMs <= 0) continue
+
+      const vibration = getVibration(ts)
+      if (vibration < MIN_VIBRATION_FOR_FLOW) {
+        points.push({ timestamp: ts, flowRateLph: 0 })
+      } else {
+        const flowRateLph = litresPerCycle / (intervalMs / 3_600_000)
+        if (!Number.isFinite(flowRateLph)) continue
+        points.push({ timestamp: ts, flowRateLph: Math.round(flowRateLph * 100) / 100 })
+      }
+    }
+
+    // Also add zero-flow points during quiet periods (no peaks)
+    // by sampling at regular intervals where there are no peaks
+    const sampleInterval = Math.max(bucketMs / 2, 5000)
+    for (let t = chartWindowStart; t <= chartWindowEnd; t += sampleInterval) {
+      // Skip if near an existing peak point
+      const nearPeak = points.some((p) => Math.abs(p.timestamp - t) < sampleInterval * 0.4)
+      if (nearPeak) continue
+      const vibration = getVibration(t)
+      if (vibration < MIN_VIBRATION_FOR_FLOW) {
+        points.push({ timestamp: t, flowRateLph: 0 })
+      }
+    }
+
+    return points.sort((a, b) => a.timestamp - b.timestamp)
+  }, [magChartData, sensorMultiplier, timeRange, bucketMs, chartWindowStart, chartWindowEnd])
+
   const [tagFormTimestamp, setTagFormTimestamp] = useState<number | null>(null)
   const [tagTitle, setTagTitle] = useState('')
   const [tagDescription, setTagDescription] = useState('')
@@ -455,9 +762,6 @@ export default function Reports() {
     null,
   )
   const [editingMappingLabel, setEditingMappingLabel] = useState('')
-
-
-  const visibleRangeMsRef = useRef(0)
 
   const handleChartClick = useCallback(
     (cx: number) => {
@@ -534,9 +838,9 @@ export default function Reports() {
       resetZoom()
       setSelectedTag(null)
       handleSensorChange(newId)
-      navigate(`/dashboard/reports/${newId}`)
+      navigate(buildPath(newId, timeRange, showRawData))
     },
-    [resetZoom, setSelectedTag, handleSensorChange, navigate],
+    [resetZoom, setSelectedTag, handleSensorChange, navigate, buildPath, timeRange, showRawData],
   )
 
   const visibleData = useMemo(() => {
@@ -586,12 +890,40 @@ export default function Reports() {
   }, [tags, domain, timeline])
 
   const compressedMagData = useMemo(() => {
-    if (magChartData.length === 0 || timeline.points.length === 0) return []
+    if (magChartData.length === 0) return []
+    // When no regular chart data exists, use timestamps directly (no compression)
+    // and filter to the canonical slot-aligned window
+    if (timeline.points.length === 0) {
+      return magChartData
+        .map((p) => ({ ...p, cx: p.timestamp }))
+        .filter((p) => p.cx >= chartWindowStart && p.cx <= chartWindowEnd)
+    }
     const [left, right] = domain
     return magChartData
       .map((p) => ({ ...p, cx: timeline.toCompressed(p.timestamp) }))
       .filter((p) => p.cx >= left && p.cx <= right)
-  }, [magChartData, timeline, domain])
+  }, [magChartData, timeline, domain, chartWindowStart, chartWindowEnd])
+
+  // Use the canonical slot-aligned window for raw mag chart domain/ticks
+  const magDomain = useMemo<[number, number]>(
+    () => [chartWindowStart, chartWindowEnd],
+    [chartWindowStart, chartWindowEnd],
+  )
+
+  const magRangeMs = chartWindowEnd - chartWindowStart
+
+  const magTicks = useMemo(() => {
+    const step = computeTickInterval(magRangeMs)
+    const start = Math.ceil(chartWindowStart / step) * step
+    const ticks: number[] = []
+    for (let t = start; t <= chartWindowEnd; t += step) ticks.push(t)
+    return ticks
+  }, [chartWindowStart, chartWindowEnd, magRangeMs])
+
+  // Use regular domain/ticks when available, fall back to mag-based ones
+  const rawChartDomain = timeline.points.length > 0 ? domain : magDomain
+  const rawChartTicks = timeline.points.length > 0 ? zoomTicks : magTicks
+  const rawChartRangeMs = timeline.points.length > 0 ? realVisibleRange : magRangeMs
 
   const totalMagYDomain = useMemo<[number, number]>(() => {
     const totals = compressedMagData
@@ -660,12 +992,15 @@ export default function Reports() {
   }, [compressedMagData])
 
   const compressedWaveFreqData = useMemo(() => {
-    if (magChartData.length < 3 || timeline.points.length === 0) return []
+    if (magChartData.length < 3) return []
     const samples = magChartData
       .filter((p) => p.x != null)
       .map((p) => ({ timestamp: p.timestamp, value: p.x! }))
     if (samples.length < 3) return []
     const freqPoints = computeWaveFrequency(samples, 5000)
+    if (timeline.points.length === 0) {
+      return freqPoints.map((p) => ({ ...p, cx: p.timestamp }))
+    }
     const [left, right] = domain
     return freqPoints
       .map((p) => ({ ...p, cx: timeline.toCompressed(p.timestamp) }))
@@ -903,7 +1238,7 @@ export default function Reports() {
                 </span>
                 {isLive && (
                   <span className="ml-1 text-xs text-gray-400">
-                    ({chartData.length} pts)
+                    ({chartData.length || magChartData.length} pts)
                   </span>
                 )}
               </p>
@@ -915,6 +1250,21 @@ export default function Reports() {
                   {totalLiters < 1 ? totalLiters.toFixed(2) : totalLiters.toFixed(1)} L
                 </span>
               </p>
+            )}
+            {magChartData.length > 0 && (
+              <button
+                onClick={() => {
+                  if (selectedSensorId == null) return
+                  navigate(buildPath(selectedSensorId, timeRange, !showRawData))
+                }}
+                className={`ml-auto rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                  showRawData
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
+                    : 'border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                }`}
+              >
+                {showRawData ? 'Hide Raw Data' : 'View Raw Data'}
+              </button>
             )}
           </div>
 
@@ -1209,15 +1559,146 @@ export default function Reports() {
           </div>
         )}
 
-        {reportsLoading && chartData.length === 0 ? (
+        {/* Flow Rate from Mag Cycles */}
+        {bucketedFlowData.length > 0 && (
+          <div className="mb-6">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Flow Rate
+            </h3>
+            <div className="h-[200px] w-full sm:h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={bucketedFlowData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
+                  <XAxis
+                    dataKey="timestamp"
+                    tickFormatter={(ts: number) => formatTick(ts, RANGE_MS[timeRange] || 60_000)}
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    width={55}
+                    domain={[-1, (dataMax: number) => Math.max(dataMax * 1.1, 100)]}
+                    allowDataOverflow
+                    tickFormatter={(v: number) => v < 0 ? '' : String(v)}
+                    tick={{ fontSize: 11, fill: '#3b82f6' }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                    label={{ value: 'L/h', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#3b82f6' } }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      borderColor: colors.tooltipBorder,
+                      color: colors.tooltipText,
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                    formatter={(value: unknown, name: unknown) => [
+                      typeof value === 'number' ? value.toFixed(2) : '—',
+                      String(name ?? ''),
+                    ]}
+                    labelFormatter={(ts: unknown) =>
+                      typeof ts === 'number'
+                        ? new Date(ts).toLocaleString('en-US', {
+                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+                          })
+                        : ''
+                    }
+                  />
+                  <Bar yAxisId="left" dataKey="flowRateLph" name="Flow Rate (L/h)" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+                    {bucketedFlowData.map((entry, index) => (
+                      <Cell
+                        key={index}
+                        fill={entry.partial ? '#3b82f6' : '#3b82f6'}
+                        fillOpacity={entry.partial ? 0.4 : 1}
+                        stroke={entry.partial ? '#3b82f6' : 'none'}
+                        strokeWidth={entry.partial ? 1.5 : 0}
+                        strokeDasharray={entry.partial ? '4 2' : 'none'}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Per-peak flow rate line chart */}
+        {peakFlowData.length > 0 && (
+          <div className="mb-6">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Flow Rate (per cycle)
+            </h3>
+            <div className="h-[160px] w-full sm:h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={peakFlowData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
+                  <XAxis
+                    dataKey="timestamp"
+                    type="number"
+                    domain={[chartWindowStart, chartWindowEnd]}
+                    tickFormatter={(ts: number) => formatTick(ts, magRangeMs)}
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <YAxis
+                    width={55}
+                    domain={[-1, (dataMax: number) => Math.max(dataMax * 1.1, 100)]}
+                    allowDataOverflow
+                    tickFormatter={(v: number) => v < 0 ? '' : String(Math.round(v))}
+                    tick={{ fontSize: 11, fill: '#8b5cf6' }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                    label={{ value: 'L/h', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#8b5cf6' } }}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      borderColor: colors.tooltipBorder,
+                      color: colors.tooltipText,
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                    formatter={(value: unknown) => [
+                      typeof value === 'number' ? value.toFixed(2) + ' L/h' : '—',
+                      'Flow Rate',
+                    ]}
+                    labelFormatter={(ts: unknown) =>
+                      typeof ts === 'number'
+                        ? new Date(ts).toLocaleString('en-US', {
+                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+                          })
+                        : ''
+                    }
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="flowRateLph"
+                    name="Flow Rate"
+                    stroke="#8b5cf6"
+                    strokeWidth={1.5}
+                    dot={{ r: 2, fill: '#8b5cf6' }}
+                    isAnimationActive={false}
+                    connectNulls={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {reportsLoading && chartData.length === 0 && bucketedFlowData.length === 0 ? (
           <div className="flex h-80 items-center justify-center text-gray-500 dark:text-gray-400">
             Loading chart…
           </div>
-        ) : chartData.length === 0 ? (
+        ) : chartData.length === 0 && bucketedFlowData.length === 0 && magChartData.length === 0 ? (
           <div className="flex h-80 items-center justify-center text-gray-400">
-            No report data for this time range
+            No data for this time range
           </div>
-        ) : (
+        ) : chartData.length > 0 ? (
           <div
             ref={chartWrapperRef}
             className={`h-[280px] select-none sm:h-[400px] ${maSelectMode ? 'cursor-crosshair' : ''}`}
@@ -1365,9 +1846,309 @@ export default function Reports() {
               </LineChart>
             </ResponsiveContainer>
           </div>
+        ) : null}
+
+        {showRawData && compressedMagData.length > 0 && (
+          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Total Magnitude
+            </h3>
+            <div className="h-[200px] w-full sm:h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={compressedMagData}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={colors.grid}
+                  />
+                  <XAxis
+                    dataKey="cx"
+                    type="number"
+                    domain={rawChartDomain}
+                    allowDataOverflow
+                    ticks={rawChartTicks}
+                    tickFormatter={(cx: number) =>
+                      formatTick(timeline.toReal(cx), rawChartRangeMs)
+                    }
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <YAxis
+                    width={50}
+                    domain={totalMagYDomain}
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                    tickFormatter={(v: number) => v.toFixed(2)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      border: `1px solid ${colors.tooltipBorder}`,
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: colors.tooltipText,
+                    }}
+                    formatter={(value, name) => [
+                      typeof value === 'number' ? value.toFixed(3) : '—',
+                      name ?? '',
+                    ]}
+                    labelFormatter={(cx: unknown) => {
+                      const realTs = timeline.toReal(Number(cx))
+                      return new Date(realTs).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false,
+                      })
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    name="Total Magnitude"
+                    stroke="#f59e0b"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         )}
 
-        {compressedWaveFreqData.length > 0 && (
+        {showRawData && compressedMagData.length > 0 && (
+          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              X Axis
+            </h3>
+            <div className="h-[200px] w-full sm:h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={compressedMagData}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={colors.grid}
+                  />
+                  <XAxis
+                    dataKey="cx"
+                    type="number"
+                    domain={rawChartDomain}
+                    allowDataOverflow
+                    ticks={rawChartTicks}
+                    tickFormatter={(cx: number) =>
+                      formatTick(timeline.toReal(cx), rawChartRangeMs)
+                    }
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <YAxis
+                    width={50}
+                    domain={xAxisYDomain}
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                    tickFormatter={(v: number) => v.toFixed(2)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      border: `1px solid ${colors.tooltipBorder}`,
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: colors.tooltipText,
+                    }}
+                    formatter={(value, name) => [
+                      typeof value === 'number' ? value.toFixed(3) : '—',
+                      name ?? '',
+                    ]}
+                    labelFormatter={(cx: unknown) => {
+                      const realTs = timeline.toReal(Number(cx))
+                      return new Date(realTs).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false,
+                      })
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="x"
+                    name="X Axis"
+                    stroke="#f43f5e"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {showRawData && compressedMagData.length > 0 && (
+          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Y Axis
+            </h3>
+            <div className="h-[200px] w-full sm:h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={compressedMagData}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={colors.grid}
+                  />
+                  <XAxis
+                    dataKey="cx"
+                    type="number"
+                    domain={rawChartDomain}
+                    allowDataOverflow
+                    ticks={rawChartTicks}
+                    tickFormatter={(cx: number) =>
+                      formatTick(timeline.toReal(cx), rawChartRangeMs)
+                    }
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <YAxis
+                    width={50}
+                    domain={yAxisYDomain}
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                    tickFormatter={(v: number) => v.toFixed(2)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      border: `1px solid ${colors.tooltipBorder}`,
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: colors.tooltipText,
+                    }}
+                    formatter={(value, name) => [
+                      typeof value === 'number' ? value.toFixed(3) : '—',
+                      name ?? '',
+                    ]}
+                    labelFormatter={(cx: unknown) => {
+                      const realTs = timeline.toReal(Number(cx))
+                      return new Date(realTs).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false,
+                      })
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="y"
+                    name="Y Axis"
+                    stroke="#10b981"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {showRawData && compressedMagData.length > 0 && (
+          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Z Axis
+            </h3>
+            <div className="h-[200px] w-full sm:h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={compressedMagData}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={colors.grid}
+                  />
+                  <XAxis
+                    dataKey="cx"
+                    type="number"
+                    domain={rawChartDomain}
+                    allowDataOverflow
+                    ticks={rawChartTicks}
+                    tickFormatter={(cx: number) =>
+                      formatTick(timeline.toReal(cx), rawChartRangeMs)
+                    }
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                  />
+                  <YAxis
+                    width={50}
+                    domain={zAxisYDomain}
+                    tick={{ fontSize: 11, fill: colors.axis }}
+                    tickLine={{ stroke: colors.grid }}
+                    axisLine={{ stroke: colors.grid }}
+                    tickFormatter={(v: number) => v.toFixed(2)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.tooltipBg,
+                      border: `1px solid ${colors.tooltipBorder}`,
+                      borderRadius: 8,
+                      fontSize: 12,
+                      color: colors.tooltipText,
+                    }}
+                    formatter={(value, name) => [
+                      typeof value === 'number' ? value.toFixed(3) : '—',
+                      name ?? '',
+                    ]}
+                    labelFormatter={(cx: unknown) => {
+                      const realTs = timeline.toReal(Number(cx))
+                      return new Date(realTs).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false,
+                      })
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="z"
+                    name="Z Axis"
+                    stroke="#3b82f6"
+                    strokeWidth={1.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {showRawData && compressedWaveFreqData.length > 0 && (
           <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Vibration Intensity — X Axis (5s window)
@@ -1385,11 +2166,11 @@ export default function Reports() {
                   <XAxis
                     dataKey="cx"
                     type="number"
-                    domain={domain}
+                    domain={rawChartDomain}
                     allowDataOverflow
-                    ticks={zoomTicks}
+                    ticks={rawChartTicks}
                     tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), realVisibleRange)
+                      formatTick(timeline.toReal(cx), rawChartRangeMs)
                     }
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
@@ -1440,7 +2221,7 @@ export default function Reports() {
           </div>
         )}
 
-        {vibrationData.length > 0 && (
+        {showRawData && vibrationData.length > 0 && (
           <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Vibration Intensity (10s / 60s / 5m)
@@ -1458,11 +2239,11 @@ export default function Reports() {
                   <XAxis
                     dataKey="cx"
                     type="number"
-                    domain={domain}
+                    domain={rawChartDomain}
                     allowDataOverflow
-                    ticks={zoomTicks}
+                    ticks={rawChartTicks}
                     tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), realVisibleRange)
+                      formatTick(timeline.toReal(cx), rawChartRangeMs)
                     }
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
@@ -1543,308 +2324,7 @@ export default function Reports() {
           </div>
         )}
 
-        {compressedMagData.length > 0 && (
-          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
-            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Total Magnitude (zoomed)
-            </h3>
-            <div className="h-[200px] w-full sm:h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={compressedMagData}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke={colors.grid}
-                  />
-                  <XAxis
-                    dataKey="cx"
-                    type="number"
-                    domain={domain}
-                    allowDataOverflow
-                    ticks={zoomTicks}
-                    tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), realVisibleRange)
-                    }
-                    tick={{ fontSize: 11, fill: colors.axis }}
-                    tickLine={{ stroke: colors.grid }}
-                    axisLine={{ stroke: colors.grid }}
-                  />
-                  <YAxis
-                    width={50}
-                    domain={totalMagYDomain}
-                    tick={{ fontSize: 11, fill: colors.axis }}
-                    tickLine={{ stroke: colors.grid }}
-                    axisLine={{ stroke: colors.grid }}
-                    tickFormatter={(v: number) => v.toFixed(2)}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: colors.tooltipBg,
-                      border: `1px solid ${colors.tooltipBorder}`,
-                      borderRadius: 8,
-                      fontSize: 12,
-                      color: colors.tooltipText,
-                    }}
-                    formatter={(value, name) => [
-                      typeof value === 'number' ? value.toFixed(3) : '—',
-                      name ?? '',
-                    ]}
-                    labelFormatter={(cx: unknown) => {
-                      const realTs = timeline.toReal(Number(cx))
-                      return new Date(realTs).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false,
-                      })
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    name="Total Magnitude"
-                    stroke="#f59e0b"
-                    strokeWidth={1.5}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {compressedMagData.length > 0 && (
-          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
-            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-              X Axis (zoomed)
-            </h3>
-            <div className="h-[200px] w-full sm:h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={compressedMagData}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke={colors.grid}
-                  />
-                  <XAxis
-                    dataKey="cx"
-                    type="number"
-                    domain={domain}
-                    allowDataOverflow
-                    ticks={zoomTicks}
-                    tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), realVisibleRange)
-                    }
-                    tick={{ fontSize: 11, fill: colors.axis }}
-                    tickLine={{ stroke: colors.grid }}
-                    axisLine={{ stroke: colors.grid }}
-                  />
-                  <YAxis
-                    width={50}
-                    domain={xAxisYDomain}
-                    tick={{ fontSize: 11, fill: colors.axis }}
-                    tickLine={{ stroke: colors.grid }}
-                    axisLine={{ stroke: colors.grid }}
-                    tickFormatter={(v: number) => v.toFixed(2)}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: colors.tooltipBg,
-                      border: `1px solid ${colors.tooltipBorder}`,
-                      borderRadius: 8,
-                      fontSize: 12,
-                      color: colors.tooltipText,
-                    }}
-                    formatter={(value, name) => [
-                      typeof value === 'number' ? value.toFixed(3) : '—',
-                      name ?? '',
-                    ]}
-                    labelFormatter={(cx: unknown) => {
-                      const realTs = timeline.toReal(Number(cx))
-                      return new Date(realTs).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false,
-                      })
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="x"
-                    name="X Axis"
-                    stroke="#f43f5e"
-                    strokeWidth={1.5}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {compressedMagData.length > 0 && (
-          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
-            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Y Axis (zoomed)
-            </h3>
-            <div className="h-[200px] w-full sm:h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={compressedMagData}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke={colors.grid}
-                  />
-                  <XAxis
-                    dataKey="cx"
-                    type="number"
-                    domain={domain}
-                    allowDataOverflow
-                    ticks={zoomTicks}
-                    tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), realVisibleRange)
-                    }
-                    tick={{ fontSize: 11, fill: colors.axis }}
-                    tickLine={{ stroke: colors.grid }}
-                    axisLine={{ stroke: colors.grid }}
-                  />
-                  <YAxis
-                    width={50}
-                    domain={yAxisYDomain}
-                    tick={{ fontSize: 11, fill: colors.axis }}
-                    tickLine={{ stroke: colors.grid }}
-                    axisLine={{ stroke: colors.grid }}
-                    tickFormatter={(v: number) => v.toFixed(2)}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: colors.tooltipBg,
-                      border: `1px solid ${colors.tooltipBorder}`,
-                      borderRadius: 8,
-                      fontSize: 12,
-                      color: colors.tooltipText,
-                    }}
-                    formatter={(value, name) => [
-                      typeof value === 'number' ? value.toFixed(3) : '—',
-                      name ?? '',
-                    ]}
-                    labelFormatter={(cx: unknown) => {
-                      const realTs = timeline.toReal(Number(cx))
-                      return new Date(realTs).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false,
-                      })
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="y"
-                    name="Y Axis"
-                    stroke="#10b981"
-                    strokeWidth={1.5}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-        {compressedMagData.length > 0 && (
-          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
-            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Z Axis (zoomed)
-            </h3>
-            <div className="h-[200px] w-full sm:h-[250px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={compressedMagData}
-                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke={colors.grid}
-                  />
-                  <XAxis
-                    dataKey="cx"
-                    type="number"
-                    domain={domain}
-                    allowDataOverflow
-                    ticks={zoomTicks}
-                    tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), realVisibleRange)
-                    }
-                    tick={{ fontSize: 11, fill: colors.axis }}
-                    tickLine={{ stroke: colors.grid }}
-                    axisLine={{ stroke: colors.grid }}
-                  />
-                  <YAxis
-                    width={50}
-                    domain={zAxisYDomain}
-                    tick={{ fontSize: 11, fill: colors.axis }}
-                    tickLine={{ stroke: colors.grid }}
-                    axisLine={{ stroke: colors.grid }}
-                    tickFormatter={(v: number) => v.toFixed(2)}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: colors.tooltipBg,
-                      border: `1px solid ${colors.tooltipBorder}`,
-                      borderRadius: 8,
-                      fontSize: 12,
-                      color: colors.tooltipText,
-                    }}
-                    formatter={(value, name) => [
-                      typeof value === 'number' ? value.toFixed(3) : '—',
-                      name ?? '',
-                    ]}
-                    labelFormatter={(cx: unknown) => {
-                      const realTs = timeline.toReal(Number(cx))
-                      return new Date(realTs).toLocaleString('en-US', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit',
-                        hour12: false,
-                      })
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="z"
-                    name="Z Axis"
-                    stroke="#3b82f6"
-                    strokeWidth={1.5}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        )}
-
-
-        {compressedMagData.length > 0 && (
+        {showRawData && compressedMagData.length > 0 && (
           <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Building Mag Data
@@ -1862,11 +2342,11 @@ export default function Reports() {
                   <XAxis
                     dataKey="cx"
                     type="number"
-                    domain={domain}
+                    domain={rawChartDomain}
                     allowDataOverflow
-                    ticks={zoomTicks}
+                    ticks={rawChartTicks}
                     tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), realVisibleRange)
+                      formatTick(timeline.toReal(cx), rawChartRangeMs)
                     }
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}

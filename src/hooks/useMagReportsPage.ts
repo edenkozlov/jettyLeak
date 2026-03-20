@@ -6,10 +6,11 @@ import { GET_BUILDINGS } from '@/queries/getBuildings'
 import { GET_MAG_SENSORS_BY_BUILDING_ID } from '@/queries/getMagDataByBuildingId'
 import { GET_MAG_REPORTS } from '@/queries/getMagReports'
 import { GET_RANGE_LABELS_BY_SENSOR_ID } from '@/queries/getRangeLabelsBySensorId'
+import { GET_SENSORS_BY_BUILDING_ID } from '@/queries/getSensorsByBuildingId'
 import { INSERT_RANGE_LABEL, DELETE_RANGE_LABEL } from '@/mutations/rangeLabelMutations'
 import { LATEST_MAG_REPORT_SUBSCRIPTION } from '@/queries/magReportSubscription'
 
-import type { Building, MagReport, RangeLabel } from '@/types'
+import type { Building, MagReport, RangeLabel, Sensor } from '@/types'
 
 export interface MagChartPoint {
   timestamp: number
@@ -64,6 +65,10 @@ interface MagReportsResponse {
 
 interface MagSubscriptionResponse {
   mag_report: MagReport[]
+}
+
+interface SensorsResponse {
+  sensor: Sensor[]
 }
 
 interface RangeLabelsResponse {
@@ -158,6 +163,8 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
     useGraphQL<InsertRangeLabelResponse>(INSERT_RANGE_LABEL)
   const { executeQuery: deleteRangeLabelMutation } =
     useGraphQL<DeleteRangeLabelResponse>(DELETE_RANGE_LABEL)
+  const { data: sensorsData, executeQuery: fetchSensors } =
+    useGraphQL<SensorsResponse>(GET_SENSORS_BY_BUILDING_ID)
 
   const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(
     initialBuildingId ?? null,
@@ -202,6 +209,23 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
       }
     })
   }, [selectedBuildingId, fetchMagSensors])
+
+  // Fetch sensors (for multiplier) when building changes
+  useEffect(() => {
+    if (selectedBuildingId === null) return
+    fetchSensors({ buildingId: selectedBuildingId })
+  }, [selectedBuildingId, fetchSensors])
+
+  // Derive the sensor multiplier for the selected mag sensor
+  const sensorMultiplier = useMemo<number | null>(() => {
+    if (!sensorsData?.sensor?.length || selectedSensorId === null) return null
+    // Try to match mag sensor ID to sensor table ID
+    const match = sensorsData.sensor.find((s) => s.id === selectedSensorId)
+    if (match?.multiplier != null) return match.multiplier
+    // Fallback: use first sensor with a multiplier for this building
+    const withMultiplier = sensorsData.sensor.find((s) => s.multiplier != null)
+    return withMultiplier?.multiplier ?? null
+  }, [sensorsData, selectedSensorId])
 
   const prevFetchKeyRef = useRef('')
 
@@ -386,6 +410,7 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
     selectedSensorId,
     rangeLabels,
     chartData,
+    sensorMultiplier,
     timeRange,
     periodOffset,
     isLive,

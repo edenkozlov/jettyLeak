@@ -14,12 +14,12 @@ import {
 
 import { computeDominantFreqOverTime, computeWaveFrequency } from '@/utils/fft'
 import type { MultiAxisSample } from '@/utils/fft'
+import { detectCycles, autoCycleCount, type CycleDetectionResult, type AutoCycleCountResult } from '@/utils/signalProcessing'
 import { useTheme } from '@/contexts/ThemeContext'
 import {
   RANGE_MS,
   TIME_RANGE_OPTIONS,
   useMagReportsPage,
-  type MagChartPoint,
   type TimeRange,
 } from '@/hooks/useMagReportsPage'
 
@@ -49,20 +49,26 @@ function getLabelColor(index: number): string {
   return LABEL_COLORS[index % LABEL_COLORS.length]!
 }
 
+function formatMs(d: Date): string {
+  return d.getMilliseconds().toString().padStart(3, '0')
+}
+
 function formatTick(ts: number, rangeMs: number): string {
   const d = new Date(ts)
   if (rangeMs <= 5 * 60_000) {
-    return d.toLocaleTimeString('en-US', {
+    const base = d.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
       hour12: false,
     })
+    return `${base}.${formatMs(d)}`
   }
   if (rangeMs <= 6 * 60 * 60_000) {
     return d.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
+      second: '2-digit',
       hour12: false,
     })
   }
@@ -71,11 +77,14 @@ function formatTick(ts: number, rangeMs: number): string {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    second: '2-digit',
     hour12: false,
   })
 }
 
 function computeTickInterval(rangeMs: number): number {
+  if (rangeMs <= 3_000) return 250
+  if (rangeMs <= 5_000) return 500
   if (rangeMs <= 10_000) return 1_000
   if (rangeMs <= 30_000) return 5_000
   if (rangeMs <= 60_000) return 10_000
@@ -88,7 +97,8 @@ function computeTickInterval(rangeMs: number): number {
 }
 
 function formatTooltipTime(ts: number): string {
-  return new Date(ts).toLocaleString('en-US', {
+  const d = new Date(ts)
+  const base = d.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -96,6 +106,7 @@ function formatTooltipTime(ts: number): string {
     second: '2-digit',
     hour12: false,
   })
+  return `${base}.${formatMs(d)}`
 }
 
 function rangeButtonClass(isActive: boolean): string {
@@ -126,99 +137,6 @@ interface CycleSelection {
   endTs: number
 }
 
-interface DetectedPeak {
-  timestamp: number
-  value: number
-  type: 'peak' | 'trough'
-}
-
-interface CycleResult {
-  peakToPeak: number
-  peak: DetectedPeak
-  trough: DetectedPeak
-}
-
-interface CycleCountResult {
-  maxPeakToPeak: number
-  allCycles: CycleResult[]
-  filteredCycles: CycleResult[]
-  peaks: DetectedPeak[]
-}
-
-function extractAxisValues(data: MagChartPoint[], axis: AxisKey): { timestamp: number; value: number }[] {
-  return data
-    .filter((p) => p[axis] != null)
-    .map((p) => ({ timestamp: p.timestamp, value: p[axis]! }))
-}
-
-function detectPeaksAndTroughs(values: { timestamp: number; value: number }[]): DetectedPeak[] {
-  if (values.length < 3) return []
-  const extrema: DetectedPeak[] = []
-  for (let i = 1; i < values.length - 1; i++) {
-    const prev = values[i - 1]!.value
-    const curr = values[i]!.value
-    const next = values[i + 1]!.value
-    if (curr > prev && curr > next) {
-      extrema.push({ timestamp: values[i]!.timestamp, value: curr, type: 'peak' })
-    } else if (curr < prev && curr < next) {
-      extrema.push({ timestamp: values[i]!.timestamp, value: curr, type: 'trough' })
-    }
-  }
-  // Ensure alternating peak/trough sequence
-  const alternating: DetectedPeak[] = []
-  for (const e of extrema) {
-    if (alternating.length === 0) {
-      alternating.push(e)
-      continue
-    }
-    const last = alternating[alternating.length - 1]!
-    if (last.type === e.type) {
-      // Same type: keep the more extreme one
-      if (e.type === 'peak' && e.value > last.value) {
-        alternating[alternating.length - 1] = e
-      } else if (e.type === 'trough' && e.value < last.value) {
-        alternating[alternating.length - 1] = e
-      }
-    } else {
-      alternating.push(e)
-    }
-  }
-  return alternating
-}
-
-function countCycles(
-  data: MagChartPoint[],
-  axis: AxisKey,
-  startTs: number,
-  endTs: number,
-  tolerancePct: number,
-): CycleCountResult {
-  const rangeData = data.filter((p) => p.timestamp >= startTs && p.timestamp <= endTs)
-  const values = extractAxisValues(rangeData, axis)
-  const peaks = detectPeaksAndTroughs(values)
-
-  const allCycles: CycleResult[] = []
-  for (let i = 0; i < peaks.length - 1; i++) {
-    const a = peaks[i]!
-    const b = peaks[i + 1]!
-    if ((a.type === 'peak' && b.type === 'trough') || (a.type === 'trough' && b.type === 'peak')) {
-      const peakPt = a.type === 'peak' ? a : b
-      const troughPt = a.type === 'trough' ? a : b
-      allCycles.push({ peakToPeak: Math.abs(peakPt.value - troughPt.value), peak: peakPt, trough: troughPt })
-    }
-  }
-
-  if (allCycles.length === 0) {
-    return { maxPeakToPeak: 0, allCycles: [], filteredCycles: [], peaks }
-  }
-
-  const maxPeakToPeak = Math.max(...allCycles.map((c) => c.peakToPeak))
-  const threshold = (tolerancePct / 100) * maxPeakToPeak
-  const filteredCycles = allCycles.filter((c) => c.peakToPeak >= threshold)
-
-  return { maxPeakToPeak, allCycles, filteredCycles, peaks }
-}
-
 const AXIS_LABELS: Record<AxisKey, string> = {
   total: 'Total Magnitude',
   x: 'X Axis',
@@ -241,6 +159,7 @@ export default function MagReports() {
     selectedSensorId,
     rangeLabels,
     chartData,
+    sensorMultiplier,
     timeRange,
     periodOffset,
     isLive,
@@ -266,15 +185,7 @@ export default function MagReports() {
     const now = Date.now()
     const untilMs = now - rangeMs * periodOffset
     const sinceMs = untilMs - rangeMs
-    const fmt = (ms: number) =>
-      new Date(ms).toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-      })
-    return `${fmt(sinceMs)} – ${fmt(untilMs)}`
+    return `${formatTooltipTime(sinceMs)} – ${formatTooltipTime(untilMs)}`
   }, [periodOffset, timeRange])
 
   const visibleRangeMs = useMemo(() => {
@@ -354,17 +265,147 @@ export default function MagReports() {
     }))
   }, [multiAxisSamples])
 
+  // --- Flow rate & accumulated consumption ---
+  const flowChartData = useMemo(() => {
+    if (!sensorMultiplier || sensorMultiplier <= 0 || chartData.length < 5) return []
+
+    const totalData = chartData
+      .filter((p) => p.total != null)
+      .map((p) => ({ timestamp: p.timestamp, value: p.total! }))
+    if (totalData.length < 5) return []
+
+    const litresPerCycle = 1 / sensorMultiplier
+
+    // Sliding window peak detection — prominence is computed locally per window
+    // so flow periods are detected even when most of the dataset is baseline
+    const rangeMs = visibleRangeMs || 60_000
+    const windowMs = Math.max(10_000, Math.min(rangeMs / 10, 300_000))
+    const hopMs = windowMs / 2
+
+    const allPeakSet = new Set<number>()
+    const startTs = totalData[0]!.timestamp
+    const endTs = totalData[totalData.length - 1]!.timestamp
+
+    for (let winStart = startTs; winStart < endTs; winStart += hopMs) {
+      const winEnd = winStart + windowMs
+      const windowData = totalData.filter(
+        (d) => d.timestamp >= winStart && d.timestamp <= winEnd,
+      )
+      if (windowData.length < 5) continue
+
+      // Skip windows with low variance — no flow (just noise)
+      const vals = windowData.map((d) => d.value)
+      const mean = vals.reduce((s, v) => s + v, 0) / vals.length
+      const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length
+      if (variance < 20) continue
+
+      const result = detectCycles(windowData, { minProminence: 0.5 })
+      for (const peak of result.peaks) allPeakSet.add(peak.timestamp)
+    }
+
+    // Sort and deduplicate peaks within 500ms
+    const sortedPeaks = [...allPeakSet].sort((a, b) => a - b)
+    const dedupedPeaks: number[] = []
+    for (const ts of sortedPeaks) {
+      if (dedupedPeaks.length === 0 || ts - dedupedPeaks[dedupedPeaks.length - 1]! > 500) {
+        dedupedPeaks.push(ts)
+      }
+    }
+
+    if (dedupedPeaks.length < 2) return []
+
+    // Compute median peak interval for sustained flow detection
+    const peakIntervals: number[] = []
+    for (let i = 1; i < dedupedPeaks.length; i++) {
+      const gap = dedupedPeaks[i]! - dedupedPeaks[i - 1]!
+      if (gap > 0) peakIntervals.push(gap)
+    }
+    if (peakIntervals.length === 0) return []
+    const sortedIntervals = [...peakIntervals].sort((a, b) => a - b)
+    const medianInterval = sortedIntervals[Math.floor(sortedIntervals.length / 2)]!
+    const sustainedGapThreshold = medianInterval * 3
+
+    // Build raw flow points
+    const rawPoints: { timestamp: number; flowRateLph: number; accumulatedL: number }[] = []
+    for (let i = 1; i < dedupedPeaks.length; i++) {
+      const intervalMs = dedupedPeaks[i]! - dedupedPeaks[i - 1]!
+      if (intervalMs <= 0) continue
+      const flowRateLph = litresPerCycle / (intervalMs / 3_600_000)
+      if (!Number.isFinite(flowRateLph)) continue
+      rawPoints.push({
+        timestamp: dedupedPeaks[i]!,
+        flowRateLph: Math.round(flowRateLph * 100) / 100,
+        accumulatedL: Math.round(i * litresPerCycle * 10000) / 10000,
+      })
+    }
+    if (rawPoints.length === 0) return []
+
+    // Fill gaps during sustained flow
+    const flowPoints: typeof rawPoints = [rawPoints[0]!]
+    for (let i = 1; i < rawPoints.length; i++) {
+      const prev = rawPoints[i - 1]!
+      const curr = rawPoints[i]!
+      const gap = curr.timestamp - prev.timestamp
+
+      if (gap > sustainedGapThreshold && gap > 2000) {
+        flowPoints.push(curr)
+      } else if (gap > medianInterval * 1.5) {
+        const avgRate = (prev.flowRateLph + curr.flowRateLph) / 2
+        const numFill = Math.floor(gap / medianInterval) - 1
+        for (let j = 1; j <= numFill; j++) {
+          flowPoints.push({
+            timestamp: prev.timestamp + j * (gap / (numFill + 1)),
+            flowRateLph: Math.round(avgRate * 100) / 100,
+            accumulatedL: prev.accumulatedL,
+          })
+        }
+        flowPoints.push(curr)
+      } else {
+        flowPoints.push(curr)
+      }
+    }
+
+    return flowPoints
+  }, [chartData, sensorMultiplier, visibleRangeMs])
+
   // --- Cycle counter state ---
   const [cycleSelection, setCycleSelection] = useState<CycleSelection | null>(null)
-  const [cycleTolerance, setCycleTolerance] = useState(100)
+  const [cycleOptions, setCycleOptions] = useState({
+    smoothWindow: 7,
+    polyOrder: 3,
+    minProminence: 0.1,
+    minDistanceMs: 0,
+  })
   const [selRefLeft, setSelRefLeft] = useState<number | null>(null)
   const [selRefRight, setSelRefRight] = useState<number | null>(null)
   const selectingAxisRef = useRef<AxisKey | null>(null)
+  const [pendingSelection, setPendingSelection] = useState<CycleSelection | null>(null)
 
-  const cycleResult = useMemo(() => {
+  const cycleResult = useMemo<CycleDetectionResult | null>(() => {
     if (!cycleSelection) return null
-    return countCycles(chartData, cycleSelection.axis, cycleSelection.startTs, cycleSelection.endTs, cycleTolerance)
-  }, [chartData, cycleSelection, cycleTolerance])
+    const rangeData = chartData
+      .filter((p) => p.timestamp >= cycleSelection.startTs && p.timestamp <= cycleSelection.endTs)
+      .filter((p) => p[cycleSelection.axis] != null)
+      .map((p) => ({ timestamp: p.timestamp, value: p[cycleSelection.axis]! }))
+    if (rangeData.length < 5) return null
+    return detectCycles(rangeData, cycleOptions)
+  }, [chartData, cycleSelection, cycleOptions])
+
+  const [showAutoWindow, setShowAutoWindow] = useState<AxisKey | null>(null)
+
+  const autoWindowMs = Math.round(visibleRangeMs * 0.5)
+
+  const autoCycleCounts = useMemo(() => {
+    const axes: AxisKey[] = ['total', 'x', 'y', 'z']
+    const results: Record<AxisKey, AutoCycleCountResult | null> = { total: null, x: null, y: null, z: null }
+    for (const axis of axes) {
+      const pts = chartData
+        .filter((p) => p[axis] != null)
+        .map((p) => ({ timestamp: p.timestamp, value: p[axis]! }))
+      results[axis] = autoCycleCount(pts, { windowMs: autoWindowMs })
+    }
+    return results
+  }, [chartData, autoWindowMs])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const makeSelMouseDown = useCallback((axis: AxisKey) => (e: any) => {
@@ -389,13 +430,29 @@ export default function MagReports() {
       if (labelModeRef.current) {
         setLabelDraft({ startTs: left, endTs: right })
       } else {
-        setCycleSelection({ axis: selectingAxisRef.current, startTs: left, endTs: right })
+        setPendingSelection({ axis: selectingAxisRef.current, startTs: left, endTs: right })
+        setCycleSelection(null)
       }
     }
     selectingAxisRef.current = null
     setSelRefLeft(null)
     setSelRefRight(null)
   }, [selRefLeft, selRefRight])
+
+  const handleZoomToSelection = useCallback(() => {
+    if (!pendingSelection) return
+    handleCustomRange(
+      new Date(pendingSelection.startTs).toISOString(),
+      new Date(pendingSelection.endTs).toISOString(),
+    )
+    setPendingSelection(null)
+  }, [pendingSelection, handleCustomRange])
+
+  const handleCountCyclesFromSelection = useCallback(() => {
+    if (!pendingSelection) return
+    setCycleSelection(pendingSelection)
+    setPendingSelection(null)
+  }, [pendingSelection])
 
   const handleSelMouseLeave = useCallback(() => {
     if (selectingAxisRef.current !== null) {
@@ -700,6 +757,70 @@ export default function MagReports() {
             </div>
           )}
 
+          {/* Auto cycle count (30s window, 50% prominence) */}
+          {chartData.length > 0 && (
+            <div className="space-y-1.5 rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2 dark:border-gray-700/50 dark:bg-gray-900/40">
+              <div className="flex flex-wrap items-center gap-3">
+                <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Cycles ({autoWindowMs >= 60_000 ? `${(autoWindowMs / 60_000).toFixed(1)}m` : `${(autoWindowMs / 1000).toFixed(1)}s`} window):</span>
+                {(['total', 'x', 'y', 'z'] as const).map((axis) => {
+                  const r = autoCycleCounts[axis]
+                  return (
+                    <span key={axis} className="inline-flex items-center gap-1 text-[11px]">
+                      <span className="font-medium text-gray-600 dark:text-gray-300">{AXIS_LABELS[axis]}:</span>
+                      {r ? (
+                        <>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">{r.cycleCount}</span>
+                          {r.frequencyHz != null && (
+                            <span className="text-gray-400 dark:text-gray-500">({r.frequencyHz.toFixed(2)} Hz)</span>
+                          )}
+                          <button
+                            onClick={() => setShowAutoWindow((prev) => prev === axis ? null : axis)}
+                            className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+                              showAutoWindow === axis
+                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
+                                : 'text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900/40'
+                            }`}
+                          >
+                            {showAutoWindow === axis ? 'Hide' : 'Show'}
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </span>
+                  )
+                })}
+              </div>
+              {showAutoWindow && autoCycleCounts[showAutoWindow] && (() => {
+                const r = autoCycleCounts[showAutoWindow]!
+                const durationMs = r.windowEndTs - r.windowStartTs
+                return (
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md border border-amber-200 bg-amber-50/60 px-2.5 py-1.5 text-[11px] dark:border-amber-800/50 dark:bg-amber-900/20">
+                    <span className="font-medium text-amber-700 dark:text-amber-400">{AXIS_LABELS[showAutoWindow]}</span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Start: <span className="font-mono font-medium text-gray-800 dark:text-gray-200">{formatTooltipTime(r.windowStartTs)}</span>
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      End: <span className="font-mono font-medium text-gray-800 dark:text-gray-200">{formatTooltipTime(r.windowEndTs)}</span>
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Duration: <span className="font-mono font-medium text-gray-800 dark:text-gray-200">{durationMs.toFixed(0)} ms</span>
+                      <span className="ml-1 text-gray-400">({(durationMs / 1000).toFixed(3)} s)</span>
+                    </span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Peaks: <span className="font-mono font-medium text-gray-800 dark:text-gray-200">{r.peakCount}</span>
+                    </span>
+                    {r.periodMs != null && (
+                      <span className="text-gray-500 dark:text-gray-400">
+                        Period: <span className="font-mono font-medium text-gray-800 dark:text-gray-200">{r.periodMs.toFixed(1)} ms</span>
+                      </span>
+                    )}
+                  </div>
+                )
+              })()}
+            </div>
+          )}
+
           <div className="flex flex-wrap items-center gap-2">
             <div className="inline-flex overflow-x-auto rounded-lg border border-gray-200 bg-gray-100 p-0.5 text-[11px] font-medium dark:border-gray-700 dark:bg-gray-900 sm:p-1 sm:text-xs">
               {TIME_RANGE_OPTIONS.map((opt) => (
@@ -725,6 +846,7 @@ export default function MagReports() {
                   From
                   <input
                     type="datetime-local"
+                    step="0.001"
                     value={customFrom}
                     onChange={(e) => setCustomFrom(e.target.value)}
                     className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
@@ -734,6 +856,7 @@ export default function MagReports() {
                   To
                   <input
                     type="datetime-local"
+                    step="0.001"
                     value={customTo}
                     onChange={(e) => setCustomTo(e.target.value)}
                     className="rounded border border-gray-300 bg-white px-2 py-1 text-xs text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
@@ -751,9 +874,9 @@ export default function MagReports() {
 
             {timeRange === 'custom' && customWindow && !showCustomPicker && (
               <span className="text-[11px] text-gray-500 dark:text-gray-400 sm:text-xs">
-                {new Date(customWindow.since).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
+                {formatTooltipTime(new Date(customWindow.since).getTime())}
                 {' – '}
-                {new Date(customWindow.until).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false })}
+                {formatTooltipTime(new Date(customWindow.until).getTime())}
               </span>
             )}
 
@@ -808,8 +931,40 @@ export default function MagReports() {
           <>
             {!labelMode && (
               <p className="mb-4 text-xs text-gray-400 dark:text-gray-500">
-                Drag on any axis chart to select a range for cycle counting
+                Drag on any axis chart to select a range, then zoom or count cycles
               </p>
+            )}
+
+            {/* Pending selection action bar */}
+            {pendingSelection && !cycleSelection && (
+              <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-800 dark:bg-blue-900/15">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[11px] text-gray-500 dark:text-gray-400">Selected range — {AXIS_LABELS[pendingSelection.axis]}</span>
+                  <span className="text-xs font-medium text-gray-900 dark:text-white">
+                    {formatTooltipTime(pendingSelection.startTs)} — {formatTooltipTime(pendingSelection.endTs)}
+                  </span>
+                </div>
+                <div className="ml-auto flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleZoomToSelection}
+                    className="rounded-md bg-indigo-500 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-indigo-600"
+                  >
+                    Zoom to Range
+                  </button>
+                  <button
+                    onClick={handleCountCyclesFromSelection}
+                    className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50"
+                  >
+                    Count Cycles
+                  </button>
+                  <button
+                    onClick={() => setPendingSelection(null)}
+                    className="rounded-md px-2 py-1.5 text-xs text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             )}
 
             {/* Cycle counter results panel */}
@@ -817,75 +972,207 @@ export default function MagReports() {
               <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-800 dark:bg-emerald-900/15">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
-                    Cycle Counter — {AXIS_LABELS[cycleSelection.axis]}
+                    Cycle Analysis — {AXIS_LABELS[cycleSelection.axis]}
                   </h3>
-                  <button
-                    onClick={clearCycleSelection}
-                    className="rounded-md border border-emerald-300 bg-white px-2.5 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
-                  >
-                    Clear
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        handleCustomRange(
+                          new Date(cycleSelection.startTs).toISOString(),
+                          new Date(cycleSelection.endTs).toISOString(),
+                        )
+                        clearCycleSelection()
+                      }}
+                      className="rounded-md bg-indigo-500 px-2.5 py-1 text-xs font-medium text-white transition-colors hover:bg-indigo-600"
+                    >
+                      Zoom to Range
+                    </button>
+                    <button
+                      onClick={clearCycleSelection}
+                      className="rounded-md border border-emerald-300 bg-white px-2.5 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
+                    >
+                      Clear
+                    </button>
+                  </div>
                 </div>
-                <div className="mb-3 text-xs text-gray-600 dark:text-gray-300">
+
+                <div className="mb-4 text-xs text-gray-600 dark:text-gray-300">
                   {formatTooltipTime(cycleSelection.startTs)} — {formatTooltipTime(cycleSelection.endTs)}
                 </div>
-                <div className="mb-3 flex flex-wrap items-center gap-4">
-                  <label className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
-                    Tolerance:
+
+                {/* Detection controls */}
+                <div className="mb-4 grid grid-cols-1 gap-3 rounded-lg border border-emerald-100 bg-white/60 p-3 dark:border-emerald-900/50 dark:bg-gray-900/40 sm:grid-cols-3">
+                  <label className="flex flex-col gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+                    <span>Smoothing window: <span className="font-semibold text-gray-800 dark:text-gray-200">{cycleOptions.smoothWindow}</span> pts</span>
                     <input
                       type="range"
-                      min={1}
-                      max={100}
-                      value={cycleTolerance}
-                      onChange={(e) => setCycleTolerance(Number(e.target.value))}
-                      className="h-1.5 w-28 cursor-pointer accent-emerald-500"
+                      min={3}
+                      max={31}
+                      step={2}
+                      value={cycleOptions.smoothWindow}
+                      onChange={(e) => setCycleOptions((p) => ({ ...p, smoothWindow: Number(e.target.value) }))}
+                      className="h-1.5 w-full cursor-pointer accent-emerald-500"
                     />
+                    <span className="flex justify-between text-[10px] text-gray-400"><span>3 (raw)</span><span>31 (heavy)</span></span>
+                  </label>
+                  <label className="flex flex-col gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+                    <span>Min prominence: <span className="font-semibold text-gray-800 dark:text-gray-200">{(cycleOptions.minProminence * 100).toFixed(0)}%</span></span>
                     <input
-                      type="number"
-                      min={1}
-                      max={100}
-                      value={cycleTolerance}
-                      onChange={(e) => {
-                        const v = Math.max(1, Math.min(100, Number(e.target.value) || 1))
-                        setCycleTolerance(v)
-                      }}
-                      className="w-14 rounded border border-emerald-300 bg-white px-1.5 py-0.5 text-center text-xs text-gray-900 dark:border-emerald-700 dark:bg-gray-800 dark:text-white"
+                      type="range"
+                      min={0}
+                      max={50}
+                      step={1}
+                      value={cycleOptions.minProminence * 100}
+                      onChange={(e) => setCycleOptions((p) => ({ ...p, minProminence: Number(e.target.value) / 100 }))}
+                      className="h-1.5 w-full cursor-pointer accent-emerald-500"
                     />
-                    <span className="text-xs text-gray-400">%</span>
+                    <span className="flex justify-between text-[10px] text-gray-400"><span>0% (all)</span><span>50% (strict)</span></span>
+                  </label>
+                  <label className="flex flex-col gap-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+                    <span>Min peak distance: <span className="font-semibold text-gray-800 dark:text-gray-200">{cycleOptions.minDistanceMs} ms</span></span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={5000}
+                      step={50}
+                      value={cycleOptions.minDistanceMs}
+                      onChange={(e) => setCycleOptions((p) => ({ ...p, minDistanceMs: Number(e.target.value) }))}
+                      className="h-1.5 w-full cursor-pointer accent-emerald-500"
+                    />
+                    <span className="flex justify-between text-[10px] text-gray-400"><span>0 ms</span><span>5000 ms</span></span>
                   </label>
                 </div>
-                <div className="flex flex-wrap gap-6 text-xs">
+
+                {/* Primary stats */}
+                <div className="mb-3 grid grid-cols-2 gap-x-6 gap-y-2 text-xs sm:grid-cols-4">
+                  <div className="rounded-lg bg-emerald-100/60 px-3 py-2 dark:bg-emerald-900/30">
+                    <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Full Cycles</div>
+                    <div className="mt-0.5 text-lg font-bold text-emerald-700 dark:text-emerald-400">{cycleResult.fullCycleCount}</div>
+                  </div>
+                  <div className="rounded-lg bg-emerald-100/60 px-3 py-2 dark:bg-emerald-900/30">
+                    <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Half Cycles</div>
+                    <div className="mt-0.5 text-lg font-bold text-emerald-700 dark:text-emerald-400">{cycleResult.halfCycleCount}</div>
+                  </div>
+                  <div className="rounded-lg bg-emerald-100/60 px-3 py-2 dark:bg-emerald-900/30">
+                    <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Peaks</div>
+                    <div className="mt-0.5 text-lg font-bold text-green-600 dark:text-green-400">{cycleResult.peaks.length}</div>
+                  </div>
+                  <div className="rounded-lg bg-emerald-100/60 px-3 py-2 dark:bg-emerald-900/30">
+                    <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Troughs</div>
+                    <div className="mt-0.5 text-lg font-bold text-red-500 dark:text-red-400">{cycleResult.troughs.length}</div>
+                  </div>
+                </div>
+
+                {/* Secondary stats */}
+                <div className="flex flex-wrap gap-x-6 gap-y-1.5 text-xs">
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Largest peak-to-peak: </span>
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {cycleResult.maxPeakToPeak.toFixed(4)}
-                    </span>
+                    <span className="text-gray-500 dark:text-gray-400">Avg amplitude: </span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{cycleResult.avgAmplitude.toFixed(4)}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Threshold: </span>
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {(cycleResult.maxPeakToPeak * cycleTolerance / 100).toFixed(4)}
-                    </span>
-                    <span className="ml-1 text-gray-400">({cycleTolerance}%)</span>
+                    <span className="text-gray-500 dark:text-gray-400">Max amplitude: </span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{cycleResult.maxAmplitude.toFixed(4)}</span>
+                  </div>
+                  {cycleResult.avgFrequencyHz != null && (
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Avg frequency: </span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{cycleResult.avgFrequencyHz.toFixed(3)} Hz</span>
+                    </div>
+                  )}
+                  {cycleResult.avgPeriodMs != null && (
+                    <div>
+                      <span className="text-gray-500 dark:text-gray-400">Avg period: </span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{cycleResult.avgPeriodMs.toFixed(0)} ms</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-gray-500 dark:text-gray-400">Inflection points: </span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{cycleResult.inflectionPoints.length}</span>
+                    <span className="ml-1 text-[10px] text-gray-400">(≈ {Math.floor(cycleResult.inflectionPoints.length / 2)} full cycles)</span>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Total half-cycles: </span>
-                    <span className="font-semibold text-gray-900 dark:text-white">
-                      {cycleResult.allCycles.length}
-                    </span>
+                    <span className="text-gray-500 dark:text-gray-400">Data range: </span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{cycleResult.dataRange.toFixed(4)}</span>
                   </div>
-                  <div>
-                    <span className="text-gray-500 dark:text-gray-400">Matching half-cycles: </span>
-                    <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                      {cycleResult.filteredCycles.length}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-gray-500 dark:text-gray-400">Full cycles (÷2): </span>
-                    <span className="font-bold text-emerald-700 dark:text-emerald-400">
-                      {Math.floor(cycleResult.filteredCycles.length / 2)}
-                    </span>
-                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Flow Rate & Consumption — shown first */}
+            {flowChartData.length > 0 && (
+              <div className="mb-5">
+                <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Flow Rate &amp; Accumulated Consumption
+                </h3>
+                <div className="h-[200px] w-full sm:h-[280px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={flowChartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
+                      <XAxis
+                        dataKey="timestamp"
+                        type="number"
+                        domain={['dataMin', 'dataMax']}
+                        ticks={xTicks}
+                        tickFormatter={(ts: number) => formatTick(ts, visibleRangeMs)}
+                        tick={{ fontSize: 11, fill: colors.axis }}
+                        tickLine={{ stroke: colors.grid }}
+                        axisLine={{ stroke: colors.grid }}
+                      />
+                      <YAxis
+                        yAxisId="left"
+                        width={55}
+                        tick={{ fontSize: 11, fill: '#3b82f6' }}
+                        tickLine={{ stroke: colors.grid }}
+                        axisLine={{ stroke: colors.grid }}
+                        label={{ value: 'L/h', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#3b82f6' } }}
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        width={55}
+                        tick={{ fontSize: 11, fill: '#10b981' }}
+                        tickLine={{ stroke: colors.grid }}
+                        axisLine={{ stroke: colors.grid }}
+                        label={{ value: 'L', angle: 90, position: 'insideRight', style: { fontSize: 11, fill: '#10b981' } }}
+                      />
+                      <Tooltip
+                        contentStyle={tooltipStyle}
+                        formatter={(value: unknown, name: unknown) => [
+                          typeof value === 'number' ? value.toFixed(2) : '—',
+                          String(name ?? ''),
+                        ]}
+                        labelFormatter={tooltipLabelFormatter}
+                      />
+                      <Line
+                        yAxisId="left"
+                        type="monotone"
+                        dataKey="flowRateLph"
+                        name="Flow Rate (L/h)"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        dot={false}
+                        isAnimationActive={false}
+                      />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="accumulatedL"
+                        name="Accumulated (L)"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        dot={false}
+                        isAnimationActive={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
+                  <span className="flex items-center gap-1">
+                    <span className="inline-block h-2 w-2 rounded-full bg-[#3b82f6]" /> Flow Rate (L/h)
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="inline-block h-2 w-2 rounded-full bg-[#10b981]" /> Accumulated (L)
+                  </span>
                 </div>
               </div>
             )}
@@ -943,14 +1230,20 @@ export default function MagReports() {
                     {labelDraft && labelMode && (
                       <ReferenceArea x1={labelDraft.startTs} x2={labelDraft.endTs} fill="#6366f1" fillOpacity={0.15} stroke="#6366f1" strokeDasharray="4 3" label={{ value: labelName || 'New label…', position: 'insideTop', fill: '#6366f1', fontSize: 11, fontWeight: 600 }} />
                     )}
+                    {pendingSelection?.axis === 'total' && (
+                      <ReferenceArea x1={pendingSelection.startTs} x2={pendingSelection.endTs} fill="#3b82f6" fillOpacity={0.1} stroke="#3b82f6" strokeDasharray="4 3" />
+                    )}
+                    {showAutoWindow === 'total' && autoCycleCounts.total && (
+                      <ReferenceArea x1={autoCycleCounts.total.windowStartTs} x2={autoCycleCounts.total.windowEndTs} fill="#f59e0b" fillOpacity={0.12} stroke="#f59e0b" strokeDasharray="4 3" label={{ value: `${autoCycleCounts.total.cycleCount} cycles`, position: 'insideTop', fill: '#d97706', fontSize: 11, fontWeight: 600 }} />
+                    )}
                     {cycleSelection?.axis === 'total' && (
                       <ReferenceArea x1={cycleSelection.startTs} x2={cycleSelection.endTs} fill="#10b981" fillOpacity={0.08} stroke="#10b981" strokeDasharray="4 3" />
                     )}
-                    {cycleSelection?.axis === 'total' && cycleResult?.filteredCycles.map((c) => (
-                      <ReferenceLine key={`p-${c.peak.timestamp}`} x={c.peak.timestamp} stroke="#10b981" strokeDasharray="2 2" strokeWidth={1} />
+                    {cycleSelection?.axis === 'total' && cycleResult?.peaks.map((p) => (
+                      <ReferenceLine key={`p-${p.timestamp}`} x={p.timestamp} stroke="#10b981" strokeDasharray="2 2" strokeWidth={1} />
                     ))}
-                    {cycleSelection?.axis === 'total' && cycleResult?.filteredCycles.map((c) => (
-                      <ReferenceLine key={`t-${c.trough.timestamp}`} x={c.trough.timestamp} stroke="#ef4444" strokeDasharray="2 2" strokeWidth={1} />
+                    {cycleSelection?.axis === 'total' && cycleResult?.troughs.map((t) => (
+                      <ReferenceLine key={`t-${t.timestamp}`} x={t.timestamp} stroke="#ef4444" strokeDasharray="2 2" strokeWidth={1} />
                     ))}
                     <Line
                       type="monotone"
@@ -1019,14 +1312,20 @@ export default function MagReports() {
                     {labelDraft && labelMode && (
                       <ReferenceArea x1={labelDraft.startTs} x2={labelDraft.endTs} fill="#6366f1" fillOpacity={0.15} stroke="#6366f1" strokeDasharray="4 3" />
                     )}
+                    {pendingSelection?.axis === 'x' && (
+                      <ReferenceArea x1={pendingSelection.startTs} x2={pendingSelection.endTs} fill="#3b82f6" fillOpacity={0.1} stroke="#3b82f6" strokeDasharray="4 3" />
+                    )}
+                    {showAutoWindow === 'x' && autoCycleCounts.x && (
+                      <ReferenceArea x1={autoCycleCounts.x.windowStartTs} x2={autoCycleCounts.x.windowEndTs} fill="#f59e0b" fillOpacity={0.12} stroke="#f59e0b" strokeDasharray="4 3" label={{ value: `${autoCycleCounts.x.cycleCount} cycles`, position: 'insideTop', fill: '#d97706', fontSize: 11, fontWeight: 600 }} />
+                    )}
                     {cycleSelection?.axis === 'x' && (
                       <ReferenceArea x1={cycleSelection.startTs} x2={cycleSelection.endTs} fill="#10b981" fillOpacity={0.08} stroke="#10b981" strokeDasharray="4 3" />
                     )}
-                    {cycleSelection?.axis === 'x' && cycleResult?.filteredCycles.map((c) => (
-                      <ReferenceLine key={`p-${c.peak.timestamp}`} x={c.peak.timestamp} stroke="#10b981" strokeDasharray="2 2" strokeWidth={1} />
+                    {cycleSelection?.axis === 'x' && cycleResult?.peaks.map((p) => (
+                      <ReferenceLine key={`p-${p.timestamp}`} x={p.timestamp} stroke="#10b981" strokeDasharray="2 2" strokeWidth={1} />
                     ))}
-                    {cycleSelection?.axis === 'x' && cycleResult?.filteredCycles.map((c) => (
-                      <ReferenceLine key={`t-${c.trough.timestamp}`} x={c.trough.timestamp} stroke="#ef4444" strokeDasharray="2 2" strokeWidth={1} />
+                    {cycleSelection?.axis === 'x' && cycleResult?.troughs.map((t) => (
+                      <ReferenceLine key={`t-${t.timestamp}`} x={t.timestamp} stroke="#ef4444" strokeDasharray="2 2" strokeWidth={1} />
                     ))}
                     <Line
                       type="monotone"
@@ -1095,14 +1394,20 @@ export default function MagReports() {
                     {labelDraft && labelMode && (
                       <ReferenceArea x1={labelDraft.startTs} x2={labelDraft.endTs} fill="#6366f1" fillOpacity={0.15} stroke="#6366f1" strokeDasharray="4 3" />
                     )}
+                    {pendingSelection?.axis === 'y' && (
+                      <ReferenceArea x1={pendingSelection.startTs} x2={pendingSelection.endTs} fill="#3b82f6" fillOpacity={0.1} stroke="#3b82f6" strokeDasharray="4 3" />
+                    )}
+                    {showAutoWindow === 'y' && autoCycleCounts.y && (
+                      <ReferenceArea x1={autoCycleCounts.y.windowStartTs} x2={autoCycleCounts.y.windowEndTs} fill="#f59e0b" fillOpacity={0.12} stroke="#f59e0b" strokeDasharray="4 3" label={{ value: `${autoCycleCounts.y.cycleCount} cycles`, position: 'insideTop', fill: '#d97706', fontSize: 11, fontWeight: 600 }} />
+                    )}
                     {cycleSelection?.axis === 'y' && (
                       <ReferenceArea x1={cycleSelection.startTs} x2={cycleSelection.endTs} fill="#10b981" fillOpacity={0.08} stroke="#10b981" strokeDasharray="4 3" />
                     )}
-                    {cycleSelection?.axis === 'y' && cycleResult?.filteredCycles.map((c) => (
-                      <ReferenceLine key={`p-${c.peak.timestamp}`} x={c.peak.timestamp} stroke="#10b981" strokeDasharray="2 2" strokeWidth={1} />
+                    {cycleSelection?.axis === 'y' && cycleResult?.peaks.map((p) => (
+                      <ReferenceLine key={`p-${p.timestamp}`} x={p.timestamp} stroke="#10b981" strokeDasharray="2 2" strokeWidth={1} />
                     ))}
-                    {cycleSelection?.axis === 'y' && cycleResult?.filteredCycles.map((c) => (
-                      <ReferenceLine key={`t-${c.trough.timestamp}`} x={c.trough.timestamp} stroke="#ef4444" strokeDasharray="2 2" strokeWidth={1} />
+                    {cycleSelection?.axis === 'y' && cycleResult?.troughs.map((t) => (
+                      <ReferenceLine key={`t-${t.timestamp}`} x={t.timestamp} stroke="#ef4444" strokeDasharray="2 2" strokeWidth={1} />
                     ))}
                     <Line
                       type="monotone"
@@ -1171,14 +1476,20 @@ export default function MagReports() {
                     {labelDraft && labelMode && (
                       <ReferenceArea x1={labelDraft.startTs} x2={labelDraft.endTs} fill="#6366f1" fillOpacity={0.15} stroke="#6366f1" strokeDasharray="4 3" />
                     )}
+                    {pendingSelection?.axis === 'z' && (
+                      <ReferenceArea x1={pendingSelection.startTs} x2={pendingSelection.endTs} fill="#3b82f6" fillOpacity={0.1} stroke="#3b82f6" strokeDasharray="4 3" />
+                    )}
+                    {showAutoWindow === 'z' && autoCycleCounts.z && (
+                      <ReferenceArea x1={autoCycleCounts.z.windowStartTs} x2={autoCycleCounts.z.windowEndTs} fill="#f59e0b" fillOpacity={0.12} stroke="#f59e0b" strokeDasharray="4 3" label={{ value: `${autoCycleCounts.z.cycleCount} cycles`, position: 'insideTop', fill: '#d97706', fontSize: 11, fontWeight: 600 }} />
+                    )}
                     {cycleSelection?.axis === 'z' && (
                       <ReferenceArea x1={cycleSelection.startTs} x2={cycleSelection.endTs} fill="#10b981" fillOpacity={0.08} stroke="#10b981" strokeDasharray="4 3" />
                     )}
-                    {cycleSelection?.axis === 'z' && cycleResult?.filteredCycles.map((c) => (
-                      <ReferenceLine key={`p-${c.peak.timestamp}`} x={c.peak.timestamp} stroke="#10b981" strokeDasharray="2 2" strokeWidth={1} />
+                    {cycleSelection?.axis === 'z' && cycleResult?.peaks.map((p) => (
+                      <ReferenceLine key={`p-${p.timestamp}`} x={p.timestamp} stroke="#10b981" strokeDasharray="2 2" strokeWidth={1} />
                     ))}
-                    {cycleSelection?.axis === 'z' && cycleResult?.filteredCycles.map((c) => (
-                      <ReferenceLine key={`t-${c.trough.timestamp}`} x={c.trough.timestamp} stroke="#ef4444" strokeDasharray="2 2" strokeWidth={1} />
+                    {cycleSelection?.axis === 'z' && cycleResult?.troughs.map((t) => (
+                      <ReferenceLine key={`t-${t.timestamp}`} x={t.timestamp} stroke="#ef4444" strokeDasharray="2 2" strokeWidth={1} />
                     ))}
                     <Line
                       type="monotone"

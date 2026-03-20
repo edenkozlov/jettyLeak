@@ -52,6 +52,8 @@ export default function App() {
               <Route path="buildings/:id" element={<BuildingDetail />} />
               <Route path="sensors" element={<Sensors />} />
               <Route path="reports/:sensorId?" element={<Reports />} />
+              <Route path="reports/:sensorId/:timeWindow" element={<Reports />} />
+              <Route path="reports/:sensorId/:timeWindow/raw" element={<Reports />} />
               <Route path="mag-reports/:buildingId?" element={<MagReports />} />
             </Route>
           </Routes>
