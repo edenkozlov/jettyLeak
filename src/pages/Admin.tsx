@@ -5,7 +5,8 @@ import { GET_PREDICTED_SIGNALS } from '@/queries/getPredictedSignals'
 import { GET_LABELS } from '@/queries/getLabels'
 import { GET_SENSORS } from '@/queries/getSensors'
 import { INSERT_SIGNAL, DELETE_SIGNAL } from '@/mutations/signalMutations'
-import { RETRAIN_MODELS } from '@/mutations/retrainMutation'
+
+const EXPRESS_URL = import.meta.env.VITE_EXPRESS_ENDPOINT || 'http://localhost:3000'
 
 type Tab = 'predictions' | 'labels' | 'retrain'
 
@@ -71,8 +72,6 @@ export default function Admin() {
     useGraphQL<{ insert_signal_one: { id: number } }>(INSERT_SIGNAL)
   const { executeQuery: executeDeleteSignal } =
     useGraphQL<{ delete_signal_by_pk: { id: number } | null }>(DELETE_SIGNAL)
-  const { executeQuery: executeRetrain } =
-    useGraphQL<{ retrain_models: RetrainResult }>(RETRAIN_MODELS)
 
   const [sensorFilter, setSensorFilter] = useState('')
 
@@ -146,14 +145,13 @@ export default function Admin() {
     setRetrainError('')
     setRetrainResult(null)
     try {
-      const result = await executeRetrain()
-      if (result?.retrain_models?.error) {
-        setRetrainError(result.retrain_models.error)
-      } else if (result?.retrain_models) {
-        setRetrainResult(result.retrain_models)
-      } else {
-        setRetrainError('No response from retrain')
-      }
+      const res = await fetch(`${EXPRESS_URL}/api/admin/retrain`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || `${res.status} ${res.statusText}`)
+      setRetrainResult(result)
     } catch (e: unknown) {
       setRetrainError(e instanceof Error ? e.message : 'Retrain failed')
     } finally {
