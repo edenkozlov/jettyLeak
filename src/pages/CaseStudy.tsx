@@ -19,7 +19,6 @@ export default function CaseStudy() {
           </Link>
           <div className="flex items-center gap-4 sm:gap-8">
             <Link to="/" className="text-[13px] text-gray-400 transition hover:text-gray-700">Home</Link>
-            <Link to="/demo" className="text-[13px] text-gray-400 transition hover:text-gray-700">Live Demo</Link>
             <Link to="/login" className="rounded-full bg-indigo-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-600 sm:px-5 sm:text-[13px]">
               Get Started
             </Link>
@@ -186,16 +185,10 @@ export default function CaseStudy() {
         </div>
 
         {/* CTA */}
-        <div className="mt-16 flex flex-col items-center gap-4 border-t border-gray-100 pt-16 text-center sm:mt-24 sm:flex-row sm:justify-center sm:gap-5 sm:pt-20">
-          <Link
-            to="/demo"
-            className="w-full rounded-full bg-indigo-500 px-8 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-600 hover:shadow-xl sm:w-auto"
-          >
-            View Live Demo
-          </Link>
+        <div className="mt-16 flex flex-col items-center gap-4 border-t border-gray-100 pt-16 text-center sm:mt-24 sm:pt-20">
           <Link
             to="/"
-            className="w-full rounded-full border border-gray-200 px-8 py-3.5 text-center text-sm font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700 sm:w-auto"
+            className="rounded-full border border-gray-200 px-8 py-3.5 text-center text-sm font-semibold text-gray-500 transition hover:border-gray-300 hover:text-gray-700"
           >
             Back to Home
           </Link>
@@ -208,7 +201,6 @@ export default function CaseStudy() {
           <Link to="/" className="flex items-center gap-2"><img src={logo} alt="Beluga" className="h-7" /><span className="text-sm font-bold text-white">Beluga</span></Link>
           <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
             <Link to="/" className="text-[12px] text-gray-400 transition hover:text-gray-600">Home</Link>
-            <Link to="/demo" className="text-[12px] text-gray-400 transition hover:text-gray-600">Live Demo</Link>
             <Link to="/case-study" className="text-[12px] text-gray-400 transition hover:text-gray-600">Case Study</Link>
             <Link to="/login" className="text-[12px] text-gray-400 transition hover:text-gray-600">Sign In</Link>
           </div>
