@@ -33,3 +33,15 @@ export const DELETE_SIGNAL = `
     }
   }
 `
+
+export const UPDATE_PREDICTED_SIGNAL = `
+  mutation UpdatePredictedSignal($id: bigint!, $prediction: String!) {
+    update_predicted_signal_by_pk(
+      pk_columns: { id: $id }
+      _set: { prediction: $prediction }
+    ) {
+      id
+      prediction
+    }
+  }
+`
