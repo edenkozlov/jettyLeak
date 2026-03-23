@@ -25,6 +25,7 @@ export default function Landing() {
                 <a key={l} href={['#product', '#features', '#how-it-works'][i]} className="text-[13px] text-gray-400 transition hover:text-gray-700">{l}</a>
               ))}
               <Link to="/case-study" className="text-[13px] text-gray-400 transition hover:text-gray-700">Case Study</Link>
+              <a href="https://pitch.com/v/belugapitchdeck-j52a9r" target="_blank" rel="noopener noreferrer" className="text-[13px] text-gray-400 transition hover:text-gray-700">Investor</a>
             </div>
             <Link to="/login" className="hidden text-[13px] text-gray-400 transition hover:text-gray-700 sm:block">Sign In</Link>
             <a href="#interested" className="rounded-full bg-indigo-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-600 sm:px-5 sm:text-[13px]">
@@ -51,6 +52,7 @@ export default function Landing() {
               <a href="#features" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Features</a>
               <a href="#how-it-works" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">How It Works</a>
               <Link to="/case-study" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Case Study</Link>
+              <a href="https://pitch.com/v/belugapitchdeck-j52a9r" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Investor</a>
               <Link to="/login" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Sign In</Link>
             </div>
           </div>
@@ -409,6 +411,7 @@ export default function Landing() {
               <a key={l} href={['#product', '#features', '#how-it-works'][i]} className="text-[12px] text-gray-400 transition hover:text-gray-600">{l}</a>
             ))}
             <Link to="/case-study" className="text-[12px] text-gray-400 transition hover:text-gray-600">Case Study</Link>
+            <a href="https://pitch.com/v/belugapitchdeck-j52a9r" target="_blank" rel="noopener noreferrer" className="text-[12px] text-gray-400 transition hover:text-gray-600">Investor</a>
             <Link to="/login" className="text-[12px] text-gray-400 transition hover:text-gray-600">Sign In</Link>
           </div>
           <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
