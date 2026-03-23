@@ -1,23 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'
-
-async function apiFetch(path: string, options?: RequestInit) {
-  const res = await fetch(`${BACKEND_URL}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-  })
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
-  return res.json()
-}
+import { useGraphQL } from '@/hooks/useGraphQL'
+import { GET_PREDICTED_SIGNALS } from '@/queries/getPredictedSignals'
+import { GET_LABELS } from '@/queries/getLabels'
+import { GET_SENSORS } from '@/queries/getSensors'
+import { INSERT_SIGNAL, DELETE_SIGNAL } from '@/mutations/signalMutations'
+import { RETRAIN_MODELS } from '@/mutations/retrainMutation'
 
 type Tab = 'predictions' | 'labels' | 'retrain'
-
-interface Sensor {
-  id: number
-  name: string
-  building?: { name: string }
-}
 
 interface PredictedSignal {
   id: number
@@ -36,6 +26,12 @@ interface Label {
   value: string
   start_time: string
   end_time: string
+}
+
+interface Sensor {
+  id: number
+  name: string
+  building: { id: number; name: string } | null
 }
 
 interface RetrainResult {
@@ -63,18 +59,24 @@ const TAB_ITEMS: { key: Tab; label: string }[] = [
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState<Tab>('predictions')
-  const [sensors, setSensors] = useState<Sensor[]>([])
 
-  // Predictions state
-  const [predictions, setPredictions] = useState<PredictedSignal[]>([])
-  const [predictionsLoading, setPredictionsLoading] = useState(false)
-  const [predictionsError, setPredictionsError] = useState('')
+  // GraphQL hooks
+  const { data: sensorsData, executeQuery: fetchSensors } =
+    useGraphQL<{ sensor: Sensor[] }>(GET_SENSORS)
+  const { data: predictionsData, loading: predictionsLoading, error: predictionsError, executeQuery: fetchPredictions } =
+    useGraphQL<{ predicted_signal: PredictedSignal[] }>(GET_PREDICTED_SIGNALS)
+  const { data: labelsData, loading: labelsLoading, error: labelsError, executeQuery: fetchLabels } =
+    useGraphQL<{ signal: Label[] }>(GET_LABELS)
+  const { executeQuery: executeInsertSignal } =
+    useGraphQL<{ insert_signal_one: { id: number } }>(INSERT_SIGNAL)
+  const { executeQuery: executeDeleteSignal } =
+    useGraphQL<{ delete_signal_by_pk: { id: number } | null }>(DELETE_SIGNAL)
+  const { executeQuery: executeRetrain } =
+    useGraphQL<{ retrain_models: RetrainResult }>(RETRAIN_MODELS)
+
   const [sensorFilter, setSensorFilter] = useState('')
 
-  // Labels state
-  const [labels, setLabels] = useState<Label[]>([])
-  const [labelsLoading, setLabelsLoading] = useState(false)
-  const [labelsError, setLabelsError] = useState('')
+  // Label form state
   const [newLabel, setNewLabel] = useState({
     sensor_id: '',
     value: '',
@@ -89,64 +91,46 @@ export default function Admin() {
   const [retrainResult, setRetrainResult] = useState<RetrainResult | null>(null)
   const [retrainError, setRetrainError] = useState('')
 
+  const sensors = sensorsData?.sensor ?? []
+  const predictions = predictionsData?.predicted_signal ?? []
+  const labels = labelsData?.signal ?? []
+
   // Fetch sensors on mount
   useEffect(() => {
-    apiFetch('/api/admin/sensors')
-      .then(setSensors)
-      .catch(() => {})
-  }, [])
+    fetchSensors()
+  }, [fetchSensors])
 
-  // Fetch predictions
+  // Fetch predictions when tab or filter changes
   useEffect(() => {
     if (activeTab !== 'predictions') return
-    setPredictionsLoading(true)
-    setPredictionsError('')
-    const query = sensorFilter
-      ? `/api/admin/predicted-signals?limit=100&sensor_id=${encodeURIComponent(sensorFilter)}`
-      : '/api/admin/predicted-signals?limit=100'
-    apiFetch(query)
-      .then(setPredictions)
-      .catch((e: Error) => setPredictionsError(e.message))
-      .finally(() => setPredictionsLoading(false))
-  }, [activeTab, sensorFilter])
+    const where = sensorFilter
+      ? { sensor_id: { _eq: parseInt(sensorFilter) } }
+      : {}
+    fetchPredictions({ limit: 100, where })
+  }, [activeTab, sensorFilter, fetchPredictions])
 
-  // Fetch labels
+  // Fetch labels when tab changes
   useEffect(() => {
     if (activeTab !== 'labels') return
     fetchLabels()
-  }, [activeTab])
+  }, [activeTab, fetchLabels])
 
-  function fetchLabels() {
-    setLabelsLoading(true)
-    setLabelsError('')
-    apiFetch('/api/admin/labels')
-      .then(setLabels)
-      .catch((e: Error) => setLabelsError(e.message))
-      .finally(() => setLabelsLoading(false))
-  }
-
-  async function handleDeleteLabel(id: number) {
-    try {
-      await apiFetch(`/api/admin/labels/${id}`, { method: 'DELETE' })
-      setLabels((prev) => prev.filter((l) => l.id !== id))
-    } catch (e: unknown) {
-      setLabelsError(e instanceof Error ? e.message : 'Failed to delete label')
-    }
-  }
+  const handleDeleteLabel = useCallback(async (id: number) => {
+    await executeDeleteSignal({ id })
+    fetchLabels()
+  }, [executeDeleteSignal, fetchLabels])
 
   async function handleAddLabel(e: React.FormEvent) {
     e.preventDefault()
     setAddLabelLoading(true)
     setAddLabelError('')
     try {
-      await apiFetch('/api/admin/labels', {
-        method: 'POST',
-        body: JSON.stringify({
-          sensor_id: parseInt(newLabel.sensor_id),
-          value: newLabel.value,
-          start_time: new Date(newLabel.start_time).toISOString(),
-          end_time: new Date(newLabel.end_time).toISOString(),
-        }),
+      await executeInsertSignal({
+        sensor_id: parseInt(newLabel.sensor_id),
+        value: newLabel.value,
+        start_time: new Date(newLabel.start_time).toISOString(),
+        end_time: new Date(newLabel.end_time).toISOString(),
+        time: new Date(newLabel.start_time).toISOString(),
       })
       setNewLabel({ sensor_id: '', value: '', start_time: '', end_time: '' })
       fetchLabels()
@@ -162,8 +146,14 @@ export default function Admin() {
     setRetrainError('')
     setRetrainResult(null)
     try {
-      const result = await apiFetch('/api/admin/retrain', { method: 'POST' })
-      setRetrainResult(result)
+      const result = await executeRetrain()
+      if (result?.retrain_models?.error) {
+        setRetrainError(result.retrain_models.error)
+      } else if (result?.retrain_models) {
+        setRetrainResult(result.retrain_models)
+      } else {
+        setRetrainError('No response from retrain')
+      }
     } catch (e: unknown) {
       setRetrainError(e instanceof Error ? e.message : 'Retrain failed')
     } finally {
