@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { label: 'Clients', path: '/dashboard/clients' },
   { label: 'Buildings', path: '/dashboard/buildings' },
   { label: 'Sensors', path: '/dashboard/sensors' },
+  { label: 'Admin', path: '/dashboard/admin' },
 ]
 
 function navLinkClass({ isActive }: { isActive: boolean }) {

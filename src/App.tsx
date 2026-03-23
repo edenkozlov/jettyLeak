@@ -20,6 +20,7 @@ import Terms from '@/pages/Terms'
 import MagReports from '@/pages/MagReports'
 import Reports from '@/pages/Reports'
 import Sensors from '@/pages/Sensors'
+import Admin from '@/pages/Admin'
 import { store } from '@/redux/store'
 
 function ScrollToTop() {
@@ -55,6 +56,7 @@ export default function App() {
               <Route path="reports/:sensorId/:timeWindow" element={<Reports />} />
               <Route path="reports/:sensorId/:timeWindow/raw" element={<Reports />} />
               <Route path="mag-reports/:buildingId?" element={<MagReports />} />
+              <Route path="admin" element={<Admin />} />
             </Route>
           </Routes>
         </BrowserRouter>
