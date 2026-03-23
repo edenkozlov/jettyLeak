@@ -3,9 +3,8 @@ import { Link } from 'react-router'
 
 import logo from '@/assets/belugaLogo.png'
 import heroVideo from '@/assets/water.mp4'
-import deviceImg from '@/assets/graph.png'
-import diagramImg from '@/assets/pipeillustration.png'
-import leakImg from '@/assets/app.png'
+import deviceImg from '@/assets/iphone1.png'
+import leakImg from '@/assets/iphone2.png'
 import { supabase } from '@/lib/supabase'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
 
@@ -22,10 +21,9 @@ export default function Landing() {
           </Link>
           <div className="flex items-center gap-4 sm:gap-8">
             <div className="hidden gap-7 md:flex">
-              {['Product', 'Features'].map((l, i) => (
-                <a key={l} href={['#product', '#features'][i]} className="text-[13px] text-gray-400 transition hover:text-gray-700">{l}</a>
+              {['Product', 'Features', 'How It Works'].map((l, i) => (
+                <a key={l} href={['#product', '#features', '#how-it-works'][i]} className="text-[13px] text-gray-400 transition hover:text-gray-700">{l}</a>
               ))}
-              <Link to="/demo" className="text-[13px] text-gray-400 transition hover:text-gray-700">Live Demo</Link>
               <Link to="/case-study" className="text-[13px] text-gray-400 transition hover:text-gray-700">Case Study</Link>
             </div>
             <Link to="/login" className="hidden text-[13px] text-gray-400 transition hover:text-gray-700 sm:block">Sign In</Link>
@@ -51,7 +49,7 @@ export default function Landing() {
             <div className="flex flex-col gap-3">
               <a href="#product" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Product</a>
               <a href="#features" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Features</a>
-              <Link to="/demo" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Live Demo</Link>
+              <a href="#how-it-works" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">How It Works</a>
               <Link to="/case-study" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Case Study</Link>
               <Link to="/login" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Sign In</Link>
             </div>
@@ -83,52 +81,44 @@ export default function Landing() {
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
               </span>
-              <span className="text-[13px] font-medium text-gray-700">Built for Canadian homes &amp; buildings</span>
+              <span className="text-[13px] font-medium text-gray-700">Water intelligence for buildings</span>
             </div>
 
-            <h1 className="max-w-4xl text-[36px] leading-[1.08] font-bold tracking-tight text-gray-900 animate-slide-up sm:text-5xl md:text-6xl lg:text-[76px]" style={{ animationDelay: '0.1s' }}>
-              Your pipes don't warn you.
+            <h1 className="max-w-4xl text-[36px] leading-[1.08] font-bold tracking-tight text-gray-900 animate-slide-up sm:text-5xl md:text-6xl lg:text-[72px]" style={{ animationDelay: '0.1s' }}>
+              Understand your building's
               <br />
               <span className="bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-400 bg-clip-text text-transparent">
-                We do.
+                water system
               </span>
             </h1>
 
-            <p className="mx-auto mt-5 max-w-xl text-[17px] leading-relaxed text-gray-800 animate-slide-up sm:mt-6 sm:text-[20px]" style={{ animationDelay: '0.2s' }}>
-              Continuous flow tracking and instant leak alerts for homes and buildings using non-invasive sensors.
+            <p className="mx-auto mt-6 max-w-xl text-[18px] leading-relaxed text-gray-700 animate-slide-up sm:mt-7 sm:text-[22px]" style={{ animationDelay: '0.2s' }}>
+              One sensor. Every fixture. No guesswork.
             </p>
 
-            <div className="mt-10 flex flex-col items-center gap-3 animate-slide-up sm:flex-row sm:gap-4" style={{ animationDelay: '0.3s' }}>
+            <div className="mt-10 animate-slide-up" style={{ animationDelay: '0.3s' }}>
               <a
                 href="#interested"
-                className="w-full rounded-full bg-indigo-500 px-8 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-600 hover:shadow-xl hover:shadow-indigo-500/30 sm:w-auto"
+                className="inline-block rounded-full bg-indigo-500 px-8 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-600 hover:shadow-xl hover:shadow-indigo-500/30"
               >
                 Start Monitoring
               </a>
-              <Link
-                to="/demo"
-                className="w-full rounded-full border border-gray-300 bg-white/70 px-8 py-3.5 text-center text-sm font-semibold text-gray-900 backdrop-blur-sm transition hover:border-gray-400 hover:bg-white/90 sm:w-auto"
-              >
-                View Live Demo
-              </Link>
             </div>
           </div>
-
         </div>
       </section>
 
       {/* ━━━ PRODUCT ━━━ */}
       <section id="product" className="relative bg-white pt-12 pb-20 sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(68,87,194,0.04),transparent_50%),radial-gradient(circle_at_70%_80%,rgba(6,182,212,0.04),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(14,165,233,0.04),transparent_50%),radial-gradient(circle_at_70%_80%,rgba(6,182,212,0.04),transparent_50%)]" />
 
         <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-semibold tracking-[0.3em] text-indigo-600 uppercase">The product</p>
-            <h2 className="mt-4 text-[26px] leading-tight font-bold tracking-tight text-gray-900 sm:mt-5 sm:text-[34px] md:text-[46px]">
-              A sensor that learns<br className="hidden sm:block" /> your plumbing
+            <h2 className="text-[26px] leading-tight font-bold tracking-tight text-gray-900 sm:text-[34px] md:text-[46px]">
+              A system that understands<br className="hidden sm:block" /> your plumbing
             </h2>
             <p className="mt-3 text-[15px] leading-relaxed text-gray-500 sm:mt-4 sm:text-[16px]">
-              The longer it runs, the smarter it gets. Beluga learns your building's water patterns over time — every fixture, every baseline. When something changes, it doesn't just detect it. It triangulates where the issue is coming from.
+              See what's happening immediately, and how it changes over time.
             </p>
           </div>
 
@@ -136,33 +126,33 @@ export default function Landing() {
             <div className="space-y-6 order-2 lg:order-1">
               {[
                 {
-                  title: 'Learns every fixture',
-                  desc: 'The model trains itself to recognize each appliance — toilet, shower, dishwasher, garden hose. Even in older buildings with no documentation.',
+                  title: 'Understands every fixture',
+                  desc: 'Identifies how toilets, sinks, showers, and appliances behave — even in older buildings with no documentation.',
                   icon: <><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" /><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z" /></>,
                   gradient: 'from-indigo-500 to-indigo-600',
                 },
                 {
-                  title: 'Works on any pipe',
-                  desc: 'Copper, PEX, CPVC, galvanized — clamp it on and you\'re set. Designed for the mix of materials found in Canadian homes, even decades-old buildings.',
-                  icon: <><circle cx="12" cy="12" r="10" /><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" /><line x1="2" y1="12" x2="22" y2="12" /></>,
+                  title: 'Works from a single install',
+                  desc: 'One sensor on the main line gives full visibility across the entire building. No pipe cutting. No specialized labor.',
+                  icon: <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />,
                   gradient: 'from-blue-500 to-cyan-500',
                 },
                 {
-                  title: 'Detects leaks early',
-                  desc: 'Sensitive enough to pick up flows as small as 1.7 mL/s. Frozen pipe bursts, slow drips, running toilets — all flagged before they become emergencies.',
-                  icon: <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />,
+                  title: 'Tracks performance over time',
+                  desc: 'See how fixtures change as they age. Catch inefficiencies early, before they become costly problems.',
+                  icon: <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></>,
                   gradient: 'from-cyan-500 to-teal-500',
                 },
                 {
-                  title: 'Maps your plumbing',
-                  desc: "Over time, Beluga builds a digital map of your piping system. When a leak happens, it doesn't just detect it — it triangulates where the problem is coming from.",
+                  title: 'Builds a live model of your system',
+                  desc: "Beluga continuously maps how water flows through your building, creating a dynamic understanding of your plumbing.",
                   icon: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></>,
                   gradient: 'from-amber-500 to-orange-500',
                 },
                 {
-                  title: 'Instant mobile alerts',
-                  desc: "Something odd at 3am? You'll know before your tenants do. Push notifications with severity, location, and what to do next.",
-                  icon: <><rect x="5" y="2" width="14" height="20" rx="2" /><line x1="12" y1="18" x2="12.01" y2="18" /></>,
+                  title: 'Immediate visibility',
+                  desc: 'Right after installation, Beluga surfaces key insights on usage, inefficiencies, and opportunities to improve performance.',
+                  icon: <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>,
                   gradient: 'from-violet-500 to-indigo-500',
                 },
               ].map((f) => (
@@ -179,8 +169,8 @@ export default function Landing() {
             </div>
 
             <div className="relative order-1 mx-auto lg:order-2 lg:mx-0">
-              <div className="absolute -inset-4 rounded-2xl bg-gradient-to-br from-indigo-100 to-cyan-50 opacity-50 blur-2xl" />
-              <img src={deviceImg} alt="Beluga dashboard" className="relative w-full max-w-md rounded-2xl shadow-xl lg:max-w-[480px]" />
+              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-indigo-100 to-cyan-50 opacity-50 blur-2xl" />
+              <img src={deviceImg} alt="Beluga mobile app" className="relative mx-auto w-52 rounded-[2rem] shadow-xl sm:w-60 lg:w-64" />
             </div>
           </div>
         </div>
@@ -193,59 +183,50 @@ export default function Landing() {
         </svg>
       </div>
 
-      {/* ━━━ FEATURES (dark band) ━━━ */}
+      {/* ━━━ WHAT BELUGA ENABLES (dark band) ━━━ */}
       <section id="features" className="relative bg-gray-950 pt-12 pb-20 text-white sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(68,87,194,0.08),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(14,165,233,0.08),transparent_60%)]" />
 
         <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
-          <p className="text-center text-xs font-semibold tracking-[0.3em] text-indigo-400 uppercase">Features</p>
+          <p className="text-center text-xs font-semibold tracking-[0.3em] text-indigo-400 uppercase">What Beluga enables</p>
           <h2 className="mx-auto mt-4 max-w-3xl text-center text-[26px] leading-tight font-bold tracking-tight sm:mt-5 sm:text-[34px] md:text-[46px]">
-            Everything happens<br className="hidden sm:block" /> on your phone
+            Know what's actually happening<br className="hidden sm:block" /> inside your building
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-center text-[15px] text-white/40 sm:mt-4 sm:text-[16px]">
-            Real-time monitoring, intelligent alerts, and full visibility into your building's water behavior — all from one app.
-          </p>
 
-          <div className="mt-12 grid gap-3 sm:mt-20 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+          <div className="mt-12 flex flex-wrap justify-center gap-3 sm:mt-20 sm:gap-4">
             {[
               {
-                title: 'Live flow & usage tracking',
-                desc: 'Real-time L/h readings with interactive charts. Track volume per hour, day, or month across your entire building.',
-                icon: <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />,
+                title: 'Fixture Performance & Analysis',
+                desc: "See how toilets, sinks, and showers actually perform — not how they're supposed to.",
+                icon: <><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></>,
                 glow: 'bg-indigo-500/20',
               },
               {
-                title: 'Appliance classification',
-                desc: 'Distinguishes toilet flushes from showers, dishwashers, and garden hoses automatically over time.',
-                icon: <><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></>,
+                title: 'Water Cost Reduction',
+                desc: 'Identify where water is being used inefficiently and reduce unnecessary consumption.',
+                icon: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></>,
                 glow: 'bg-blue-500/20',
               },
               {
-                title: 'Smart alerts',
-                desc: "Push notifications ranked by severity. Know what's happening, where, and what action to take.",
-                icon: <><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 01-3.46 0" /></>,
+                title: 'Fixture Comparison & Benchmarking',
+                desc: 'Compare fixtures against ideal performance standards to spot underperforming units instantly.',
+                icon: <><line x1="4" y1="21" x2="4" y2="14" /><line x1="4" y1="10" x2="4" y2="3" /><line x1="12" y1="21" x2="12" y2="12" /><line x1="12" y1="8" x2="12" y2="3" /><line x1="20" y1="21" x2="20" y2="16" /><line x1="20" y1="12" x2="20" y2="3" /><line x1="1" y1="14" x2="7" y2="14" /><line x1="9" y1="8" x2="15" y2="8" /><line x1="17" y1="16" x2="23" y2="16" /></>,
                 glow: 'bg-cyan-500/20',
               },
               {
-                title: 'Pipe system mapping',
-                desc: 'Builds a digital map of your plumbing over time. See how water flows even without blueprints.',
-                icon: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></>,
+                title: 'Warranty & Replacement Opportunities',
+                desc: 'Surface fixtures that may qualify for replacement based on performance patterns.',
+                icon: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
                 glow: 'bg-emerald-500/20',
               },
               {
-                title: 'No WiFi at the pipe',
-                desc: 'The sensor transmits via LoRa to a hub with connectivity. Install it anywhere — no WiFi needed where the pipe is.',
-                icon: <><path d="M1 1l22 22" /><path d="M16.72 11.06A10.94 10.94 0 0119 12.55" /><path d="M5 12.55a10.94 10.94 0 015.17-2.39" /><path d="M10.71 5.05A16 16 0 0122.56 9" /><path d="M1.42 9a15.91 15.91 0 014.7-2.88" /><path d="M8.53 16.11a6 6 0 016.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></>,
+                title: 'Leak & Anomaly Detection',
+                desc: 'Detect abnormal usage patterns across the building, including leaks.',
+                icon: <><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></>,
                 glow: 'bg-amber-500/20',
               },
-              {
-                title: 'Multi-building dashboard',
-                desc: 'Manage an entire portfolio from one screen. Compare buildings, spot outliers, deploy at scale.',
-                icon: <><rect x="2" y="3" width="20" height="14" rx="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></>,
-                glow: 'bg-rose-500/20',
-              },
             ].map((f) => (
-              <div key={f.title} className="group relative rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 transition hover:border-white/10 hover:bg-white/[0.04]">
+              <div key={f.title} className="group relative w-full rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 transition hover:border-white/10 hover:bg-white/[0.04] sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.75rem)]">
                 <div className={`absolute top-1/2 left-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full ${f.glow} blur-2xl opacity-0 transition-opacity group-hover:opacity-100`} />
                 <div className="relative">
                   <div className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5">
@@ -267,112 +248,76 @@ export default function Landing() {
         </svg>
       </div>
 
-      {/* ━━━ APP EXPERIENCE ━━━ */}
+      {/* ━━━ DASHBOARD ━━━ */}
       <section className="relative bg-white pt-12 pb-20 sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_30%,rgba(239,68,68,0.04),transparent_50%),radial-gradient(circle_at_20%_80%,rgba(68,87,194,0.04),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_30%,rgba(14,165,233,0.04),transparent_50%),radial-gradient(circle_at_20%_80%,rgba(6,182,212,0.04),transparent_50%)]" />
 
         <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="grid items-center gap-10 lg:grid-cols-[1fr_1fr] lg:gap-20">
-            <div className="relative mx-auto max-w-sm lg:mx-0 lg:max-w-none">
-              <div className="absolute -inset-6 rounded-[28px] bg-gradient-to-br from-red-100/60 via-indigo-100/40 to-cyan-50/60 blur-2xl sm:-inset-8 sm:rounded-[32px]" />
-              <div className="relative overflow-hidden rounded-[20px] border border-gray-200/60 shadow-2xl shadow-gray-900/10 sm:rounded-[24px]">
-                <img src={leakImg} alt="Beluga app detecting a leak in real time" className="w-full" />
-              </div>
+          <div className="grid items-center gap-10 lg:grid-cols-[auto_1fr] lg:gap-14">
+            <div className="relative mx-auto lg:mx-0">
+              <div className="absolute -inset-6 rounded-[32px] bg-gradient-to-br from-indigo-100/60 via-cyan-100/40 to-emerald-50/60 blur-2xl sm:-inset-8" />
+              <img src={leakImg} alt="Beluga mobile app telemetry data" className="relative mx-auto w-52 rounded-[2rem] shadow-2xl sm:w-60 lg:w-64" />
             </div>
 
             <div>
-              <p className="text-xs font-semibold tracking-[0.3em] text-red-500 uppercase">Real-time detection</p>
+              <p className="text-xs font-semibold tracking-[0.3em] text-indigo-500 uppercase">Dashboard</p>
               <h2 className="mt-4 text-[26px] leading-tight font-bold tracking-tight text-gray-900 sm:mt-5 sm:text-[34px] md:text-[42px]">
-                From leak detected<br className="hidden sm:block" /> to alert in seconds
+                Everything in one place
               </h2>
-              <p className="mt-4 text-[16px] leading-relaxed text-gray-500">
-                The moment abnormal flow is detected, Beluga identifies the location, severity, and sends a push notification — so you can act immediately, not after the damage is done.
+              <p className="mt-4 text-[15px] leading-relaxed text-gray-500 sm:text-[16px]">
+                Full visibility into your building's water system — from high-level usage to individual fixture performance.
               </p>
 
-              <div className="mt-10 space-y-5">
+              <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">
                 {[
-                  { label: 'Abnormal flow detected', detail: '3rd floor mechanical room', color: 'bg-red-500', ring: 'ring-red-500/20' },
-                  { label: 'Alert sent to phone', detail: 'Within 30 seconds of detection', color: 'bg-amber-500', ring: 'ring-amber-500/20' },
-                  { label: 'Action taken', detail: 'Valve shut off, damage prevented', color: 'bg-emerald-500', ring: 'ring-emerald-500/20' },
-                ].map((step, i) => (
-                  <div key={step.label} className="flex items-start gap-4">
-                    <div className="relative mt-0.5">
-                      <div className={`h-3 w-3 rounded-full ${step.color} ring-4 ${step.ring}`} />
-                      {i < 2 && <div className="absolute top-3 left-1/2 h-8 w-px -translate-x-1/2 bg-gray-200" />}
+                  { icon: <><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></>, title: 'Usage over time', desc: 'Track total water usage with clear, real-time trends.' },
+                  { icon: <><path d="M21.21 15.89A10 10 0 118 2.83" /><path d="M22 12A10 10 0 0012 2v10z" /></>, title: 'Breakdown by fixture', desc: 'Understand where your water is going.' },
+                  { icon: <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>, title: 'Flagged fixtures', desc: 'See which fixtures need attention instantly.' },
+                  { icon: <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />, title: 'Performance tracking', desc: 'Monitor how fixtures change over time.' },
+                  { icon: <><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></>, title: 'Savings insights', desc: 'See how much water and cost can be reduced.' },
+                  { icon: <><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></>, title: 'Portfolio view', desc: 'Compare buildings from one dashboard.' },
+                ].map((item) => (
+                  <div key={item.title}>
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-500">
+                      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">{item.icon}</svg>
                     </div>
-                    <div>
-                      <p className="text-[14px] font-semibold text-gray-900">{step.label}</p>
-                      <p className="text-[13px] text-gray-400">{step.detail}</p>
-                    </div>
+                    <h3 className="mt-2 text-[13px] font-semibold text-gray-900">{item.title}</h3>
+                    <p className="mt-0.5 text-[12px] leading-relaxed text-gray-500">{item.desc}</p>
                   </div>
                 ))}
               </div>
-
             </div>
           </div>
         </div>
       </section>
 
-      {/* ━━━ LIVE DEMO ━━━ */}
-      <section id="how-it-works" className="relative bg-white pt-12 pb-20 sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
+      {/* ━━━ THE SENSOR ━━━ */}
+      <section className="relative bg-white pt-12 pb-20 sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="grid items-center gap-10 sm:gap-16 lg:grid-cols-[1fr_380px]">
-            <div>
-              <p className="text-xs font-semibold tracking-[0.3em] text-emerald-600 uppercase">Live demo</p>
-              <h2 className="mt-4 text-[26px] leading-tight font-bold tracking-tight text-gray-900 sm:mt-5 sm:text-[34px] md:text-[46px]">
-                See real water data.<br className="hidden sm:block" /> Right now.
-              </h2>
-              <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-gray-500 sm:mt-4 sm:text-[16px]">
-                This is live data streaming from Beluga sensors installed at our Montreal office and warehouse. Explore the same dashboard our customers across Canada use to monitor their buildings 24/7.
-              </p>
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-semibold tracking-[0.3em] text-emerald-600 uppercase">The sensor</p>
+            <h2 className="mt-4 text-[26px] leading-tight font-bold tracking-tight text-gray-900 sm:mt-5 sm:text-[34px] md:text-[46px]">
+              One install. Full visibility.
+            </h2>
+            <p className="mt-3 text-[15px] leading-relaxed text-gray-500 sm:mt-4 sm:text-[16px]">
+              Beluga installs on your building's main water line and observes how water moves through the system — no pipe cutting or specialized labor required.
+            </p>
+          </div>
 
-              <div className="mt-10 space-y-6">
-                {[
-                  { icon: <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />, title: 'Real-time flow readings', desc: 'Watch L/h data update in real time with interactive charts you can zoom and pan.' },
-                  { icon: <><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" /><line x1="7" y1="7" x2="7.01" y2="7" /></>, title: 'Appliance signatures', desc: 'See how the system classifies different fixtures by their unique flow patterns.' },
-                  { icon: <><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 01-3.46 0" /></>, title: 'Alert-ready monitoring', desc: 'Anomalies would trigger instant push notifications to the building manager.' },
-                ].map((item) => (
-                  <div key={item.title} className="flex gap-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">{item.icon}</svg>
-                    </div>
-                    <div>
-                      <h3 className="text-[15px] font-semibold text-gray-900">{item.title}</h3>
-                      <p className="mt-1 text-[13px] leading-relaxed text-gray-500">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-10 text-center sm:text-left">
-                <Link
-                  to="/demo"
-                  className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 transition-all hover:bg-emerald-500 hover:shadow-xl hover:shadow-emerald-600/30"
-                >
-                  <span className="relative flex h-2 w-2">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
-                    <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-                  </span>
-                  View Live Demo
-                </Link>
-              </div>
-            </div>
-
-            <div className="relative mx-auto flex flex-col items-center lg:mx-0 lg:items-start">
-              <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-emerald-100/80 to-indigo-100/60 opacity-60 blur-2xl sm:-inset-6" />
-              <div className="relative flex flex-col items-center space-y-3 lg:items-start lg:space-y-5">
-                <img src={diagramImg} alt="Ultrasonic flow sensing diagram" className="w-64 max-w-full sm:w-72 lg:max-w-[360px] lg:w-full" />
-                <div className="rounded-xl border border-gray-200/80 bg-gray-50 p-4 sm:p-5">
-                  <h4 className="text-[13px] font-semibold text-gray-900 sm:text-[14px]">How the sensor works</h4>
-                  <p className="mt-2 text-[12px] leading-relaxed text-gray-500 sm:text-[13px]">
-                    Two ultrasonic transducers are clamped onto the outside of the pipe. They send sound pulses to each other — one upstream, one downstream. The difference in travel time reveals how fast water is moving, without ever touching it.
-                  </p>
-                  <p className="mt-2 text-[12px] leading-relaxed text-gray-500 sm:text-[13px]">
-                    Completely non-invasive. No cutting, no plumber, no downtime.
-                  </p>
+          <div className="mt-12 grid gap-3 sm:mt-16 sm:grid-cols-3 sm:gap-4">
+            {[
+              { icon: <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />, title: 'Real usage tracking', desc: 'See how water is used across your building over time, from total consumption to detailed patterns.' },
+              { icon: <><rect x="4" y="4" width="16" height="16" rx="2" /><rect x="9" y="9" width="6" height="6" /><line x1="9" y1="2" x2="9" y2="4" /><line x1="15" y1="2" x2="15" y2="4" /><line x1="9" y1="20" x2="9" y2="22" /><line x1="15" y1="20" x2="15" y2="22" /><line x1="20" y1="9" x2="22" y2="9" /><line x1="20" y1="14" x2="22" y2="14" /><line x1="2" y1="9" x2="4" y2="9" /><line x1="2" y1="14" x2="4" y2="14" /></>, title: 'Fixture intelligence', desc: 'Automatically identifies toilets, sinks, showers, and appliances based on how water flows through the system.' },
+              { icon: <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>, title: 'Performance insights', desc: "Understand what's inefficient, what's changing, and where to focus — without guesswork." },
+            ].map((item) => (
+              <div key={item.title} className="rounded-xl border border-gray-100 bg-gray-50/50 p-5 text-center sm:p-6">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">{item.icon}</svg>
                 </div>
+                <h3 className="mt-4 text-[14px] font-semibold text-gray-900">{item.title}</h3>
+                <p className="mt-1.5 text-[13px] leading-relaxed text-gray-500">{item.desc}</p>
               </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
@@ -384,63 +329,63 @@ export default function Landing() {
         </svg>
       </div>
 
-      {/* ━━━ PRESSURE PROTECTION ━━━ */}
-      <section className="relative overflow-hidden bg-gray-950 pt-12 pb-20 text-white sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(68,87,194,0.1),transparent_60%)]" />
-        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-red-500/10 blur-[120px] animate-glow-pulse" />
+      {/* ━━━ HOW IT WORKS + WHO IT'S FOR (dark band) ━━━ */}
+      <section id="how-it-works" className="relative overflow-hidden bg-gray-950 pt-12 pb-20 text-white sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(14,165,233,0.1),transparent_60%)]" />
+        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-indigo-500/10 blur-[120px] animate-glow-pulse" />
 
         <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-semibold tracking-[0.3em] text-indigo-400 uppercase">Who it's for</p>
-            <h2 className="mt-4 text-[26px] leading-tight font-bold tracking-tight sm:mt-5 sm:text-[34px] md:text-[46px]">
-              From single homes<br className="hidden sm:block" /> to entire portfolios
-            </h2>
-            <p className="mx-auto mt-3 max-w-lg text-[15px] leading-relaxed text-white/40 sm:mt-4 sm:text-[16px]">
-              Whether you manage one property or hundreds, Beluga gives you visibility into every pipe — without tearing open a single wall.
-            </p>
-          </div>
+          {/* Who It's For */}
+          <div>
+            <div className="mx-auto max-w-2xl text-center">
+              <p className="text-xs font-semibold tracking-[0.3em] text-indigo-400 uppercase">Who it's for</p>
+              <h2 className="mt-4 text-[26px] leading-tight font-bold tracking-tight sm:mt-5 sm:text-[34px] md:text-[46px]">
+                From single properties<br className="hidden sm:block" /> to full portfolios
+              </h2>
+            </div>
 
-          <div className="mt-12 grid gap-3 sm:mt-20 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
-            {[
-              {
-                label: 'Homeowners',
-                detail: 'Protect your basement and catch frozen pipe bursts before the insurance claim.',
-                icon: <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />,
-              },
-              {
-                label: 'Property managers',
-                detail: 'Monitor every building remotely. Know about a leak before your tenants do.',
-                icon: <><rect x="1" y="4" width="22" height="16" rx="2" /><path d="M1 10h22" /></>,
-              },
-              {
-                label: 'Condos & stratas',
-                detail: 'Shared risers, shared risk. Track common lines and unit-level anomalies.',
-                icon: <><rect x="4" y="2" width="16" height="20" rx="2" /><path d="M9 22V12h6v10" /><path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01" /></>,
-              },
-              {
-                label: 'Commercial & industrial',
-                detail: 'Warehouses, offices, restaurants — the sensor talks to a hub via LoRa, so no IT overhead at the pipe.',
-                icon: <><path d="M2 20h20" /><path d="M5 20V8l7-5 7 5v12" /><rect x="9" y="12" width="6" height="8" /></>,
-              },
-            ].map((c) => (
-              <div key={c.label} className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 transition hover:border-white/10 hover:bg-white/[0.05]">
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5">
-                  <svg className="h-5 w-5 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">{c.icon}</svg>
+            <div className="mt-12 grid gap-3 sm:mt-16 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+              {[
+                {
+                  label: 'Property managers',
+                  detail: 'Understand what\u2019s happening across every building and reduce operating costs.',
+                  icon: <><rect x="2" y="7" width="20" height="14" rx="2" /><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" /></>,
+                },
+                {
+                  label: 'Commercial buildings',
+                  detail: 'Offices, retail, and mixed-use spaces gain visibility into water usage and inefficiencies.',
+                  icon: <><path d="M2 20h20" /><path d="M5 20V8l7-5 7 5v12" /><rect x="9" y="12" width="6" height="8" /></>,
+                },
+                {
+                  label: 'Multi-family & condos',
+                  detail: 'Track shared systems, compare units, and identify issues early.',
+                  icon: <><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" /></>,
+                },
+                {
+                  label: 'Industrial & facilities',
+                  detail: 'Monitor water usage across large systems without adding complexity.',
+                  icon: <><path d="M2 20h20" /><path d="M5 20V8l7-5 7 5v12" /><path d="M9 20v-6h6v6" /></>,
+                },
+              ].map((c) => (
+                <div key={c.label} className="group rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 transition hover:border-white/10 hover:bg-white/[0.05]">
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                    <svg className="h-5 w-5 text-white/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">{c.icon}</svg>
+                  </div>
+                  <h3 className="text-[15px] font-semibold">{c.label}</h3>
+                  <p className="mt-2 text-[13px] leading-relaxed text-white/35">{c.detail}</p>
                 </div>
-                <h3 className="text-[15px] font-semibold">{c.label}</h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-white/35">{c.detail}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="mt-12 text-center sm:mt-16">
-            <Link
-              to="/case-study"
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-7 py-3 text-sm font-semibold text-white/60 backdrop-blur-sm transition hover:border-white/20 hover:text-white"
-            >
-              View Case Study
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-            </Link>
+            <div className="mt-12 text-center sm:mt-16">
+              <Link
+                to="/case-study"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-7 py-3 text-sm font-semibold text-white/60 backdrop-blur-sm transition hover:border-white/20 hover:text-white"
+              >
+                View Case Study
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -452,18 +397,17 @@ export default function Landing() {
         </svg>
       </div>
 
-      {/* ━━━ INTERESTED ━━━ */}
+      {/* ━━━ CTA ━━━ */}
       <InterestSection />
 
       {/* ━━━ Footer ━━━ */}
       <footer className="border-t border-gray-100 bg-white py-8 sm:py-10">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 sm:gap-6 sm:px-6 md:flex-row">
-          <Link to="/" className="flex items-center gap-2"><img src={logo} alt="Beluga" className="h-7" /><span className="text-sm font-bold text-white">Beluga</span></Link>
+          <Link to="/" className="flex items-center gap-2"><img src={logo} alt="Beluga" className="h-7" /><span className="text-sm font-bold text-gray-900">Beluga</span></Link>
           <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
-            {['Product', 'Features'].map((l, i) => (
-              <a key={l} href={['#product', '#features'][i]} className="text-[12px] text-gray-400 transition hover:text-gray-600">{l}</a>
+            {['Product', 'Features', 'How It Works'].map((l, i) => (
+              <a key={l} href={['#product', '#features', '#how-it-works'][i]} className="text-[12px] text-gray-400 transition hover:text-gray-600">{l}</a>
             ))}
-            <Link to="/demo" className="text-[12px] text-gray-400 transition hover:text-gray-600">Live Demo</Link>
             <Link to="/case-study" className="text-[12px] text-gray-400 transition hover:text-gray-600">Case Study</Link>
             <Link to="/login" className="text-[12px] text-gray-400 transition hover:text-gray-600">Sign In</Link>
           </div>
@@ -472,7 +416,7 @@ export default function Landing() {
             <Link to="/privacy" className="text-[12px] text-gray-400 transition hover:text-gray-600">Privacy Policy</Link>
             <Link to="/terms" className="text-[12px] text-gray-400 transition hover:text-gray-600">Terms of Service</Link>
           </div>
-          <p className="text-[12px] text-gray-300">&copy; {new Date().getFullYear()} Beluga — Made in Canada</p>
+          <p className="text-[12px] text-gray-300">&copy; {new Date().getFullYear()} Beluga — Water intelligence for buildings</p>
         </div>
       </footer>
 
@@ -523,10 +467,10 @@ function InterestSection() {
 
           <div className="relative">
             <h2 className="text-[26px] leading-tight font-bold tracking-tight text-white sm:text-[34px] md:text-[46px]">
-              Get Beluga for your building
+              Understand your building's<br className="hidden sm:block" /> water system
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-[14px] text-white/40 sm:mt-4 sm:text-[15px]">
-              Leave your email and our team will reach out to get you set up.
+              Get visibility into every fixture, every pattern, and every inefficiency.
             </p>
 
             {status === 'success' ? (
