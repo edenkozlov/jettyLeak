@@ -51,10 +51,21 @@ interface Sensor {
   building: { id: number; name: string } | null
 }
 
+interface RetrainTestResult {
+  signalId: number
+  trueLabel: string
+  predicted: string
+  correct: boolean
+  confidence: number
+  scores: Record<string, number>
+}
+
 interface RetrainResult {
   modelsCount?: number
   fixtureTypes?: string[]
   totalSequences?: number
+  testResults?: RetrainTestResult[]
+  accuracy?: number
   error?: string
 }
 
@@ -1051,16 +1062,62 @@ export default function Admin() {
             )}
 
             {retrainResult && (
-              <div className="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-4 dark:border-green-700 dark:bg-green-900/30">
-                <p className="mb-2 text-sm font-medium text-green-800 dark:text-green-300">Retrain completed successfully.</p>
-                {retrainResult.fixtureTypes && (
-                  <p className="text-sm text-green-700 dark:text-green-400">Fixture types: {retrainResult.fixtureTypes.join(', ')}</p>
-                )}
-                {retrainResult.totalSequences != null && (
-                  <p className="text-sm text-green-700 dark:text-green-400">Total sequences: {retrainResult.totalSequences}</p>
-                )}
-                {retrainResult.modelsCount != null && (
-                  <p className="text-sm text-green-700 dark:text-green-400">Models trained: {retrainResult.modelsCount}</p>
+              <div className="mt-4 space-y-4">
+                <div className="rounded-md border border-green-200 bg-green-50 px-4 py-4 dark:border-green-700 dark:bg-green-900/30">
+                  <p className="mb-2 text-sm font-medium text-green-800 dark:text-green-300">Retrain completed successfully.</p>
+                  <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-green-700 dark:text-green-400">
+                    {retrainResult.fixtureTypes && (
+                      <span>Types: {retrainResult.fixtureTypes.join(', ')}</span>
+                    )}
+                    {retrainResult.totalSequences != null && (
+                      <span>Sequences: {retrainResult.totalSequences}</span>
+                    )}
+                    {retrainResult.accuracy != null && (
+                      <span className="font-semibold">Accuracy: {(retrainResult.accuracy * 100).toFixed(1)}%</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Test results table */}
+                {retrainResult.testResults && retrainResult.testResults.length > 0 && (
+                  <div className="rounded-md border border-gray-200 dark:border-gray-700">
+                    <div className="border-b border-gray-200 bg-gray-50 px-4 py-2 dark:border-gray-700 dark:bg-gray-800">
+                      <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                        Test Results ({retrainResult.testResults.filter(r => r.correct).length}/{retrainResult.testResults.length} correct)
+                      </h3>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto">
+                      <table className="min-w-full divide-y divide-gray-200 text-xs dark:divide-gray-700">
+                        <thead className="bg-gray-50 dark:bg-gray-800">
+                          <tr>
+                            {['Signal', 'True Label', 'Predicted', 'Confidence', 'Result'].map((h) => (
+                              <th key={h} className="px-3 py-2 text-left font-semibold text-gray-500 dark:text-gray-400">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+                          {retrainResult.testResults.map((r) => (
+                            <tr key={r.signalId} className={r.correct ? '' : 'bg-red-50/50 dark:bg-red-900/10'}>
+                              <td className="px-3 py-1.5 text-gray-700 dark:text-gray-300">#{r.signalId}</td>
+                              <td className="px-3 py-1.5 text-gray-700 dark:text-gray-300">{r.trueLabel}</td>
+                              <td className="px-3 py-1.5">
+                                <span className={`rounded-full px-2 py-0.5 font-medium ${r.correct ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'}`}>
+                                  {r.predicted}
+                                </span>
+                              </td>
+                              <td className="px-3 py-1.5 text-gray-700 dark:text-gray-300">{(r.confidence * 100).toFixed(1)}%</td>
+                              <td className="px-3 py-1.5">
+                                {r.correct
+                                  ? <span className="font-medium text-green-600 dark:text-green-400">Correct</span>
+                                  : <span className="font-medium text-red-600 dark:text-red-400">Wrong</span>
+                                }
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
