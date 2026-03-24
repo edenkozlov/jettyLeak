@@ -6,6 +6,7 @@ export const GET_PREDICTED_SIGNALS = `
       start_time
       end_time
       prediction
+      confidence
       sensor_id
       sensor {
         name
@@ -27,6 +28,7 @@ export const GET_PREDICTED_SIGNALS_BY_SENSOR = `
       start_time
       end_time
       prediction
+      confidence
       sensor_id
       sensor {
         name

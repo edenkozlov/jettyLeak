@@ -29,6 +29,7 @@ interface PredictedSignal {
   sensor_id: number
   sensor: { name: string; building: { name: string } | null } | null
   prediction: string
+  confidence: number | null
   start_time: string
   end_time: string
   created_at: string
@@ -92,7 +93,7 @@ const FIXTURE_TYPES = [
 const TAB_ITEMS: { key: Tab; label: string }[] = [
   { key: 'predictions', label: 'Predicted Signals' },
   { key: 'labels', label: 'Training Labels' },
-  { key: 'retrain', label: 'Retrain' },
+  { key: 'retrain', label: 'Tools' },
 ]
 
 const CHART_COLORS = {
@@ -728,6 +729,12 @@ export default function Admin() {
   const [retrainResult, setRetrainResult] = useState<RetrainResult | null>(null)
   const [retrainError, setRetrainError] = useState('')
 
+  // Sanitize state
+  const [sanitizeSensorId, setSanitizeSensorId] = useState('')
+  const [sanitizeLoading, setSanitizeLoading] = useState(false)
+  const [sanitizeResult, setSanitizeResult] = useState<{ totalDeleted: number; totalKept: number } | null>(null)
+  const [sanitizeError, setSanitizeError] = useState('')
+
   const sensors = sensorsData?.sensor ?? []
   const predictions = predictionsData?.predicted_signal ?? []
   const labels = labelsData?.signal ?? []
@@ -787,6 +794,27 @@ export default function Admin() {
       setRetrainError(e instanceof Error ? e.message : 'Retrain failed')
     } finally {
       setRetrainLoading(false)
+    }
+  }
+
+  async function handleSanitize() {
+    if (!sanitizeSensorId) return
+    setSanitizeLoading(true)
+    setSanitizeError('')
+    setSanitizeResult(null)
+    try {
+      const res = await fetch(`${EXPRESS_URL}/api/admin/sanitize`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sensor_id: parseInt(sanitizeSensorId) }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || `${res.status} ${res.statusText}`)
+      setSanitizeResult(result)
+    } catch (e: unknown) {
+      setSanitizeError(e instanceof Error ? e.message : 'Sanitize failed')
+    } finally {
+      setSanitizeLoading(false)
     }
   }
 
@@ -866,14 +894,14 @@ export default function Admin() {
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
-                    {['ID', 'Sensor', 'Building', 'Prediction', 'Start Time', 'End Time', ''].map((header, i) => (
+                    {['ID', 'Sensor', 'Building', 'Prediction', 'Confidence', 'Start Time', 'End Time', ''].map((header, i) => (
                       <th key={i} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{header}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
                   {predictions.length === 0 ? (
-                    <tr><td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No predicted signals found.</td></tr>
+                    <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No predicted signals found.</td></tr>
                   ) : (
                     predictions.map((p) => (
                       <tr
@@ -886,6 +914,9 @@ export default function Admin() {
                         <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{p.sensor?.building?.name ?? '—'}</td>
                         <td className="whitespace-nowrap px-4 py-3 text-sm">
                           <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">{p.prediction}</span>
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                          {p.confidence != null ? `${(p.confidence * 100).toFixed(1)}%` : '—'}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{new Date(p.start_time).toLocaleString()}</td>
                         <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{new Date(p.end_time).toLocaleString()}</td>
@@ -998,7 +1029,8 @@ export default function Admin() {
 
       {/* Retrain */}
       {activeTab === 'retrain' && (
-        <div className="mx-auto max-w-lg">
+        <div className="mx-auto max-w-lg space-y-6">
+          {/* Retrain */}
           <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
             <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Retrain Model</h2>
             <div className="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-700 dark:bg-amber-900/30">
@@ -1030,6 +1062,48 @@ export default function Admin() {
                 {retrainResult.modelsCount != null && (
                   <p className="text-sm text-green-700 dark:text-green-400">Models trained: {retrainResult.modelsCount}</p>
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* Sanitize */}
+          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Sanitize Sensor Data</h2>
+            <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 dark:border-red-700 dark:bg-red-900/30">
+              <p className="text-sm text-red-800 dark:text-red-300">
+                Deletes all mag_report rows with no flow activity (band energy &lt; 5) for the selected sensor. This is irreversible.
+              </p>
+            </div>
+            <div className="mb-4">
+              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Sensor</label>
+              <select
+                value={sanitizeSensorId}
+                onChange={(e) => { setSanitizeSensorId(e.target.value); setSanitizeResult(null); setSanitizeError('') }}
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              >
+                <option value="">Select sensor</option>
+                {sensors.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name || s.id}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              onClick={handleSanitize}
+              disabled={sanitizeLoading || !sanitizeSensorId}
+              className="w-full rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 dark:bg-red-500 dark:hover:bg-red-600"
+            >
+              {sanitizeLoading ? 'Sanitizing...' : 'Sanitize'}
+            </button>
+
+            {sanitizeError && (
+              <p className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">{sanitizeError}</p>
+            )}
+
+            {sanitizeResult && (
+              <div className="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-4 dark:border-green-700 dark:bg-green-900/30">
+                <p className="mb-2 text-sm font-medium text-green-800 dark:text-green-300">Sanitization complete.</p>
+                <p className="text-sm text-green-700 dark:text-green-400">Deleted: {sanitizeResult.totalDeleted.toLocaleString()} rows</p>
+                <p className="text-sm text-green-700 dark:text-green-400">Kept: {sanitizeResult.totalKept.toLocaleString()} rows</p>
               </div>
             )}
           </div>
