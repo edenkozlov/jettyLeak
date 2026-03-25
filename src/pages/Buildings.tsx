@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 
+import LiveFlowIndicator from '@/components/LiveFlowIndicator'
 import { MAPBOX_TOKEN } from '@/globals/constants'
 import { useGraphQL } from '@/hooks/useGraphQL'
 import { useBuildingsPage } from '@/hooks/useBuildingsPage'
@@ -162,6 +163,7 @@ export default function Buildings() {
             <tr>
               <th className="px-4 py-3 sm:px-6">Name</th>
               <th className="px-4 py-3 sm:px-6">Address</th>
+              <th className="px-4 py-3 sm:px-6">Flow</th>
               <th className="px-4 py-3 sm:px-6">Client</th>
               <th className="px-4 py-3 sm:px-6">Created</th>
             </tr>
@@ -179,6 +181,9 @@ export default function Buildings() {
                 <td className="px-4 py-3 text-gray-500 dark:text-gray-400 sm:px-6 sm:py-4">
                   {building.full_address ?? '—'}
                 </td>
+                <td className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
+                  <LiveFlowIndicator buildingId={building.id} compact />
+                </td>
                 <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400 sm:px-6 sm:py-4">
                   {building.client
                     ? [building.client.first_name, building.client.last_name]
@@ -194,7 +199,7 @@ export default function Buildings() {
             {buildings.length === 0 && (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="px-6 py-8 text-center text-gray-400"
                 >
                   No buildings found
@@ -221,6 +226,9 @@ export default function Buildings() {
                 {building.full_address}
               </p>
             )}
+            <div className="mt-2">
+              <LiveFlowIndicator buildingId={building.id} compact />
+            </div>
             <div className="mt-2 flex items-center justify-between">
               <span className="text-xs text-gray-400 dark:text-gray-500">
                 {building.client

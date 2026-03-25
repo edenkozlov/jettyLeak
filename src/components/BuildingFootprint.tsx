@@ -5,6 +5,12 @@ import type { BuildingFootprint as FootprintData } from '@/hooks/useBuildingFoot
 import type { Fixture, FixtureType, Sensor } from '@/types'
 import { FIXTURE_COLORS } from '@/types'
 
+const FALLBACK_FIXTURE_COLOR = { fill: '#9ca3af', stroke: '#6b7280', label: 'Unknown' }
+
+function getFixtureColor(type: string) {
+  return FIXTURE_COLORS[type as keyof typeof FIXTURE_COLORS] ?? FALLBACK_FIXTURE_COLOR
+}
+
 interface BuildingFootprintProps {
   footprints: FootprintData[]
   sensors?: Sensor[]
@@ -602,7 +608,7 @@ export default function BuildingFootprint({
             <div className="flex flex-col gap-1">
               {[...new Set(floorFixtures.map((f) => f.type).filter(Boolean))].map(
                 (type) => {
-                  const colors = FIXTURE_COLORS[type!]
+                  const colors = getFixtureColor(type!)
                   return (
                     <div key={type} className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400">
                       <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colors.fill }} />
@@ -743,7 +749,7 @@ export default function BuildingFootprint({
           {/* Placed fixtures */}
           {floorFixtures.map((fixture) => {
             if (!fixture.location_on_floor || !defaultViewBox || !fixture.type) return null
-            const colors = FIXTURE_COLORS[fixture.type]
+            const colors = getFixtureColor(fixture.type!)
             const isDragging = draggingFixtureId === fixture.id
             const isSelected = selectedFixtureId === fixture.id
             const pos =
@@ -1048,7 +1054,7 @@ export default function BuildingFootprint({
                         ) : (
                           sensorFixtures.map((fixture) => {
                             if (!fixture.type) return null
-                            const colors = FIXTURE_COLORS[fixture.type]
+                            const colors = getFixtureColor(fixture.type!)
                             const isSelected = selectedFixtureId === fixture.id
                             return (
                               <div key={fixture.id}>
@@ -1098,7 +1104,7 @@ export default function BuildingFootprint({
                       <div className="space-y-0.5">
                         {unassigned.map((fixture) => {
                           if (!fixture.type) return null
-                          const colors = FIXTURE_COLORS[fixture.type]
+                          const colors = getFixtureColor(fixture.type!)
                           const placed = fixture.location_on_floor != null
                           const isSelected = selectedFixtureId === fixture.id
                           return (
@@ -1156,7 +1162,7 @@ export default function BuildingFootprint({
               {showFixtureMenu ? (
                 <div className="flex flex-col gap-1 rounded-md border border-gray-200 bg-white p-1.5 dark:border-gray-600 dark:bg-gray-800">
                   {(Object.keys(FIXTURE_COLORS) as FixtureType[]).map((type) => {
-                    const colors = FIXTURE_COLORS[type]
+                    const colors = getFixtureColor(type)
                     return (
                       <button
                         key={type}
