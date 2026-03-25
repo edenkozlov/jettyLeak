@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 
+import BuildingAnalytics from '@/components/BuildingAnalytics'
 import BuildingFootprint from '@/components/BuildingFootprint'
 import BuildingMap3D from '@/components/BuildingMap3D'
 import { MAPBOX_TOKEN } from '@/globals/constants'
@@ -432,6 +433,11 @@ export default function BuildingDetail() {
             Client: {clientName}
           </p>
         )}
+      </div>
+
+      {/* Analytics */}
+      <div className="mb-4 sm:mb-6">
+        <BuildingAnalytics buildingId={building.id} />
       </div>
 
       {/* Map views */}
