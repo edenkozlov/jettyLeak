@@ -11,6 +11,11 @@ export const GET_BUILDINGS_BY_CLIENT_ID = `
       latitude
       longitude
       client_id
+      client {
+        id
+        first_name
+        last_name
+      }
     }
   }
 `

@@ -1,15 +1,16 @@
-import { Link, NavLink, Outlet } from 'react-router'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 
 import logo from '@/assets/belugaLogo.png'
 import { useDashboardLayout } from '@/hooks/useDashboardLayout'
+import useAuth from '@/hooks/auth/useAuth'
 
 const NAV_ITEMS = [
-  { label: 'Reports', path: '/dashboard' },
-  { label: 'Home', path: '/dashboard/home' },
-  { label: 'Clients', path: '/dashboard/clients' },
-  { label: 'Buildings', path: '/dashboard/buildings' },
-  { label: 'Sensors', path: '/dashboard/sensors' },
-  { label: 'Admin', path: '/dashboard/admin' },
+  { label: 'Reports', path: '/dashboard', adminOnly: false },
+  { label: 'Home', path: '/dashboard/home', adminOnly: true },
+  { label: 'Clients', path: '/dashboard/clients', adminOnly: true },
+  { label: 'Buildings', path: '/dashboard/buildings', adminOnly: false },
+  { label: 'Sensors', path: '/dashboard/sensors', adminOnly: true },
+  { label: 'Admin', path: '/dashboard/admin', adminOnly: true },
 ]
 
 function navLinkClass({ isActive }: { isActive: boolean }) {
@@ -23,6 +24,10 @@ function navLinkClass({ isActive }: { isActive: boolean }) {
 export default function DashboardLayout() {
   const { mode, sidebarOpen, handleToggleSidebar, handleToggleTheme } =
     useDashboardLayout()
+  const { role, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const visibleNavItems = NAV_ITEMS.filter((item) => !item.adminOnly || role === 'admin')
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
@@ -65,7 +70,7 @@ export default function DashboardLayout() {
         </div>
 
         <nav className="mt-4 flex flex-col gap-1 px-3">
-          {NAV_ITEMS.map((item) => (
+          {visibleNavItems.map((item) => (
             <NavLink
               key={item.path}
               to={item.path}
@@ -137,7 +142,15 @@ export default function DashboardLayout() {
               )}
             </button>
 
-            <div className="h-8 w-8 rounded-full bg-gray-300 dark:bg-gray-600" />
+            <button
+              onClick={async () => { await logout(); navigate('/login', { replace: true }) }}
+              className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+              aria-label="Log out"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </button>
           </div>
         </header>
 

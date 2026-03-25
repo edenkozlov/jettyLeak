@@ -5,30 +5,97 @@ import {
   authenticate,
   logout as logoutAction,
   setUserData,
+  type UserRole,
 } from '@/redux/loginSlice'
 import { supabase } from '@/lib/supabase'
 import { logger } from '@/utils/logger/logger'
 
+async function fetchProfile(userId: string): Promise<{ role: UserRole; client_id: string | null } | null> {
+  const { data: { session } } = await supabase.auth.getSession()
+
+  const headers: Record<string, string> = {}
+  if (session?.access_token) {
+    headers['Authorization'] = `Bearer ${session.access_token}`
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single()
+
+  if (error || !data) {
+    logger.error('AUTH', 'Failed to fetch profile', { error, userId, hasSession: !!session })
+    return null
+  }
+
+  const role = (data.role as UserRole) ?? 'client'
+  return {
+    role,
+    client_id: role === 'client' ? userId : null,
+  }
+}
+
+export async function restoreSession(dispatch: ReturnType<typeof useAppDispatch>) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) return
+
+    const profile = await fetchProfile(session.user.id)
+    if (!profile) return
+
+    dispatch(authenticate({
+      user_id: session.user.id,
+      token: session.access_token,
+      role: profile.role,
+      client_id: profile.client_id,
+    }))
+    dispatch(setUserData({
+      email: session.user.email,
+      name: session.user.user_metadata?.name ?? session.user.email,
+    }))
+  } catch (err) {
+    logger.error('AUTH', 'Session restore failed', err)
+  }
+}
+
 export default function useAuth() {
   const dispatch = useAppDispatch()
-  const { user_id, userData, token, isAuthenticated } = useAppSelector(
+  const { user_id, userData, token, isAuthenticated, role, client_id } = useAppSelector(
     (state) => state.login,
   )
 
   const login = useCallback(
-    async (_email: string, _password: string) => {
-      if (_email !== 'test@test.com' || _password !== 'testtest') {
-        return { success: false, error: 'Invalid email or password' }
-      }
+    async (email: string, password: string) => {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
-      dispatch(
-        authenticate({
-          user_id: 'demo-user',
-          token: 'demo-token',
-        }),
-      )
-      dispatch(setUserData({ email: _email, name: 'Demo User' }))
-      return { success: true, error: null }
+        if (error || !data.session) {
+          return { success: false, error: error?.message ?? 'Login failed' }
+        }
+
+        const profile = await fetchProfile(data.user.id)
+        if (!profile) {
+          await supabase.auth.signOut()
+          return { success: false, error: 'No profile found for this account' }
+        }
+
+        dispatch(authenticate({
+          user_id: data.user.id,
+          token: data.session.access_token,
+          role: profile.role,
+          client_id: profile.client_id,
+        }))
+        dispatch(setUserData({
+          email: data.user.email,
+          name: data.user.user_metadata?.name ?? data.user.email,
+        }))
+
+        return { success: true, error: null }
+      } catch (err: any) {
+        logger.error('AUTH', 'Login failed', err)
+        return { success: false, error: err?.message ?? 'Login failed' }
+      }
     },
     [dispatch],
   )
@@ -36,11 +103,11 @@ export default function useAuth() {
   const logout = useCallback(async () => {
     try {
       await supabase.auth.signOut()
-      dispatch(logoutAction())
     } catch (err) {
       logger.error('AUTH', 'Logout failed', err)
     }
+    dispatch(logoutAction())
   }, [dispatch])
 
-  return { user_id, userData, token, isAuthenticated, login, logout }
+  return { user_id, userData, token, isAuthenticated, role, client_id, login, logout }
 }

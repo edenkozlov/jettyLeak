@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router'
 
 import { Provider } from 'react-redux'
@@ -6,6 +6,7 @@ import { Provider } from 'react-redux'
 import { ThemeProvider } from '@/contexts/ThemeContext'
 import AuthLayout from '@/layouts/AuthLayout'
 import DashboardLayout from '@/layouts/DashboardLayout'
+import AdminRoute from '@/routes/AdminRoute'
 import BuildingDetail from '@/pages/BuildingDetail'
 import Buildings from '@/pages/Buildings'
 import Clients from '@/pages/Clients'
@@ -22,6 +23,8 @@ import Reports from '@/pages/Reports'
 import Sensors from '@/pages/Sensors'
 import Admin from '@/pages/Admin'
 import { store } from '@/redux/store'
+import { restoreSession } from '@/hooks/auth/useAuth'
+import { useAppDispatch } from '@/hooks/useAppSelector'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -29,37 +32,60 @@ function ScrollToTop() {
   return null
 }
 
+function SessionRestorer({ children }: { children: React.ReactNode }) {
+  const dispatch = useAppDispatch()
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    restoreSession(dispatch).finally(() => setReady(true))
+  }, [dispatch])
+
+  if (!ready) return null
+
+  return <>{children}</>
+}
+
+function AppRoutes() {
+  return (
+    <BrowserRouter>
+      <ScrollToTop />
+      <SessionRestorer>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/case-study" element={<CaseStudy />} />
+          <Route path="/demo" element={<Demo />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<Login />} />
+          </Route>
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<Reports />} />
+            <Route path="buildings" element={<Buildings />} />
+            <Route path="buildings/:id" element={<BuildingDetail />} />
+            <Route path="reports/:sensorId?" element={<Reports />} />
+            <Route path="reports/:sensorId/:timeWindow" element={<Reports />} />
+            <Route path="reports/:sensorId/:timeWindow/raw" element={<Reports />} />
+            <Route path="mag-reports/:buildingId?" element={<MagReports />} />
+            <Route element={<AdminRoute />}>
+              <Route path="home" element={<Home />} />
+              <Route path="clients" element={<Clients />} />
+              <Route path="sensors" element={<Sensors />} />
+              <Route path="admin" element={<Admin />} />
+            </Route>
+          </Route>
+        </Routes>
+      </SessionRestorer>
+    </BrowserRouter>
+  )
+}
+
 export default function App() {
   return (
     <Provider store={store}>
       <ThemeProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/case-study" element={<CaseStudy />} />
-            <Route path="/demo" element={<Demo />} />
-            <Route path="/support" element={<Support />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route element={<AuthLayout />}>
-              <Route path="/login" element={<Login />} />
-            </Route>
-            <Route path="/dashboard" element={<DashboardLayout />}>
-              <Route index element={<Reports />} />
-              <Route path="home" element={<Home />} />
-              <Route path="clients" element={<Clients />} />
-              <Route path="buildings" element={<Buildings />} />
-              <Route path="buildings/:id" element={<BuildingDetail />} />
-              <Route path="sensors" element={<Sensors />} />
-              <Route path="reports/:sensorId?" element={<Reports />} />
-              <Route path="reports/:sensorId/:timeWindow" element={<Reports />} />
-              <Route path="reports/:sensorId/:timeWindow/raw" element={<Reports />} />
-              <Route path="mag-reports/:buildingId?" element={<MagReports />} />
-              <Route path="admin" element={<Admin />} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
+        <AppRoutes />
       </ThemeProvider>
     </Provider>
   )

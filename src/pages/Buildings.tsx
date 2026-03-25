@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router'
 import { MAPBOX_TOKEN } from '@/globals/constants'
 import { useGraphQL } from '@/hooks/useGraphQL'
 import { useBuildingsPage } from '@/hooks/useBuildingsPage'
+import useAuth from '@/hooks/auth/useAuth'
 import { CREATE_BUILDING } from '@/mutations/buildingMutations'
 import { GET_CLIENTS } from '@/queries/getClients'
 import type { Client } from '@/types'
@@ -16,6 +17,8 @@ interface ClientsResponse {
 export default function Buildings() {
   const navigate = useNavigate()
   const { buildings, loading, error } = useBuildingsPage()
+  const { role } = useAuth()
+  const isAdmin = role === 'admin'
 
   const [showForm, setShowForm] = useState(false)
   const [address, setAddress] = useState('')
@@ -92,12 +95,14 @@ export default function Buildings() {
     <div>
       <div className="mb-4 flex items-center justify-between sm:mb-6">
         <h1 className="text-xl font-bold sm:text-2xl">Buildings</h1>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600"
-        >
-          {showForm ? 'Cancel' : '+ Add Building'}
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => setShowForm((v) => !v)}
+            className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600"
+          >
+            {showForm ? 'Cancel' : '+ Add Building'}
+          </button>
+        )}
       </div>
 
       {/* Add building form */}
