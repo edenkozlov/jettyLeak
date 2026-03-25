@@ -215,6 +215,7 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           )
           .map((r) => ({
             timestamp: new Date(r.created_at).getTime(),
+            x: r.x_axis_reading,
             total: r.total_magnitude,
             bandEnergy10s: r.band_energy_10s,
             bandEnergy60s: r.band_energy_60s,
