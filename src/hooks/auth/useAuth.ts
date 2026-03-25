@@ -10,29 +10,24 @@ import {
 import { supabase } from '@/lib/supabase'
 import { logger } from '@/utils/logger/logger'
 
-async function fetchProfile(userId: string): Promise<{ role: UserRole; client_id: string | null } | null> {
+async function fetchUser(userId: string): Promise<{ role: UserRole; client_id: string | null } | null> {
   const { data: { session } } = await supabase.auth.getSession()
 
-  const headers: Record<string, string> = {}
-  if (session?.access_token) {
-    headers['Authorization'] = `Bearer ${session.access_token}`
-  }
-
   const { data, error } = await supabase
-    .from('profiles')
+    .from('users')
     .select('*')
     .eq('id', userId)
     .single()
 
   if (error || !data) {
-    logger.error('AUTH', 'Failed to fetch profile', { error, userId, hasSession: !!session })
+    logger.error('AUTH', 'Failed to fetch user', { error, userId, hasSession: !!session })
     return null
   }
 
   const role = (data.role as UserRole) ?? 'client'
   return {
     role,
-    client_id: role === 'client' ? userId : null,
+    client_id: data.client_id ?? null,
   }
 }
 
@@ -41,14 +36,14 @@ export async function restoreSession(dispatch: ReturnType<typeof useAppDispatch>
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user) return
 
-    const profile = await fetchProfile(session.user.id)
-    if (!profile) return
+    const user = await fetchUser(session.user.id)
+    if (!user) return
 
     dispatch(authenticate({
       user_id: session.user.id,
       token: session.access_token,
-      role: profile.role,
-      client_id: profile.client_id,
+      role: user.role,
+      client_id: user.client_id,
     }))
     dispatch(setUserData({
       email: session.user.email,
@@ -74,17 +69,17 @@ export default function useAuth() {
           return { success: false, error: error?.message ?? 'Login failed' }
         }
 
-        const profile = await fetchProfile(data.user.id)
-        if (!profile) {
+        const user = await fetchUser(data.user.id)
+        if (!user) {
           await supabase.auth.signOut()
-          return { success: false, error: 'No profile found for this account' }
+          return { success: false, error: 'No user record found for this account' }
         }
 
         dispatch(authenticate({
           user_id: data.user.id,
           token: data.session.access_token,
-          role: profile.role,
-          client_id: profile.client_id,
+          role: user.role,
+          client_id: user.client_id,
         }))
         dispatch(setUserData({
           email: data.user.email,

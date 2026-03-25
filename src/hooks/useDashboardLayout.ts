@@ -1,9 +1,6 @@
 import { useCallback, useState } from 'react'
 
-import { useTheme } from '@/contexts/ThemeContext'
-
 export function useDashboardLayout() {
-  const { mode, toggleTheme } = useTheme()
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const handleToggleSidebar = useCallback(() => {
@@ -11,10 +8,8 @@ export function useDashboardLayout() {
   }, [])
 
   return {
-    mode,
     sidebarOpen,
     handleToggleSidebar,
-    handleToggleTheme: toggleTheme,
   }
 }
 

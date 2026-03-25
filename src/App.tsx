@@ -22,6 +22,7 @@ import MagReports from '@/pages/MagReports'
 import Reports from '@/pages/Reports'
 import Sensors from '@/pages/Sensors'
 import Admin from '@/pages/Admin'
+import Settings from '@/pages/Settings'
 import { store } from '@/redux/store'
 import { restoreSession } from '@/hooks/auth/useAuth'
 import { useAppDispatch } from '@/hooks/useAppSelector'
@@ -68,6 +69,7 @@ function AppRoutes() {
             <Route path="reports/:sensorId/:timeWindow" element={<Reports />} />
             <Route path="reports/:sensorId/:timeWindow/raw" element={<Reports />} />
             <Route path="mag-reports/:buildingId?" element={<MagReports />} />
+            <Route path="settings" element={<Settings />} />
             <Route element={<AdminRoute />}>
               <Route path="home" element={<Home />} />
               <Route path="clients" element={<Clients />} />
