@@ -70,6 +70,7 @@ import { detectCycles } from '@/utils/signalProcessing'
 /** Minimal mag data point — matches MagChartPoint from the hooks. */
 export interface MagDataPoint {
   timestamp: number
+  x: number | null
   total: number | null
   bandEnergy10s: number | null
   bandEnergy60s: number | null
@@ -226,27 +227,85 @@ function detectFlowPeaks(
   return dedupedPeaks
 }
 
+/** Rolling 5s stddev of X-axis — same metric as the vibration intensity chart. */
+const VIBRATION_WINDOW_MS = 5000
+
 /**
- * Returns the vibration intensity (band energy) of the mag data point
- * closest to the given timestamp. Uses the 10-second band energy if
- * available, otherwise falls back to 60-second.
- *
- * Data is assumed to be sorted chronologically — the search breaks early
- * once it passes the target timestamp for efficiency.
+ * Minimum average sample spacing (ms) to use X-axis stddev.
+ * Below this threshold (data is dense enough) we compute rolling stddev.
+ * Above it (sparse/downsampled data) we fall back to bandEnergy10s from the DB.
  */
-function getVibrationAtTime(data: MagDataPoint[], ts: number): number {
-  let closest: MagDataPoint | null = null
+const MAX_SPARSE_SPACING_MS = 5000
+
+/**
+ * Check whether the data is dense enough for the rolling X-axis stddev.
+ * Returns true if average spacing <= MAX_SPARSE_SPACING_MS.
+ */
+function isDenseEnough(data: MagDataPoint[]): boolean {
+  if (data.length < 5) return false
+  const span = data[data.length - 1]!.timestamp - data[0]!.timestamp
+  return span / data.length <= MAX_SPARSE_SPACING_MS
+}
+
+/**
+ * Precompute rolling X-axis stddev for every data point.
+ * Returns a Map from timestamp → activity (stddev).
+ */
+function buildVibrationMap(data: MagDataPoint[]): Map<number, number> {
+  const map = new Map<number, number>()
+
+  // Sparse data — fall back to bandEnergy10s from the DB
+  if (!isDenseEnough(data)) {
+    for (const p of data) {
+      map.set(p.timestamp, p.bandEnergy10s ?? 0)
+    }
+    return map
+  }
+
+  // Dense data — rolling 5s X-axis stddev
+  let windowStart = 0
+  for (let i = 0; i < data.length; i++) {
+    const x = data[i]!.x
+    if (x == null) { map.set(data[i]!.timestamp, 0); continue }
+
+    const cutoff = data[i]!.timestamp - VIBRATION_WINDOW_MS
+    while (windowStart < i && data[windowStart]!.timestamp < cutoff) windowStart++
+
+    let count = 0, sum = 0
+    for (let j = windowStart; j <= i; j++) {
+      const v = data[j]!.x
+      if (v != null) { sum += v; count++ }
+    }
+    if (count < 3) { map.set(data[i]!.timestamp, 0); continue }
+
+    const mean = sum / count
+    let variance = 0
+    for (let j = windowStart; j <= i; j++) {
+      const v = data[j]!.x
+      if (v != null) { const diff = v - mean; variance += diff * diff }
+    }
+    variance /= count
+    map.set(data[i]!.timestamp, Math.sqrt(variance))
+  }
+
+  return map
+}
+
+/**
+ * Returns the vibration intensity of the data point closest to the given timestamp.
+ */
+function getVibrationAtTime(vibMap: Map<number, number>, sortedTimestamps: number[], ts: number): number {
+  let closest = 0
   let closestDist = Infinity
-  for (const p of data) {
-    const dist = Math.abs(p.timestamp - ts)
+  for (const t of sortedTimestamps) {
+    const dist = Math.abs(t - ts)
     if (dist < closestDist) {
       closestDist = dist
-      closest = p
+      closest = t
     }
-    if (p.timestamp > ts) break
+    if (t > ts) break
   }
-  if (!closest) return 0
-  return closest.bandEnergy10s ?? closest.bandEnergy60s ?? 0
+  return vibMap.get(closest) ?? 0
 }
 
 // ---------------------------------------------------------------------------
@@ -386,6 +445,7 @@ export function computeBucketedFlow(
   minBar = DEFAULT_MIN_BAR,
   now = Date.now(),
 ): BucketedFlowPoint[] {
+  const vibMap = buildVibrationMap(magData)
   const buckets: BucketedFlowPoint[] = []
 
   for (let i = 0; i < numBuckets; i++) {
@@ -394,11 +454,11 @@ export function computeBucketedFlow(
     const bMid = bStart + bucketMs / 2
     const isPartial = bStart <= now && now < bEnd
 
-    // Check vibration intensity in this bucket
+    // Check vibration intensity in this bucket (rolling X-axis stddev)
     let maxVibration = 0
     for (const p of magData) {
       if (p.timestamp >= bStart && p.timestamp < bEnd) {
-        const v = p.bandEnergy10s ?? p.bandEnergy60s ?? 0
+        const v = vibMap.get(p.timestamp) ?? 0
         if (v > maxVibration) maxVibration = v
       }
     }
@@ -478,6 +538,8 @@ export function computePeakFlow(
   const peaks = detectFlowPeaks(totalData, visibleRangeMs)
   if (peaks.length < 2) return []
 
+  const vibMap = buildVibrationMap(magData)
+  const sortedTs = magData.map(p => p.timestamp)
   const points: PeakFlowPoint[] = []
 
   for (let i = 1; i < peaks.length; i++) {
@@ -485,7 +547,7 @@ export function computePeakFlow(
     const intervalMs = ts - peaks[i - 1]!
     if (intervalMs <= 0) continue
 
-    const vibration = getVibrationAtTime(magData, ts)
+    const vibration = getVibrationAtTime(vibMap, sortedTs, ts)
     if (vibration < minVibration) {
       points.push({ timestamp: ts, flowRateLph: 0 })
     } else {
@@ -504,7 +566,7 @@ export function computePeakFlow(
       (p) => Math.abs(p.timestamp - t) < sampleIntervalMs * 0.4,
     )
     if (nearPeak) continue
-    const vibration = getVibrationAtTime(magData, t)
+    const vibration = getVibrationAtTime(vibMap, sortedTs, t)
     if (vibration < minVibration) {
       points.push({ timestamp: t, flowRateLph: 0 })
     }
