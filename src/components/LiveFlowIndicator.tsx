@@ -2,6 +2,8 @@ import { useLiveFlow, type FlowStatus } from '@/hooks/useLiveFlow'
 
 interface Props {
   buildingId: number | null | undefined
+  /** See `useLiveFlow` — use selected sensor when building has no `mag_to_building` rows */
+  fallbackMagSensorId?: number | null
   compact?: boolean
 }
 
@@ -56,8 +58,12 @@ function statusLabel(status: FlowStatus, flowRate: number | null): string {
   }
 }
 
-export default function LiveFlowIndicator({ buildingId, compact }: Props) {
-  const { flowRate, status } = useLiveFlow(buildingId)
+export default function LiveFlowIndicator({
+  buildingId,
+  fallbackMagSensorId,
+  compact,
+}: Props) {
+  const { flowRate, status } = useLiveFlow(buildingId, { fallbackMagSensorId })
 
   if (compact) {
     return (

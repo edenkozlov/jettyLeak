@@ -17,6 +17,7 @@ import {
   YAxis,
 } from 'recharts'
 
+import LiveFlowIndicator from '@/components/LiveFlowIndicator'
 import { computeWaveFrequency } from '@/utils/fft'
 import { computeFlowFromPeaks, computeBucketedFlow, computePeakFlow } from '@/utils/flowComputation'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -364,6 +365,7 @@ export default function Reports() {
     selectedSensorName,
     sensorMultiplier,
     chartData,
+    rawChartData,
     timeRange,
     periodOffset,
     isLive,
@@ -372,6 +374,7 @@ export default function Reports() {
     reportsLoading,
     reportsError,
     magChartData,
+    magChartDataFull,
     refetchMag,
     parsedSignals,
     signalTypeIds,
@@ -408,6 +411,21 @@ export default function Reports() {
       navigate(buildPath(defaultId, timeRange), { replace: true })
     }
   }, [paramSensorId, sensors, navigate, buildPath, timeRange])
+
+  const selectedBuildingId = useMemo(() => {
+    if (selectedSensorId == null) return null
+    return sensors.find((s) => s.id === selectedSensorId)?.building_id ?? null
+  }, [sensors, selectedSensorId])
+
+  /** Latest flow from report table (subscription + fetch), for the selected sensor — L/h */
+  const liveSensorFlowLph = useMemo(() => {
+    if (!isLive || periodOffset !== 0 || rawChartData.length === 0) return null
+    const last = rawChartData[rawChartData.length - 1]!
+    if (last.flowValue == null) return null
+    const ageMs = Date.now() - last.timestamp
+    if (ageMs > 180_000) return null
+    return toLph(last.flowValue)
+  }, [isLive, periodOffset, rawChartData])
 
   const periodLabel = useMemo(() => {
     if (periodOffset === 0 || timeRange === 'all' || timeRange === 'custom') return null
@@ -464,11 +482,11 @@ export default function Reports() {
 
   const magFlowChartData = useMemo(
     () => computeFlowFromPeaks(
-      magChartData,
+      magChartDataFull,
       sensorMultiplier ?? 0,
       visibleRangeMsRef.current || RANGE_MS[timeRange] || 60_000,
     ),
-    [magChartData, sensorMultiplier, timeRange],
+    [magChartDataFull, sensorMultiplier, timeRange],
   )
 
   // Nice round bucket intervals per time range (in ms)
@@ -486,52 +504,68 @@ export default function Reports() {
 
   const bucketMs = FLOW_BUCKET_MS[timeRange]
 
-  // Refetch mag data at each slot boundary so the flow chart updates discretely
   const [slotAnchor, setSlotAnchor] = useState(() =>
     Math.floor(Date.now() / bucketMs) * bucketMs,
   )
 
+  // Synchronously update slotAnchor when bucketMs changes so the chart window
+  // is never stale (useEffect would leave it wrong for one render).
+  const [prevBucketMs, setPrevBucketMs] = useState(bucketMs)
+  if (bucketMs !== prevBucketMs) {
+    setPrevBucketMs(bucketMs)
+    setSlotAnchor(Math.floor(Date.now() / bucketMs) * bucketMs)
+  }
+
+  const lastRefetchMsRef = useRef(Date.now())
+  const MIN_REFETCH_INTERVAL_MS = 15_000
+
   useEffect(() => {
-    // Compute ms until the next slot boundary
     const now = Date.now()
     const nextBoundary = (Math.floor(now / bucketMs) + 1) * bucketMs
     const delay = nextBoundary - now
 
     const timeout = setTimeout(() => {
       setSlotAnchor(Math.floor(Date.now() / bucketMs) * bucketMs)
-      refetchMag()
+      const elapsed = Date.now() - lastRefetchMsRef.current
+      if (elapsed >= MIN_REFETCH_INTERVAL_MS) {
+        lastRefetchMsRef.current = Date.now()
+        refetchMag()
+      }
     }, delay)
 
     return () => clearTimeout(timeout)
   }, [slotAnchor, bucketMs, refetchMag])
 
-  // Also reset anchor when time range changes
-  useEffect(() => {
-    setSlotAnchor(Math.floor(Date.now() / bucketMs) * bucketMs)
-  }, [bucketMs])
-
   // Canonical time window shared by all charts
-  const numFlowBuckets = Math.round((RANGE_MS[timeRange] || 60_000) / bucketMs)
+  const effectiveRangeMs = useMemo(() => {
+    const r = RANGE_MS[timeRange]
+    if (r > 0) return r
+    if (magChartDataFull.length >= 2) {
+      return magChartDataFull[magChartDataFull.length - 1]!.timestamp - magChartDataFull[0]!.timestamp
+    }
+    return 60_000
+  }, [timeRange, magChartDataFull])
+  const numFlowBuckets = Math.max(1, Math.round(effectiveRangeMs / bucketMs))
   const chartWindowEnd = slotAnchor + bucketMs
   const chartWindowStart = chartWindowEnd - numFlowBuckets * bucketMs
 
   const bucketedFlowData = useMemo(
-    () => magChartData.length === 0
+    () => magChartDataFull.length === 0
       ? []
-      : computeBucketedFlow(magChartData, magFlowChartData, bucketMs, chartWindowStart, numFlowBuckets),
-    [magChartData, magFlowChartData, bucketMs, chartWindowStart, numFlowBuckets, slotAnchor],
+      : computeBucketedFlow(magChartDataFull, magFlowChartData, bucketMs, chartWindowStart, numFlowBuckets),
+    [magChartDataFull, magFlowChartData, bucketMs, chartWindowStart, numFlowBuckets, slotAnchor],
   )
 
   const peakFlowData = useMemo(
     () => computePeakFlow(
-      magChartData,
+      magChartDataFull,
       sensorMultiplier ?? 0,
       visibleRangeMsRef.current || RANGE_MS[timeRange] || 60_000,
       Math.max(bucketMs / 2, 5000),
       chartWindowStart,
       chartWindowEnd,
     ),
-    [magChartData, sensorMultiplier, timeRange, bucketMs, chartWindowStart, chartWindowEnd],
+    [magChartDataFull, sensorMultiplier, timeRange, bucketMs, chartWindowStart, chartWindowEnd],
   )
 
   const [tagFormTimestamp, setTagFormTimestamp] = useState<number | null>(null)
@@ -631,6 +665,7 @@ export default function Reports() {
       resetZoom()
       setSelectedTag(null)
       handleSensorChange(newId)
+      lastRefetchMsRef.current = 0
       navigate(buildPath(newId, timeRange, showRawData))
     },
     [resetZoom, setSelectedTag, handleSensorChange, navigate, buildPath, timeRange, showRawData],
@@ -682,10 +717,9 @@ export default function Reports() {
     })
   }, [tags, domain, timeline])
 
-  const compressedMagData = useMemo(() => {
+  /** Mag points after main time-window / flow-chart zoom (base layer for raw mag zoom) */
+  const magLayerBaseData = useMemo(() => {
     if (magChartData.length === 0) return []
-    // When no regular chart data exists, use timestamps directly (no compression)
-    // and filter to the canonical slot-aligned window
     if (timeline.points.length === 0) {
       return magChartData
         .map((p) => ({ ...p, cx: p.timestamp }))
@@ -697,29 +731,89 @@ export default function Reports() {
       .filter((p) => p.cx >= left && p.cx <= right)
   }, [magChartData, timeline, domain, chartWindowStart, chartWindowEnd])
 
-  // Use the canonical slot-aligned window for raw mag chart domain/ticks
-  const magDomain = useMemo<[number, number]>(
-    () => [chartWindowStart, chartWindowEnd],
-    [chartWindowStart, chartWindowEnd],
-  )
-
   const magRangeMs = chartWindowEnd - chartWindowStart
 
-  const magTicks = useMemo(() => {
-    const step = computeTickInterval(magRangeMs)
-    const start = Math.ceil(chartWindowStart / step) * step
-    const ticks: number[] = []
-    for (let t = start; t <= chartWindowEnd; t += step) ticks.push(t)
-    return ticks
-  }, [chartWindowStart, chartWindowEnd, magRangeMs])
+  const magXBaseMin = useMemo(() => {
+    if (magLayerBaseData.length === 0) return 0
+    let min = magLayerBaseData[0]!.cx
+    for (const p of magLayerBaseData) {
+      if (p.cx < min) min = p.cx
+    }
+    return min
+  }, [magLayerBaseData])
 
-  // Use regular domain/ticks when available, fall back to mag-based ones
-  const rawChartDomain = timeline.points.length > 0 ? domain : magDomain
-  const rawChartTicks = timeline.points.length > 0 ? zoomTicks : magTicks
-  const rawChartRangeMs = timeline.points.length > 0 ? realVisibleRange : magRangeMs
+  const magXBaseMax = useMemo(() => {
+    if (magLayerBaseData.length === 0) return 1
+    let max = magLayerBaseData[0]!.cx
+    for (const p of magLayerBaseData) {
+      if (p.cx > max) max = p.cx
+    }
+    return max
+  }, [magLayerBaseData])
+
+  const magXDataMin = magXBaseMin
+  const magXDataMax = useMemo(
+    () => (magXBaseMax <= magXBaseMin ? magXBaseMin + 1e-9 : magXBaseMax),
+    [magXBaseMin, magXBaseMax],
+  )
+
+  const {
+    chartWrapperRef: magRawChartWrapperRef,
+    domain: magRawDomain,
+    isZoomed: magRawIsZoomed,
+    refAreaLeft: magRefAreaLeft,
+    refAreaRight: magRefAreaRight,
+    onChartMouseDown: onMagRawMouseDown,
+    onChartMouseMove: onMagRawMouseMove,
+    onChartMouseUp: onMagRawMouseUp,
+    cancelSelection: cancelMagRawSelection,
+    panLeft: magRawPanLeft,
+    panRight: magRawPanRight,
+    zoomIn: magRawZoomIn,
+    zoomOut: magRawZoomOut,
+    resetZoom: resetMagRawZoom,
+  } = useChartZoomPan(magXDataMin, magXDataMax, magXBaseMin, magXBaseMax)
+
+  useEffect(() => {
+    resetMagRawZoom()
+  }, [magXBaseMin, magXBaseMax, resetMagRawZoom])
+
+  const magDisplayData = useMemo(() => {
+    if (magLayerBaseData.length === 0) return []
+    const [left, right] = magRawDomain
+    return magLayerBaseData.filter((p) => p.cx >= left && p.cx <= right)
+  }, [magLayerBaseData, magRawDomain])
+
+  const magRawRealRangeMs = useMemo(() => {
+    const [left, right] = magRawDomain
+    if (timeline.points.length > 0) {
+      return Math.max(0, timeline.toReal(right) - timeline.toReal(left))
+    }
+    return Math.max(0, right - left)
+  }, [magRawDomain, timeline])
+
+  const magRawTicks = useMemo(() => {
+    const [left, right] = magRawDomain
+    if (magLayerBaseData.length === 0) return []
+    const realLeft = timeline.points.length > 0 ? timeline.toReal(left) : left
+    const realRight = timeline.points.length > 0 ? timeline.toReal(right) : right
+    const span = realRight - realLeft
+    if (span <= 0) return []
+    const step = computeTickInterval(span)
+    const ticks: number[] = []
+    const start = Math.ceil(realLeft / step) * step
+    for (let t = start; t <= realRight; t += step) {
+      ticks.push(timeline.points.length > 0 ? timeline.toCompressed(t) : t)
+    }
+    return ticks
+  }, [magRawDomain, magLayerBaseData, timeline])
+
+  const onMagRawMouseLeave = useCallback(() => {
+    cancelMagRawSelection()
+  }, [cancelMagRawSelection])
 
   const totalMagYDomain = useMemo<[number, number]>(() => {
-    const totals = compressedMagData
+    const totals = magDisplayData
       .map((p) => p.total)
       .filter((v): v is number => v != null)
     if (totals.length === 0) return [0, 1]
@@ -731,10 +825,10 @@ export default function Reports() {
     }
     const pad = Math.max((max - min) * 0.15, 0.05)
     return [min - pad, max + pad]
-  }, [compressedMagData])
+  }, [magDisplayData])
 
   const xAxisYDomain = useMemo<[number, number]>(() => {
-    const vals = compressedMagData
+    const vals = magDisplayData
       .map((p) => p.x)
       .filter((v): v is number => v != null)
     if (vals.length === 0) return [0, 1]
@@ -746,10 +840,10 @@ export default function Reports() {
     }
     const pad = Math.max((max - min) * 0.15, 0.05)
     return [min - pad, max + pad]
-  }, [compressedMagData])
+  }, [magDisplayData])
 
   const yAxisYDomain = useMemo<[number, number]>(() => {
-    const vals = compressedMagData
+    const vals = magDisplayData
       .map((p) => p.y)
       .filter((v): v is number => v != null)
     if (vals.length === 0) return [0, 1]
@@ -761,10 +855,10 @@ export default function Reports() {
     }
     const pad = Math.max((max - min) * 0.15, 0.05)
     return [min - pad, max + pad]
-  }, [compressedMagData])
+  }, [magDisplayData])
 
   const zAxisYDomain = useMemo<[number, number]>(() => {
-    const vals = compressedMagData
+    const vals = magDisplayData
       .map((p) => p.z)
       .filter((v): v is number => v != null)
     if (vals.length === 0) return [0, 1]
@@ -776,13 +870,13 @@ export default function Reports() {
     }
     const pad = Math.max((max - min) * 0.15, 0.05)
     return [min - pad, max + pad]
-  }, [compressedMagData])
+  }, [magDisplayData])
   const vibrationData = useMemo(() => {
-    if (compressedMagData.length === 0) return []
-    return compressedMagData.filter(
+    if (magDisplayData.length === 0) return []
+    return magDisplayData.filter(
       (p) => p.bandEnergy10s != null || p.bandEnergy60s != null || p.bandEnergy5m != null,
     )
-  }, [compressedMagData])
+  }, [magDisplayData])
 
   const compressedWaveFreqData = useMemo(() => {
     if (magChartData.length < 3) return []
@@ -791,14 +885,20 @@ export default function Reports() {
       .map((p) => ({ timestamp: p.timestamp, value: p.x! }))
     if (samples.length < 3) return []
     const freqPoints = computeWaveFrequency(samples, 5000)
+    let rows: { cx: number; activity: number; timestamp: number }[]
     if (timeline.points.length === 0) {
-      return freqPoints.map((p) => ({ ...p, cx: p.timestamp }))
+      rows = freqPoints
+        .map((p) => ({ ...p, cx: p.timestamp }))
+        .filter((p) => p.cx >= chartWindowStart && p.cx <= chartWindowEnd)
+    } else {
+      const [l, r] = domain
+      rows = freqPoints
+        .map((p) => ({ ...p, cx: timeline.toCompressed(p.timestamp) }))
+        .filter((p) => p.cx >= l && p.cx <= r)
     }
-    const [left, right] = domain
-    return freqPoints
-      .map((p) => ({ ...p, cx: timeline.toCompressed(p.timestamp) }))
-      .filter((p) => p.cx >= left && p.cx <= right)
-  }, [magChartData, timeline, domain])
+    const [zl, zr] = magRawDomain
+    return rows.filter((p) => p.cx >= zl && p.cx <= zr)
+  }, [magChartData, timeline, domain, chartWindowStart, chartWindowEnd, magRawDomain])
 
   const enrichedData = useMemo(
     () => buildEnrichedData(visibleData, parsedSignals),
@@ -1019,6 +1119,29 @@ export default function Reports() {
           {reportsError}
         </div>
       )}
+
+      <div className="mb-4 flex flex-wrap gap-3">
+        <div className="max-w-sm min-w-[200px] flex-1">
+          <LiveFlowIndicator
+            buildingId={selectedBuildingId ?? undefined}
+            fallbackMagSensorId={selectedSensorId ?? undefined}
+          />
+        </div>
+        {liveSensorFlowLph != null && (
+          <div className="max-w-sm min-w-[200px] flex-1 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Live (sensor report)
+            </p>
+            <p className="text-2xl font-bold text-sky-600 dark:text-sky-400">
+              {liveSensorFlowLph.toFixed(1)}{' '}
+              <span className="text-sm font-normal text-gray-400">L/h</span>
+            </p>
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+              Latest sample for this sensor
+            </p>
+          </div>
+        )}
+      </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
         <div className="mb-4 space-y-3 sm:mb-5">
@@ -1388,10 +1511,16 @@ export default function Reports() {
                       borderRadius: 8,
                       fontSize: 12,
                     }}
-                    formatter={(value: unknown, name: unknown) => [
-                      typeof value === 'number' ? value.toFixed(2) : '—',
-                      String(name ?? ''),
-                    ]}
+                    formatter={(value: unknown, name: unknown, item: { payload?: { flowRateLph?: number } }) => {
+                      const actual = item?.payload?.flowRateLph
+                      const text =
+                        typeof actual === 'number'
+                          ? `${actual.toFixed(2)} L/h`
+                          : typeof value === 'number'
+                            ? `${value.toFixed(2)} L/h`
+                            : '—'
+                      return [text, String(name ?? '')]
+                    }}
                     labelFormatter={(ts: unknown) =>
                       typeof ts === 'number'
                         ? new Date(ts).toLocaleString('en-US', {
@@ -1400,7 +1529,7 @@ export default function Reports() {
                         : ''
                     }
                   />
-                  <Bar yAxisId="left" dataKey="flowRateLph" name="Flow Rate (L/h)" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+                  <Bar yAxisId="left" dataKey="flowRateBarVisual" name="Flow Rate (L/h)" radius={[3, 3, 0, 0]} isAnimationActive={false}>
                     {bucketedFlowData.map((entry, index) => (
                       <Cell
                         key={index}
@@ -1641,16 +1770,80 @@ export default function Reports() {
           </div>
         ) : null}
 
-        {showRawData && compressedMagData.length > 0 && (
-          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+        {showRawData && magLayerBaseData.length > 0 && (
+          <div
+            ref={magRawChartWrapperRef}
+            className="select-none"
+            onMouseLeave={onMagRawMouseLeave}
+          >
+            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2 dark:border-gray-700 dark:bg-gray-900/40">
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-300 sm:text-sm">
+                Raw mag time range
+              </span>
+              <div className="flex items-center gap-0.5">
+                <button
+                  type="button"
+                  onClick={magRawPanLeft}
+                  className="rounded-md px-1.5 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:px-2 sm:text-sm"
+                  title="Pan left"
+                >
+                  ◀
+                </button>
+                <button
+                  type="button"
+                  onClick={magRawZoomOut}
+                  className="rounded-md px-1.5 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:px-2 sm:text-sm"
+                  title="Zoom out"
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  onClick={magRawZoomIn}
+                  className="rounded-md px-1.5 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:px-2 sm:text-sm"
+                  title="Zoom in"
+                >
+                  +
+                </button>
+                <button
+                  type="button"
+                  onClick={magRawPanRight}
+                  className="rounded-md px-1.5 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:px-2 sm:text-sm"
+                  title="Pan right"
+                >
+                  ▶
+                </button>
+              </div>
+              {magRawIsZoomed && (
+                <button
+                  type="button"
+                  onClick={resetMagRawZoom}
+                  className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] font-medium text-indigo-600 transition-colors hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 sm:px-2.5 sm:text-xs"
+                >
+                  Reset zoom
+                </button>
+              )}
+              <span className="hidden text-xs text-gray-400 dark:text-gray-500 sm:inline">
+                Drag to zoom · Scroll to zoom · Swipe to pan
+              </span>
+            </div>
+            {magDisplayData.length === 0 && magRawIsZoomed && (
+              <p className="mb-3 text-center text-xs text-amber-600 dark:text-amber-400">
+                No samples in this zoom range — reset zoom or drag a wider selection.
+              </p>
+            )}
+            <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Total Magnitude
             </h3>
             <div className="h-[200px] w-full sm:h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={compressedMagData}
+                  data={magDisplayData}
                   margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  onMouseDown={onMagRawMouseDown}
+                  onMouseMove={onMagRawMouseMove}
+                  onMouseUp={onMagRawMouseUp}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -1659,11 +1852,11 @@ export default function Reports() {
                   <XAxis
                     dataKey="cx"
                     type="number"
-                    domain={rawChartDomain}
+                    domain={magRawDomain}
                     allowDataOverflow
-                    ticks={rawChartTicks}
+                    ticks={magRawTicks}
                     tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), rawChartRangeMs)
+                      formatTick(timeline.toReal(cx), magRawRealRangeMs)
                     }
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
@@ -1701,6 +1894,17 @@ export default function Reports() {
                       })
                     }}
                   />
+                  {magRefAreaLeft !== null &&
+                    magRefAreaRight !== null &&
+                    magRefAreaLeft !== magRefAreaRight && (
+                      <ReferenceArea
+                        x1={magRefAreaLeft}
+                        x2={magRefAreaRight}
+                        strokeOpacity={0.3}
+                        fill={colors.line}
+                        fillOpacity={0.15}
+                      />
+                    )}
                   <Line
                     type="monotone"
                     dataKey="total"
@@ -1713,19 +1917,20 @@ export default function Reports() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          </div>
-        )}
+            </div>
 
-        {showRawData && compressedMagData.length > 0 && (
-          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
               X Axis
             </h3>
             <div className="h-[200px] w-full sm:h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={compressedMagData}
+                  data={magDisplayData}
                   margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  onMouseDown={onMagRawMouseDown}
+                  onMouseMove={onMagRawMouseMove}
+                  onMouseUp={onMagRawMouseUp}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -1734,11 +1939,11 @@ export default function Reports() {
                   <XAxis
                     dataKey="cx"
                     type="number"
-                    domain={rawChartDomain}
+                    domain={magRawDomain}
                     allowDataOverflow
-                    ticks={rawChartTicks}
+                    ticks={magRawTicks}
                     tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), rawChartRangeMs)
+                      formatTick(timeline.toReal(cx), magRawRealRangeMs)
                     }
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
@@ -1776,6 +1981,17 @@ export default function Reports() {
                       })
                     }}
                   />
+                  {magRefAreaLeft !== null &&
+                    magRefAreaRight !== null &&
+                    magRefAreaLeft !== magRefAreaRight && (
+                      <ReferenceArea
+                        x1={magRefAreaLeft}
+                        x2={magRefAreaRight}
+                        strokeOpacity={0.3}
+                        fill={colors.line}
+                        fillOpacity={0.15}
+                      />
+                    )}
                   <Line
                     type="monotone"
                     dataKey="x"
@@ -1788,19 +2004,20 @@ export default function Reports() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          </div>
-        )}
+            </div>
 
-        {showRawData && compressedMagData.length > 0 && (
-          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Y Axis
             </h3>
             <div className="h-[200px] w-full sm:h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={compressedMagData}
+                  data={magDisplayData}
                   margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  onMouseDown={onMagRawMouseDown}
+                  onMouseMove={onMagRawMouseMove}
+                  onMouseUp={onMagRawMouseUp}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -1809,11 +2026,11 @@ export default function Reports() {
                   <XAxis
                     dataKey="cx"
                     type="number"
-                    domain={rawChartDomain}
+                    domain={magRawDomain}
                     allowDataOverflow
-                    ticks={rawChartTicks}
+                    ticks={magRawTicks}
                     tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), rawChartRangeMs)
+                      formatTick(timeline.toReal(cx), magRawRealRangeMs)
                     }
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
@@ -1851,6 +2068,17 @@ export default function Reports() {
                       })
                     }}
                   />
+                  {magRefAreaLeft !== null &&
+                    magRefAreaRight !== null &&
+                    magRefAreaLeft !== magRefAreaRight && (
+                      <ReferenceArea
+                        x1={magRefAreaLeft}
+                        x2={magRefAreaRight}
+                        strokeOpacity={0.3}
+                        fill={colors.line}
+                        fillOpacity={0.15}
+                      />
+                    )}
                   <Line
                     type="monotone"
                     dataKey="y"
@@ -1863,19 +2091,20 @@ export default function Reports() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          </div>
-        )}
+            </div>
 
-        {showRawData && compressedMagData.length > 0 && (
-          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Z Axis
             </h3>
             <div className="h-[200px] w-full sm:h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={compressedMagData}
+                  data={magDisplayData}
                   margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  onMouseDown={onMagRawMouseDown}
+                  onMouseMove={onMagRawMouseMove}
+                  onMouseUp={onMagRawMouseUp}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -1884,11 +2113,11 @@ export default function Reports() {
                   <XAxis
                     dataKey="cx"
                     type="number"
-                    domain={rawChartDomain}
+                    domain={magRawDomain}
                     allowDataOverflow
-                    ticks={rawChartTicks}
+                    ticks={magRawTicks}
                     tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), rawChartRangeMs)
+                      formatTick(timeline.toReal(cx), magRawRealRangeMs)
                     }
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
@@ -1926,6 +2155,17 @@ export default function Reports() {
                       })
                     }}
                   />
+                  {magRefAreaLeft !== null &&
+                    magRefAreaRight !== null &&
+                    magRefAreaLeft !== magRefAreaRight && (
+                      <ReferenceArea
+                        x1={magRefAreaLeft}
+                        x2={magRefAreaRight}
+                        strokeOpacity={0.3}
+                        fill={colors.line}
+                        fillOpacity={0.15}
+                      />
+                    )}
                   <Line
                     type="monotone"
                     dataKey="z"
@@ -1938,10 +2178,9 @@ export default function Reports() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-          </div>
-        )}
+            </div>
 
-        {showRawData && compressedWaveFreqData.length > 0 && (
+            {compressedWaveFreqData.length > 0 && (
           <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Vibration Intensity — X Axis (5s window)
@@ -1951,6 +2190,9 @@ export default function Reports() {
                 <LineChart
                   data={compressedWaveFreqData}
                   margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  onMouseDown={onMagRawMouseDown}
+                  onMouseMove={onMagRawMouseMove}
+                  onMouseUp={onMagRawMouseUp}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -1959,11 +2201,11 @@ export default function Reports() {
                   <XAxis
                     dataKey="cx"
                     type="number"
-                    domain={rawChartDomain}
+                    domain={magRawDomain}
                     allowDataOverflow
-                    ticks={rawChartTicks}
+                    ticks={magRawTicks}
                     tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), rawChartRangeMs)
+                      formatTick(timeline.toReal(cx), magRawRealRangeMs)
                     }
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
@@ -1999,6 +2241,17 @@ export default function Reports() {
                       })
                     }}
                   />
+                  {magRefAreaLeft !== null &&
+                    magRefAreaRight !== null &&
+                    magRefAreaLeft !== magRefAreaRight && (
+                      <ReferenceArea
+                        x1={magRefAreaLeft}
+                        x2={magRefAreaRight}
+                        strokeOpacity={0.3}
+                        fill={colors.line}
+                        fillOpacity={0.15}
+                      />
+                    )}
                   <Line
                     type="monotone"
                     dataKey="activity"
@@ -2012,10 +2265,10 @@ export default function Reports() {
               </ResponsiveContainer>
             </div>
           </div>
-        )}
+            )}
 
-        {showRawData && vibrationData.length > 0 && (
-          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            {vibrationData.length > 0 && (
+              <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Vibration Intensity (10s / 60s / 5m)
             </h3>
@@ -2024,6 +2277,9 @@ export default function Reports() {
                 <LineChart
                   data={vibrationData}
                   margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  onMouseDown={onMagRawMouseDown}
+                  onMouseMove={onMagRawMouseMove}
+                  onMouseUp={onMagRawMouseUp}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -2032,11 +2288,11 @@ export default function Reports() {
                   <XAxis
                     dataKey="cx"
                     type="number"
-                    domain={rawChartDomain}
+                    domain={magRawDomain}
                     allowDataOverflow
-                    ticks={rawChartTicks}
+                    ticks={magRawTicks}
                     tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), rawChartRangeMs)
+                      formatTick(timeline.toReal(cx), magRawRealRangeMs)
                     }
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
@@ -2073,6 +2329,17 @@ export default function Reports() {
                       })
                     }}
                   />
+                  {magRefAreaLeft !== null &&
+                    magRefAreaRight !== null &&
+                    magRefAreaLeft !== magRefAreaRight && (
+                      <ReferenceArea
+                        x1={magRefAreaLeft}
+                        x2={magRefAreaRight}
+                        strokeOpacity={0.3}
+                        fill={colors.line}
+                        fillOpacity={0.15}
+                      />
+                    )}
                   <Line
                     type="monotone"
                     dataKey="bandEnergy10s"
@@ -2115,18 +2382,20 @@ export default function Reports() {
               </span>
             </div>
           </div>
-        )}
+              )}
 
-        {showRawData && compressedMagData.length > 0 && (
-          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
             <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Building Mag Data
             </h3>
             <div className="h-[200px] w-full sm:h-[250px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
-                  data={compressedMagData}
+                  data={magDisplayData}
                   margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                  onMouseDown={onMagRawMouseDown}
+                  onMouseMove={onMagRawMouseMove}
+                  onMouseUp={onMagRawMouseUp}
                 >
                   <CartesianGrid
                     strokeDasharray="3 3"
@@ -2135,11 +2404,11 @@ export default function Reports() {
                   <XAxis
                     dataKey="cx"
                     type="number"
-                    domain={rawChartDomain}
+                    domain={magRawDomain}
                     allowDataOverflow
-                    ticks={rawChartTicks}
+                    ticks={magRawTicks}
                     tickFormatter={(cx: number) =>
-                      formatTick(timeline.toReal(cx), rawChartRangeMs)
+                      formatTick(timeline.toReal(cx), magRawRealRangeMs)
                     }
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
@@ -2175,6 +2444,17 @@ export default function Reports() {
                       })
                     }}
                   />
+                  {magRefAreaLeft !== null &&
+                    magRefAreaRight !== null &&
+                    magRefAreaLeft !== magRefAreaRight && (
+                      <ReferenceArea
+                        x1={magRefAreaLeft}
+                        x2={magRefAreaRight}
+                        strokeOpacity={0.3}
+                        fill={colors.line}
+                        fillOpacity={0.15}
+                      />
+                    )}
                   <Line
                     type="monotone"
                     dataKey="x"
@@ -2228,6 +2508,7 @@ export default function Reports() {
                 <span className="inline-block h-2 w-2 rounded-full bg-[#f59e0b]" /> Total Magnitude
               </span>
             </div>
+          </div>
           </div>
         )}
 

@@ -272,8 +272,19 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
       setLiveBuffer([])
       bufferRef.current = []
       lastSeenIdRef.current = null
+      setMagSensorIds([])
+      setMagFetchWindow(null)
     }
   }, [initialSensorId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (initialTimeRange != null && initialTimeRange !== timeRange) {
+      setTimeRange(initialTimeRange)
+      setPeriodOffset(0)
+      bufferRef.current = []
+      lastSeenIdRef.current = null
+    }
+  }, [initialTimeRange]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Subscription ---
 
@@ -339,6 +350,14 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
   // --- Mag sensor IDs (lightweight lookup, cached in state) ---
 
   const [magSensorIds, setMagSensorIds] = useState<number[]>([])
+  const [magFetchWindow, setMagFetchWindow] = useState<{ since: string; until: string } | null>(null)
+
+  // mag_report rows use sensor_id → sensor(id). Data may be stored under the same id as the
+  // selected flow sensor even when mag_to_building only lists other mag hardware for the building.
+  const magSensorIdsForQuery = useMemo(() => {
+    if (selectedSensorId === null) return []
+    return [...new Set([...magSensorIds, selectedSensorId])]
+  }, [magSensorIds, selectedSensorId])
 
   const sensorsLoaded = !!sensorsData?.sensor?.length
 
@@ -349,31 +368,32 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
   }, [selectedSensorId, sensorsData])
 
   useEffect(() => {
-    // Don't resolve yet if sensors haven't loaded — we can't know the building ID
     if (!sensorsLoaded) return
-    if (selectedBuildingId === null) {
-      setMagSensorIds([])
-      return
-    }
+    setMagSensorIds([])
+    setMagFetchWindow(null)
+    if (selectedBuildingId === null) return
     fetchMagSensors({ buildingId: selectedBuildingId }).then((result) => {
-      if (!result?.mag_to_building?.length) {
-        setMagSensorIds([])
-      } else {
-        setMagSensorIds(result.mag_to_building.map((m) => m.mag_id))
-      }
+      const ids = result?.mag_to_building?.length
+        ? result.mag_to_building.map((m) => m.mag_id)
+        : []
+      setMagSensorIds(ids)
     })
   }, [selectedBuildingId, sensorsLoaded, fetchMagSensors])
 
   // --- Historical fetch (reports + signals) ---
 
   const prevFetchKeyRef = useRef('')
+  const prevFetchFnRef = useRef(fetchSensorData)
 
   useEffect(() => {
     if (selectedSensorId === null) return
     if (timeRange === 'custom' && !customWindow) return
 
+    const fnChanged = fetchSensorData !== prevFetchFnRef.current
+    prevFetchFnRef.current = fetchSensorData
+
     const fetchKey = `${selectedSensorId}-${timeRange}-${periodOffset}-${customWindow?.since}-${customWindow?.until}`
-    if (fetchKey === prevFetchKeyRef.current) return
+    if (!fnChanged && fetchKey === prevFetchKeyRef.current) return
     prevFetchKeyRef.current = fetchKey
 
     setLiveBuffer([])
@@ -393,28 +413,40 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
 
   useEffect(() => {
     if (selectedSensorId === null) return
-    if (magSensorIds.length === 0) return
+    if (magSensorIdsForQuery.length === 0) return
     if (timeRange === 'custom' && !customWindow) return
 
-    const { since, until } = computeTimeWindow(timeRange, periodOffset, customWindow ?? undefined)
+    const window = computeTimeWindow(timeRange, periodOffset, customWindow ?? undefined)
+    setMagFetchWindow(window)
     fetchMagSupplement({
       sensorId: selectedSensorId,
-      since,
-      until,
-      magSensorIds,
+      since: window.since,
+      until: window.until,
+      magSensorIds: magSensorIdsForQuery,
     })
-  }, [selectedSensorId, timeRange, periodOffset, magSensorIds, customWindow, fetchMagSupplement])
+  }, [selectedSensorId, timeRange, periodOffset, magSensorIdsForQuery, customWindow, fetchMagSupplement])
 
   // Mag data — historical only, no live subscription.
   // Refetched periodically at slot boundaries by the Reports page via refetchMag().
   const magChartData = useMemo<MagChartPoint[]>(() => {
+    if (magSensorIdsForQuery.length === 0) return []
     const magReports = magSupplementData?.mag_report ?? []
     if (magReports.length === 0) return []
-    const base = [...magReports]
+    // Discard stale data from a previous sensor/building
+    const expectedIds = new Set(magSensorIdsForQuery)
+    const matching = magReports.filter((r) => expectedIds.has(Number(r.sensor_id)))
+    if (matching.length === 0) return []
+    const base = [...matching]
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
       .map(magToPoint)
-    return filterPointsToWindow(base, timeRange, periodOffset, customWindow ?? undefined)
-  }, [timeRange, periodOffset, customWindow, magSupplementData])
+    if (timeRange === 'all') return base
+    if (magFetchWindow) {
+      const sinceMs = new Date(magFetchWindow.since).getTime()
+      const untilMs = new Date(magFetchWindow.until).getTime()
+      return base.filter((p) => p.timestamp >= sinceMs && p.timestamp <= untilMs)
+    }
+    return base
+  }, [timeRange, magFetchWindow, magSensorIdsForQuery, magSupplementData])
 
   const downsampledMagChartData = useMemo(
     () => downsample(magChartData, MAX_CHART_POINTS),
@@ -422,11 +454,18 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
   )
 
   const refetchMag = useCallback(() => {
-    if (selectedSensorId === null || magSensorIds.length === 0) return
+    if (selectedSensorId === null) return
+    if (magSensorIdsForQuery.length === 0) return
     if (timeRange === 'custom' && !customWindow) return
-    const { since, until } = computeTimeWindow(timeRange, periodOffset, customWindow ?? undefined)
-    fetchMagSupplement({ sensorId: selectedSensorId, since, until, magSensorIds })
-  }, [selectedSensorId, magSensorIds, timeRange, periodOffset, customWindow, fetchMagSupplement])
+    const window = computeTimeWindow(timeRange, periodOffset, customWindow ?? undefined)
+    setMagFetchWindow(window)
+    fetchMagSupplement({
+      sensorId: selectedSensorId,
+      since: window.since,
+      until: window.until,
+      magSensorIds: magSensorIdsForQuery,
+    })
+  }, [selectedSensorId, magSensorIdsForQuery, timeRange, periodOffset, customWindow, fetchMagSupplement])
 
   // --- Computed ---
 
@@ -529,6 +568,8 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
       setLiveBuffer([])
       bufferRef.current = []
       lastSeenIdRef.current = null
+      setMagSensorIds([])
+      setMagFetchWindow(null)
     },
     [],
   )
@@ -593,6 +634,7 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     reportsLoading: sensorDataLoading,
     reportsError: sensorDataError,
     magChartData: downsampledMagChartData,
+    magChartDataFull: magChartData,
     refetchMag,
     parsedSignals,
     signalTypeIds,

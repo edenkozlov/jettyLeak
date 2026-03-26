@@ -19,12 +19,25 @@ export type FlowStatus =
 const POLL_INTERVAL_MS = 5_000
 const LOOKBACK_MS = 30_000
 
-export function useLiveFlow(buildingId: number | null | undefined) {
+export interface UseLiveFlowOptions {
+  /**
+   * When `mag_to_building` has no rows (or omits a sensor), still include this
+   * sensor id in mag_report queries — same idea as Reports `magSensorIdsForQuery`.
+   */
+  fallbackMagSensorId?: number | null
+}
+
+export function useLiveFlow(
+  buildingId: number | null | undefined,
+  options?: UseLiveFlowOptions,
+) {
   const token = useAppSelector((state) => state.login.token)
   const [flowRate, setFlowRate] = useState<number | null>(null)
   const [status, setStatus] = useState<FlowStatus>('loading')
   const tokenRef = useRef(token)
   tokenRef.current = token
+
+  const fallbackMagSensorId = options?.fallbackMagSensorId ?? null
 
   useEffect(() => {
     if (buildingId == null) {
@@ -104,8 +117,12 @@ export function useLiveFlow(buildingId: number | null | undefined) {
         }>(GET_MAG_SENSORS_BY_BUILDING_ID, { buildingId }, tokenRef.current)
         if (cancelled) return
 
-        const magIds =
+        const fromBuilding =
           magResult?.mag_to_building?.map((m) => m.mag_id) ?? []
+        const magIds =
+          fallbackMagSensorId != null
+            ? [...new Set([...fromBuilding, fallbackMagSensorId])]
+            : fromBuilding
         if (magIds.length === 0) {
           setStatus('no-sensor')
           return
@@ -152,7 +169,7 @@ export function useLiveFlow(buildingId: number | null | undefined) {
       cancelled = true
       if (intervalId) clearInterval(intervalId)
     }
-  }, [buildingId, token])
+  }, [buildingId, token, fallbackMagSensorId])
 
   return { flowRate, status }
 }

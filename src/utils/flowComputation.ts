@@ -89,8 +89,13 @@ export interface FlowPoint {
 export interface BucketedFlowPoint {
   /** Midpoint timestamp of the bucket. */
   timestamp: number
-  /** Average flow rate in L/h for this bucket (or minBar if zero). */
+  /** True average flow in L/h (0 when there is no flow in this bucket). */
   flowRateLph: number
+  /**
+   * Bar chart Y value only: same as `flowRateLph`, except zero-flow buckets use a
+   * small floor so the bar is still visible. Do not use for labels — use `flowRateLph`.
+   */
+  flowRateBarVisual: number
   /** True if this bucket is the current (incomplete) time slot. */
   partial: boolean
 }
@@ -133,6 +138,13 @@ const PEAK_DEDUP_MS = 500
  * detected peaks are assumed to be noise and flow is set to zero.
  */
 const DEFAULT_MIN_VIBRATION = 5
+
+/**
+ * Minimum data points required per sliding window for peak detection.
+ * Windows with fewer points are skipped. This is used to compute the
+ * density-based minimum window size: avgSpacing * MIN_POINTS_PER_WINDOW.
+ */
+const MIN_POINTS_PER_WINDOW = 10
 
 /**
  * Default minimum bar height (L/h) for zero-flow buckets in the bar chart.
@@ -190,7 +202,12 @@ function detectFlowPeaks(
 ): number[] {
   if (totalData.length < 5) return []
 
-  const windowMs = Math.max(10_000, Math.min(visibleRangeMs / 10, 300_000))
+  const dataSpan =
+    totalData[totalData.length - 1]!.timestamp - totalData[0]!.timestamp
+  const avgSpacingMs = dataSpan / (totalData.length - 1)
+  const densityMin = avgSpacingMs * MIN_POINTS_PER_WINDOW
+  const rangeWindow = Math.min(visibleRangeMs / 10, 300_000)
+  const windowMs = Math.max(densityMin, 10_000, rangeWindow)
   const hopMs = windowMs / 2
 
   const allPeakSet = new Set<number>()
@@ -421,9 +438,9 @@ export function computeFlowFromPeaks(
  *
  * ## Zero-Flow Minimum Bar
  *
- * Zero-flow buckets are given a small minimum value (`minBar`, default 2 L/h)
- * so they render as a tiny sliver in the bar chart, indicating that the time
- * slot exists and has been evaluated (vs. missing data).
+ * Zero-flow buckets keep `flowRateLph === 0` for tooltips and stats. The field
+ * `flowRateBarVisual` uses a small floor (`minBar`, default 2 L/h) so the bar
+ * still renders as a tiny sliver (time slot exists vs. missing data).
  *
  * @param magData - Raw mag data points (for vibration intensity lookup).
  * @param flowData - Pre-computed flow points from `computeFlowFromPeaks`.
@@ -474,18 +491,16 @@ export function computeBucketedFlow(
       }
     }
 
+    const flowRateLph = count > 0 ? Math.round((sum / count) * 100) / 100 : 0
     buckets.push({
       timestamp: bMid,
-      flowRateLph: count > 0 ? Math.round((sum / count) * 100) / 100 : 0,
+      flowRateLph,
+      flowRateBarVisual: flowRateLph === 0 ? minBar : flowRateLph,
       partial: isPartial,
     })
   }
 
-  // Apply minimum bar for zero-flow buckets
-  return buckets.map((b) => ({
-    ...b,
-    flowRateLph: b.flowRateLph === 0 ? minBar : b.flowRateLph,
-  }))
+  return buckets
 }
 
 /**
