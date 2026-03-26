@@ -98,6 +98,11 @@ export interface BucketedFlowPoint {
   flowRateBarVisual: number
   /** True if this bucket is the current (incomplete) time slot. */
   partial: boolean
+  /**
+   * Estimated litres in this bucket: `flowRateLph` × effective duration (full `bucketMs`,
+   * or elapsed time in-slot when `partial`).
+   */
+  bucketVolumeL: number
 }
 
 /** A per-peak flow rate measurement for the line chart. */
@@ -196,7 +201,7 @@ function extractTotalMagnitude(
  * @param visibleRangeMs - The visible time range in ms (used to size windows).
  * @returns Sorted, deduplicated array of peak timestamps.
  */
-function detectFlowPeaks(
+export function detectFlowPeaks(
   totalData: { timestamp: number; value: number }[],
   visibleRangeMs: number,
 ): number[] {
@@ -323,6 +328,45 @@ function getVibrationAtTime(vibMap: Map<number, number>, sortedTimestamps: numbe
     if (t > ts) break
   }
   return vibMap.get(closest) ?? 0
+}
+
+/** Litres per waveform cycle: `1 / multiplier` when multiplier is cycles per litre. */
+export function litresPerCycleFromMultiplier(multiplier: number): number {
+  if (multiplier <= 0) return 0
+  return 1 / multiplier
+}
+
+/**
+ * Peak timestamps (total magnitude) for the same detection used by flow rate.
+ */
+export function getFlowPeakTimestamps(
+  magData: MagDataPoint[],
+  visibleRangeMs: number,
+): number[] {
+  const totalData = extractTotalMagnitude(magData)
+  return detectFlowPeaks(totalData, visibleRangeMs)
+}
+
+/**
+ * Volume from complete cycles whose peak-to-peak interval lies fully inside the window.
+ * Each such interval contributes one cycle = `litresPerCycle` litres.
+ */
+export function volumeFromFullCyclesInWindow(
+  peakTimestamps: number[],
+  windowStartMs: number,
+  windowEndMs: number,
+  litresPerCycle: number,
+): { fullCycles: number; volumeL: number } {
+  let fullCycles = 0
+  for (let i = 1; i < peakTimestamps.length; i++) {
+    const a = peakTimestamps[i - 1]!
+    const b = peakTimestamps[i]!
+    if (a >= windowStartMs && b <= windowEndMs) fullCycles++
+  }
+  return {
+    fullCycles,
+    volumeL: Math.round(fullCycles * litresPerCycle * 10000) / 10000,
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -492,11 +536,17 @@ export function computeBucketedFlow(
     }
 
     const flowRateLph = count > 0 ? Math.round((sum / count) * 100) / 100 : 0
+    const effectiveDurationMs = isPartial
+      ? Math.max(0, Math.min(now, bEnd) - bStart)
+      : bucketMs
+    const bucketVolumeL =
+      Math.round(flowRateLph * (effectiveDurationMs / 3_600_000) * 10000) / 10000
     buckets.push({
       timestamp: bMid,
       flowRateLph,
       flowRateBarVisual: flowRateLph === 0 ? minBar : flowRateLph,
       partial: isPartial,
+      bucketVolumeL,
     })
   }
 

@@ -19,7 +19,15 @@ import {
 
 import LiveFlowIndicator from '@/components/LiveFlowIndicator'
 import { computeWaveFrequency } from '@/utils/fft'
-import { computeFlowFromPeaks, computeBucketedFlow, computePeakFlow } from '@/utils/flowComputation'
+import {
+  computeFlowFromPeaks,
+  computeBucketedFlow,
+  computePeakFlow,
+  getFlowPeakTimestamps,
+  litresPerCycleFromMultiplier,
+  volumeFromFullCyclesInWindow,
+  type BucketedFlowPoint,
+} from '@/utils/flowComputation'
 import { useTheme } from '@/contexts/ThemeContext'
 import { useChartTags } from '@/hooks/useChartTags'
 import { useChartZoomPan } from '@/hooks/useChartZoomPan'
@@ -69,6 +77,47 @@ const CHART_COLORS = {
     tooltipText: '#f3f4f6',
   },
 } as const
+
+/** Snap to human-friendly time steps for axis ticks. */
+const NICE_TIME_AXIS_STEPS_MS = [
+  1_000, 2_000, 5_000, 10_000, 15_000, 30_000,
+  60_000, 2 * 60_000, 5 * 60_000, 10 * 60_000, 15 * 60_000, 30 * 60_000,
+  60 * 60_000, 2 * 60 * 60_000, 3 * 60 * 60_000, 6 * 60 * 60_000,
+  12 * 60 * 60_000, 24 * 60 * 60_000,
+] as const
+
+function pickNiceTimeAxisStepMs(roughStepMs: number): number {
+  for (const s of NICE_TIME_AXIS_STEPS_MS) {
+    if (s >= roughStepMs) return s
+  }
+  return NICE_TIME_AXIS_STEPS_MS[NICE_TIME_AXIS_STEPS_MS.length - 1]!
+}
+
+/**
+ * Evenly spaced epoch timestamps for the x-axis (max ~8 labels) so short ranges
+ * are not one label per bar.
+ */
+function buildReadableTimeAxisTicks(
+  minTs: number,
+  maxTs: number,
+  maxLabels = 8,
+): number[] {
+  if (minTs >= maxTs) return [minTs]
+  const span = Math.max(maxTs - minTs, 1)
+  const target = Math.max(2, Math.min(maxLabels, 10))
+  const roughStep = span / (target - 1)
+  const step = pickNiceTimeAxisStepMs(roughStep)
+  const ticks: number[] = []
+  let t = Math.ceil(minTs / step) * step
+  let guard = 0
+  while (t <= maxTs + step * 0.001 && guard < 48) {
+    ticks.push(t)
+    t += step
+    guard++
+  }
+  if (ticks.length === 0) return [minTs, maxTs]
+  return ticks
+}
 
 function formatTick(ts: number, rangeMs: number): string {
   const d = new Date(ts)
@@ -480,15 +529,6 @@ export default function Reports() {
 
   const visibleRangeMsRef = useRef(0)
 
-  const magFlowChartData = useMemo(
-    () => computeFlowFromPeaks(
-      magChartDataFull,
-      sensorMultiplier ?? 0,
-      visibleRangeMsRef.current || RANGE_MS[timeRange] || 60_000,
-    ),
-    [magChartDataFull, sensorMultiplier, timeRange],
-  )
-
   // Nice round bucket intervals per time range (in ms)
   const FLOW_BUCKET_MS: Record<TimeRange, number> = {
     '1m':  5_000,           // 5s  → 12 buckets
@@ -548,25 +588,6 @@ export default function Reports() {
   const numFlowBuckets = Math.max(1, Math.round(effectiveRangeMs / bucketMs))
   const chartWindowEnd = slotAnchor + bucketMs
   const chartWindowStart = chartWindowEnd - numFlowBuckets * bucketMs
-
-  const bucketedFlowData = useMemo(
-    () => magChartDataFull.length === 0
-      ? []
-      : computeBucketedFlow(magChartDataFull, magFlowChartData, bucketMs, chartWindowStart, numFlowBuckets),
-    [magChartDataFull, magFlowChartData, bucketMs, chartWindowStart, numFlowBuckets, slotAnchor],
-  )
-
-  const peakFlowData = useMemo(
-    () => computePeakFlow(
-      magChartDataFull,
-      sensorMultiplier ?? 0,
-      visibleRangeMsRef.current || RANGE_MS[timeRange] || 60_000,
-      Math.max(bucketMs / 2, 5000),
-      chartWindowStart,
-      chartWindowEnd,
-    ),
-    [magChartDataFull, sensorMultiplier, timeRange, bucketMs, chartWindowStart, chartWindowEnd],
-  )
 
   const [tagFormTimestamp, setTagFormTimestamp] = useState<number | null>(null)
   const [tagTitle, setTagTitle] = useState('')
@@ -797,16 +818,124 @@ export default function Reports() {
     if (magLayerBaseData.length === 0) return []
     const realLeft = timeline.points.length > 0 ? timeline.toReal(left) : left
     const realRight = timeline.points.length > 0 ? timeline.toReal(right) : right
-    const span = realRight - realLeft
-    if (span <= 0) return []
-    const step = computeTickInterval(span)
-    const ticks: number[] = []
-    const start = Math.ceil(realLeft / step) * step
-    for (let t = start; t <= realRight; t += step) {
-      ticks.push(timeline.points.length > 0 ? timeline.toCompressed(t) : t)
-    }
-    return ticks
+    if (realRight <= realLeft) return []
+    const realTicks = buildReadableTimeAxisTicks(realLeft, realRight, 8)
+    return realTicks.map((t) =>
+      timeline.points.length > 0 ? timeline.toCompressed(t) : t,
+    )
   }, [magRawDomain, magLayerBaseData, timeline])
+
+  /** Sliding-window size for peak detection: real ms from mag zoom when raw is open, else main chart span. */
+  const flowPeakDetectionRangeMs = useMemo(() => {
+    const fallback = RANGE_MS[timeRange] || 60_000
+    if (showRawData && magChartDataFull.length >= 2) {
+      return Math.max(magRawRealRangeMs, 10_000)
+    }
+    return Math.max(realVisibleRange > 0 ? realVisibleRange : fallback, 10_000)
+  }, [showRawData, magRawRealRangeMs, realVisibleRange, timeRange, magChartDataFull.length])
+
+  const magZoomTimeBounds = useMemo(() => {
+    const [left, right] = magRawDomain
+    if (timeline.points.length > 0) {
+      return { start: timeline.toReal(left), end: timeline.toReal(right) }
+    }
+    return { start: left, end: right }
+  }, [magRawDomain, timeline])
+
+  const magFlowChartData = useMemo(
+    () =>
+      computeFlowFromPeaks(
+        magChartDataFull,
+        sensorMultiplier ?? 0,
+        flowPeakDetectionRangeMs,
+      ),
+    [magChartDataFull, sensorMultiplier, flowPeakDetectionRangeMs],
+  )
+
+  const bucketedFlowData = useMemo(
+    () =>
+      magChartDataFull.length === 0
+        ? []
+        : computeBucketedFlow(
+            magChartDataFull,
+            magFlowChartData,
+            bucketMs,
+            chartWindowStart,
+            numFlowBuckets,
+          ),
+    [
+      magChartDataFull,
+      magFlowChartData,
+      bucketMs,
+      chartWindowStart,
+      numFlowBuckets,
+      slotAnchor,
+    ],
+  )
+
+  const peakFlowData = useMemo(
+    () =>
+      computePeakFlow(
+        magChartDataFull,
+        sensorMultiplier ?? 0,
+        flowPeakDetectionRangeMs,
+        Math.max(bucketMs / 2, 5000),
+        chartWindowStart,
+        chartWindowEnd,
+      ),
+    [
+      magChartDataFull,
+      sensorMultiplier,
+      flowPeakDetectionRangeMs,
+      bucketMs,
+      chartWindowStart,
+      chartWindowEnd,
+    ],
+  )
+
+  const flowBarAxisRangeMs = useMemo(() => {
+    const preset = RANGE_MS[timeRange]
+    if (preset > 0) return preset
+    if (bucketedFlowData.length >= 2) {
+      return (
+        bucketedFlowData[bucketedFlowData.length - 1]!.timestamp -
+        bucketedFlowData[0]!.timestamp
+      )
+    }
+    return 60_000
+  }, [timeRange, bucketedFlowData])
+
+  const flowBarAxisTicks = useMemo(() => {
+    if (bucketedFlowData.length === 0) return [] as number[]
+    const min = bucketedFlowData[0]!.timestamp
+    const max = bucketedFlowData[bucketedFlowData.length - 1]!.timestamp
+    return buildReadableTimeAxisTicks(min, max, 8)
+  }, [bucketedFlowData])
+
+  const peakFlowAxisTicks = useMemo(
+    () => buildReadableTimeAxisTicks(chartWindowStart, chartWindowEnd, 8),
+    [chartWindowStart, chartWindowEnd],
+  )
+
+  const magVolumeFromCycles = useMemo(() => {
+    const m = sensorMultiplier ?? 0
+    if (m <= 0 || magChartDataFull.length < 5) return null
+    const litresPerCycle = litresPerCycleFromMultiplier(m)
+    const peaks = getFlowPeakTimestamps(magChartDataFull, flowPeakDetectionRangeMs)
+    const { start, end } = magZoomTimeBounds
+    const { fullCycles, volumeL } = volumeFromFullCyclesInWindow(
+      peaks,
+      start,
+      end,
+      litresPerCycle,
+    )
+    return { litresPerCycle, fullCycles, volumeL, peakCount: peaks.length }
+  }, [
+    sensorMultiplier,
+    magChartDataFull,
+    flowPeakDetectionRangeMs,
+    magZoomTimeBounds,
+  ])
 
   const onMagRawMouseLeave = useCallback(() => {
     cancelMagRawSelection()
@@ -1478,16 +1607,40 @@ export default function Reports() {
         {/* Flow Rate from Mag Cycles */}
         {bucketedFlowData.length > 0 && (
           <div className="mb-6">
-            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Flow Rate
             </h3>
-            <div className="h-[200px] w-full sm:h-[280px]">
+            {showRawData && magVolumeFromCycles && (
+              <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+                <span className="font-medium text-gray-600 dark:text-gray-300">
+                  {magVolumeFromCycles.fullCycles}
+                </span>{' '}
+                full cycle(s) in the raw mag zoom →{' '}
+                <span className="font-semibold tabular-nums text-gray-800 dark:text-gray-100">
+                  {magVolumeFromCycles.volumeL.toFixed(3)} L
+                </span>
+                <span className="ml-2 text-gray-400">
+                  (1 cycle = {magVolumeFromCycles.litresPerCycle.toFixed(4)} L)
+                </span>
+              </p>
+            )}
+            <div className="h-[200px] w-full min-w-0 overflow-hidden sm:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={bucketedFlowData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                <BarChart
+                  data={bucketedFlowData}
+                  margin={{ top: 5, right: 12, left: 8, bottom: 14 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
                   <XAxis
                     dataKey="timestamp"
-                    tickFormatter={(ts: number) => formatTick(ts, RANGE_MS[timeRange] || 60_000)}
+                    type="number"
+                    domain={[
+                      bucketedFlowData[0]!.timestamp - bucketMs / 2,
+                      bucketedFlowData[bucketedFlowData.length - 1]!.timestamp +
+                        bucketMs / 2,
+                    ]}
+                    ticks={flowBarAxisTicks}
+                    tickFormatter={(ts: number) => formatTick(ts, flowBarAxisRangeMs)}
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
                     axisLine={{ stroke: colors.grid }}
@@ -1504,30 +1657,47 @@ export default function Reports() {
                     label={{ value: 'L/h', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#3b82f6' } }}
                   />
                   <Tooltip
-                    contentStyle={{
-                      backgroundColor: colors.tooltipBg,
-                      borderColor: colors.tooltipBorder,
-                      color: colors.tooltipText,
-                      borderRadius: 8,
-                      fontSize: 12,
+                    cursor={{ fill: 'rgba(59, 130, 246, 0.06)' }}
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null
+                      const p = payload[0]?.payload as BucketedFlowPoint | undefined
+                      if (!p) return null
+                      const timeStr =
+                        typeof label === 'number'
+                          ? new Date(label).toLocaleString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit',
+                              hour12: false,
+                            })
+                          : ''
+                      return (
+                        <div
+                          className="rounded-lg border px-3 py-2 text-xs shadow-sm"
+                          style={{
+                            backgroundColor: colors.tooltipBg,
+                            borderColor: colors.tooltipBorder,
+                            color: colors.tooltipText,
+                          }}
+                        >
+                          <p className="mb-2 font-semibold" style={{ fontSize: 12 }}>
+                            {timeStr}
+                          </p>
+                          <p
+                            className="font-medium tabular-nums"
+                            style={{ fontSize: 13, color: '#3b82f6' }}
+                          >
+                            {p.flowRateLph.toFixed(2)} L/h
+                          </p>
+                          <p className="mt-1.5 text-[11px] leading-snug tabular-nums text-gray-500 dark:text-gray-400">
+                            {p.bucketVolumeL.toFixed(3)} L in this bucket
+                            {p.partial ? ' (so far)' : ''}
+                          </p>
+                        </div>
+                      )
                     }}
-                    formatter={(value: unknown, name: unknown, item: { payload?: { flowRateLph?: number } }) => {
-                      const actual = item?.payload?.flowRateLph
-                      const text =
-                        typeof actual === 'number'
-                          ? `${actual.toFixed(2)} L/h`
-                          : typeof value === 'number'
-                            ? `${value.toFixed(2)} L/h`
-                            : '—'
-                      return [text, String(name ?? '')]
-                    }}
-                    labelFormatter={(ts: unknown) =>
-                      typeof ts === 'number'
-                        ? new Date(ts).toLocaleString('en-US', {
-                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
-                          })
-                        : ''
-                    }
                   />
                   <Bar yAxisId="left" dataKey="flowRateBarVisual" name="Flow Rate (L/h)" radius={[3, 3, 0, 0]} isAnimationActive={false}>
                     {bucketedFlowData.map((entry, index) => (
@@ -1550,17 +1720,24 @@ export default function Reports() {
         {/* Per-peak flow rate line chart */}
         {peakFlowData.length > 0 && (
           <div className="mb-6">
-            <h3 className="mb-3 text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Flow Rate (per cycle)
             </h3>
+            {showRawData && magVolumeFromCycles && (
+              <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+                Each spike is one cycle; volume in the raw mag zoom uses the same calibration (
+                {magVolumeFromCycles.litresPerCycle.toFixed(4)} L per cycle).
+              </p>
+            )}
             <div className="h-[160px] w-full sm:h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={peakFlowData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                <LineChart data={peakFlowData} margin={{ top: 5, right: 20, left: 10, bottom: 14 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
                   <XAxis
                     dataKey="timestamp"
                     type="number"
                     domain={[chartWindowStart, chartWindowEnd]}
+                    ticks={peakFlowAxisTicks}
                     tickFormatter={(ts: number) => formatTick(ts, magRangeMs)}
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}

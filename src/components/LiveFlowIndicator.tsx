@@ -1,8 +1,9 @@
+import { useEffect, useState } from 'react'
+
 import { useLiveFlow, type FlowStatus } from '@/hooks/useLiveFlow'
 
 interface Props {
   buildingId: number | null | undefined
-  /** See `useLiveFlow` — use selected sensor when building has no `mag_to_building` rows */
   fallbackMagSensorId?: number | null
   compact?: boolean
 }
@@ -26,6 +27,11 @@ function StatusDot({ status }: { status: FlowStatus }) {
       <span className="inline-block h-2.5 w-2.5 rounded-full bg-gray-300 dark:bg-gray-600" />
     )
   }
+  if (status === 'stale') {
+    return (
+      <span className="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-amber-400" />
+    )
+  }
   if (status === 'error') {
     return (
       <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-400" />
@@ -41,14 +47,31 @@ function StatusDot({ status }: { status: FlowStatus }) {
   )
 }
 
+function useRelativeTime(epochMs: number | null): string {
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    if (epochMs == null) return
+    const id = setInterval(() => setTick((n) => n + 1), 5_000)
+    return () => clearInterval(id)
+  }, [epochMs])
+
+  if (epochMs == null) return ''
+  const ago = Math.max(0, Math.round((Date.now() - epochMs) / 1000))
+  if (ago < 5) return 'just now'
+  if (ago < 60) return `${ago}s ago`
+  return `${Math.floor(ago / 60)}m ago`
+}
+
 function statusLabel(status: FlowStatus, flowRate: number | null): string {
   switch (status) {
     case 'loading':
-      return 'Loading…'
+      return 'Loading...'
     case 'flowing':
       return `${flowRate ?? 0} L/h`
     case 'idle':
       return '0 L/h'
+    case 'stale':
+      return flowRate != null ? `${flowRate} L/h` : 'Reconnecting...'
     case 'no-sensor':
       return 'No sensor'
     case 'needs-cal':
@@ -63,7 +86,10 @@ export default function LiveFlowIndicator({
   fallbackMagSensorId,
   compact,
 }: Props) {
-  const { flowRate, status } = useLiveFlow(buildingId, { fallbackMagSensorId })
+  const { flowRate, status, lastUpdated } = useLiveFlow(buildingId, {
+    fallbackMagSensorId,
+  })
+  const relTime = useRelativeTime(lastUpdated)
 
   if (compact) {
     return (
@@ -75,9 +101,11 @@ export default function LiveFlowIndicator({
               ? 'font-medium text-emerald-600 dark:text-emerald-400'
               : status === 'error'
                 ? 'text-red-500'
-                : status === 'needs-cal'
+                : status === 'stale'
                   ? 'text-amber-500'
-                  : 'text-gray-500 dark:text-gray-400'
+                  : status === 'needs-cal'
+                    ? 'text-amber-500'
+                    : 'text-gray-500 dark:text-gray-400'
           }
         >
           {statusLabel(status, flowRate)}
@@ -88,9 +116,22 @@ export default function LiveFlowIndicator({
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-        Live Flow
-      </p>
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          Live Flow
+        </p>
+        {relTime && (
+          <span
+            className={`text-[10px] tabular-nums ${
+              status === 'stale'
+                ? 'text-amber-500'
+                : 'text-gray-400 dark:text-gray-500'
+            }`}
+          >
+            {relTime}
+          </span>
+        )}
+      </div>
       <div className="flex items-center gap-3">
         <StatusDot status={status} />
         <span
@@ -99,22 +140,25 @@ export default function LiveFlowIndicator({
               ? 'text-emerald-600 dark:text-emerald-400'
               : status === 'error'
                 ? 'text-red-500'
-                : status === 'needs-cal'
+                : status === 'stale'
                   ? 'text-amber-500'
-                  : 'text-gray-900 dark:text-white'
+                  : status === 'needs-cal'
+                    ? 'text-amber-500'
+                    : 'text-gray-900 dark:text-white'
           }`}
         >
-          {status === 'loading'
+          {status === 'loading' || status === 'no-sensor' || status === 'needs-cal'
             ? '—'
-            : status === 'no-sensor'
+            : status === 'error'
               ? '—'
-              : status === 'needs-cal'
-                ? '—'
-                : status === 'error'
-                  ? '—'
-                  : `${flowRate ?? 0} L/h`}
+              : `${flowRate ?? 0} L/h`}
         </span>
       </div>
+      {status === 'stale' && (
+        <p className="mt-1 text-xs text-amber-500">
+          Data may be stale — retrying...
+        </p>
+      )}
       {(status === 'no-sensor' ||
         status === 'needs-cal' ||
         status === 'error') && (
@@ -123,7 +167,7 @@ export default function LiveFlowIndicator({
             ? 'No magnetometer sensor linked'
             : status === 'needs-cal'
               ? 'Sensor multiplier not configured'
-              : 'Failed to fetch flow data'}
+              : 'Failed to fetch flow data — retrying...'}
         </p>
       )}
     </div>
