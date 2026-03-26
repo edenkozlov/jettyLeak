@@ -37,7 +37,6 @@ export interface AnalyticsData {
 }
 
 const SESSION_GAP_MS = 120_000
-const DAY_MS = 24 * 60 * 60 * 1000
 
 function getStartOfDay(date: Date = new Date()): Date {
   const d = new Date(date)
@@ -88,7 +87,7 @@ function computeFlowPointsForRange(
     (d) => d.timestamp >= since && d.timestamp <= until,
   )
   if (rangeData.length < 5) return []
-  return computeFlowFromPeaks(rangeData, multiplier, until - since)
+  return computeFlowFromPeaks(rangeData, multiplier)
 }
 
 function computeActiveFlow(flowPoints: FlowPoint[]): {
