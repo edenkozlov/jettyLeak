@@ -485,15 +485,6 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
   const rawChartData = useMemo(() => {
     const allReports = sensorData?.report ?? []
     const filtered = allReports.filter((r) => r.sensor_id == null || Number(r.sensor_id) === selectedSensorId)
-    console.log('[rawChartData]', {
-      allReports: allReports.length,
-      filtered: filtered.length,
-      sensorDataRef: sensorData,
-      liveBuffer: liveBuffer.length,
-      selectedSensorId,
-      sensorMultiplier,
-      isLive,
-    })
     const base: ChartPoint[] = filtered.length
       ? [...filtered]
           .sort(
@@ -635,6 +626,7 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     reportsError: sensorDataError,
     magChartData: downsampledMagChartData,
     magChartDataFull: magChartData,
+    magSensorIdsForQuery,
     refetchMag,
     parsedSignals,
     signalTypeIds,

@@ -175,35 +175,52 @@ function extractTotalMagnitude(
 }
 
 /**
+ * Binary search: returns the index of the first element whose timestamp >= target.
+ */
+function lowerBound(
+  data: { timestamp: number }[],
+  target: number,
+): number {
+  let lo = 0
+  let hi = data.length
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1
+    if (data[mid]!.timestamp < target) lo = mid + 1
+    else hi = mid
+  }
+  return lo
+}
+
+/**
+ * Binary search: returns the index of the first element whose timestamp > target.
+ */
+function upperBound(
+  data: { timestamp: number }[],
+  target: number,
+): number {
+  let lo = 0
+  let hi = data.length
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1
+    if (data[mid]!.timestamp <= target) lo = mid + 1
+    else hi = mid
+  }
+  return lo
+}
+
+/**
  * Detects peaks in the total magnitude signal using a sliding window approach.
  *
- * ## Algorithm
- *
- * 1. Divide the signal into overlapping windows (50% overlap).
- *    Window size is clamped between 10s and 5 minutes, targeting ~1/10th
- *    of the visible time range for good local resolution.
- *
- * 2. For each window:
- *    - Compute the variance of the signal values.
- *    - Skip if variance < MIN_VARIANCE (no flow, just noise).
- *    - Run `detectCycles` (Savitzky-Golay smoothing + prominence-based
- *      peak detection) on the window data.
- *    - Collect all detected peak timestamps.
- *
- * 3. Sort all peaks chronologically and deduplicate: any two peaks within
- *    PEAK_DEDUP_MS (500ms) are treated as the same peak (keep the first).
- *
- * This sliding window approach ensures that peaks are detected with local
- * prominence — a small flow signal won't be drowned out by a much larger
- * flow event elsewhere in the dataset.
+ * Uses binary search to extract window slices instead of filtering the full
+ * array on every hop, reducing complexity from O(windows * N) to O(windows * W).
  *
  * @param totalData - Time series of total magnitude values.
- * @param visibleRangeMs - The visible time range in ms (used to size windows).
+ * @param _visibleRangeMs - Deprecated, ignored. Kept for call-site compat.
  * @returns Sorted, deduplicated array of peak timestamps.
  */
 export function detectFlowPeaks(
   totalData: { timestamp: number; value: number }[],
-  visibleRangeMs: number,
+  _visibleRangeMs?: number,
 ): number[] {
   if (totalData.length < 5) return []
 
@@ -211,8 +228,7 @@ export function detectFlowPeaks(
     totalData[totalData.length - 1]!.timestamp - totalData[0]!.timestamp
   const avgSpacingMs = dataSpan / (totalData.length - 1)
   const densityMin = avgSpacingMs * MIN_POINTS_PER_WINDOW
-  const rangeWindow = Math.min(visibleRangeMs / 10, 300_000)
-  const windowMs = Math.max(densityMin, 10_000, rangeWindow)
+  const windowMs = Math.max(densityMin, 10_000)
   const hopMs = windowMs / 2
 
   const allPeakSet = new Set<number>()
@@ -221,14 +237,21 @@ export function detectFlowPeaks(
 
   for (let winStart = startTs; winStart < endTs; winStart += hopMs) {
     const winEnd = winStart + windowMs
-    const windowData = totalData.filter(
-      (d) => d.timestamp >= winStart && d.timestamp <= winEnd,
-    )
-    if (windowData.length < 5) continue
+    const lo = lowerBound(totalData, winStart)
+    const hi = upperBound(totalData, winEnd)
+    if (hi - lo < 5) continue
 
-    const vals = windowData.map((d) => d.value)
-    const mean = vals.reduce((s, v) => s + v, 0) / vals.length
-    const variance = vals.reduce((s, v) => s + (v - mean) ** 2, 0) / vals.length
+    const windowData = totalData.slice(lo, hi)
+
+    let sum = 0
+    for (let i = 0; i < windowData.length; i++) sum += windowData[i]!.value
+    const mean = sum / windowData.length
+    let variance = 0
+    for (let i = 0; i < windowData.length; i++) {
+      const diff = windowData[i]!.value - mean
+      variance += diff * diff
+    }
+    variance /= windowData.length
     if (variance < MIN_VARIANCE) continue
 
     const result = detectCycles(windowData, { minProminence: MIN_PROMINENCE })
@@ -315,17 +338,29 @@ function buildVibrationMap(data: MagDataPoint[]): Map<number, number> {
 
 /**
  * Returns the vibration intensity of the data point closest to the given timestamp.
+ * Uses binary search for O(log n) instead of linear scan.
  */
 function getVibrationAtTime(vibMap: Map<number, number>, sortedTimestamps: number[], ts: number): number {
-  let closest = 0
-  let closestDist = Infinity
-  for (const t of sortedTimestamps) {
-    const dist = Math.abs(t - ts)
-    if (dist < closestDist) {
-      closestDist = dist
-      closest = t
-    }
-    if (t > ts) break
+  const n = sortedTimestamps.length
+  if (n === 0) return 0
+
+  let lo = 0
+  let hi = n
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1
+    if (sortedTimestamps[mid]! < ts) lo = mid + 1
+    else hi = mid
+  }
+
+  let closest: number
+  if (lo >= n) {
+    closest = sortedTimestamps[n - 1]!
+  } else if (lo === 0) {
+    closest = sortedTimestamps[0]!
+  } else {
+    const before = sortedTimestamps[lo - 1]!
+    const after = sortedTimestamps[lo]!
+    closest = (ts - before <= after - ts) ? before : after
   }
   return vibMap.get(closest) ?? 0
 }
@@ -341,10 +376,9 @@ export function litresPerCycleFromMultiplier(multiplier: number): number {
  */
 export function getFlowPeakTimestamps(
   magData: MagDataPoint[],
-  visibleRangeMs: number,
 ): number[] {
   const totalData = extractTotalMagnitude(magData)
-  return detectFlowPeaks(totalData, visibleRangeMs)
+  return detectFlowPeaks(totalData)
 }
 
 /**
@@ -393,13 +427,11 @@ export function volumeFromFullCyclesInWindow(
  *
  * @param magData - Raw magnetometer data points (must have `total` field).
  * @param sensorMultiplier - Cycles per litre from sensor calibration.
- * @param visibleRangeMs - Visible time range in ms (for window sizing).
  * @returns Array of FlowPoint sorted chronologically.
  */
 export function computeFlowFromPeaks(
   magData: MagDataPoint[],
   sensorMultiplier: number,
-  visibleRangeMs: number,
 ): FlowPoint[] {
   if (sensorMultiplier <= 0 || magData.length < 5) return []
 
@@ -407,7 +439,7 @@ export function computeFlowFromPeaks(
   if (totalData.length < 5) return []
 
   const litresPerCycle = 1 / sensorMultiplier
-  const peaks = detectFlowPeaks(totalData, visibleRangeMs)
+  const peaks = detectFlowPeaks(totalData)
   if (peaks.length < 2) return []
 
   // Compute median peak interval for sustained flow detection
@@ -474,6 +506,13 @@ export function computeFlowFromPeaks(
  * 1-minute buckets on a 15-minute view, boundaries are always at :00, :01,
  * :02, etc. Only the last bucket (the current time slot) is partial.
  *
+ * ## Volume Calculation
+ *
+ * Volume per bucket is calculated by counting complete peak-to-peak cycles
+ * (both peaks within the bucket boundaries) and multiplying by litresPerCycle.
+ * This matches the cycle-counting approach used everywhere else and gives
+ * correct discrete volume rather than the over-estimated rate × time approach.
+ *
  * ## Vibration Gating
  *
  * For each bucket, the maximum vibration intensity across all mag data points
@@ -488,6 +527,8 @@ export function computeFlowFromPeaks(
  *
  * @param magData - Raw mag data points (for vibration intensity lookup).
  * @param flowData - Pre-computed flow points from `computeFlowFromPeaks`.
+ * @param peakTimestamps - Sorted peak timestamps from `detectFlowPeaks`.
+ * @param litresPerCycle - Volume per cycle (1 / sensorMultiplier).
  * @param bucketMs - Width of each bucket in milliseconds.
  * @param chartWindowStart - Start of the display window (epoch ms).
  * @param numBuckets - Number of buckets to generate.
@@ -499,6 +540,8 @@ export function computeFlowFromPeaks(
 export function computeBucketedFlow(
   magData: MagDataPoint[],
   flowData: FlowPoint[],
+  peakTimestamps: number[],
+  litresPerCycle: number,
   bucketMs: number,
   chartWindowStart: number,
   numBuckets: number,
@@ -509,38 +552,57 @@ export function computeBucketedFlow(
   const vibMap = buildVibrationMap(magData)
   const buckets: BucketedFlowPoint[] = []
 
+  // Pre-compute bucket index for each data point to avoid repeated linear scans.
+  // magData, flowData, and peakTimestamps are assumed sorted by timestamp.
+  const magBucketVib = new Float64Array(numBuckets)
+  for (const p of magData) {
+    const bi = Math.floor((p.timestamp - chartWindowStart) / bucketMs)
+    if (bi < 0 || bi >= numBuckets) continue
+    const v = vibMap.get(p.timestamp) ?? 0
+    if (v > magBucketVib[bi]!) magBucketVib[bi] = v
+  }
+
+  const flowBucketSum = new Float64Array(numBuckets)
+  const flowBucketCount = new Uint32Array(numBuckets)
+  for (const p of flowData) {
+    const bi = Math.floor((p.timestamp - chartWindowStart) / bucketMs)
+    if (bi < 0 || bi >= numBuckets) continue
+    flowBucketSum[bi]! += p.flowRateLph
+    flowBucketCount[bi]!++
+  }
+
+  const cycleBucketCount = new Uint32Array(numBuckets)
+  for (let j = 1; j < peakTimestamps.length; j++) {
+    const a = peakTimestamps[j - 1]!
+    const b = peakTimestamps[j]!
+    // Skip cycles whose first peak is before the chart window (consistent
+    // with volumeFromFullCyclesInWindow).  Assign the cycle to the bucket
+    // where it completes (peak B) so boundary-straddling cycles aren't lost.
+    if (a < chartWindowStart) continue
+    const biB = Math.floor((b - chartWindowStart) / bucketMs)
+    if (biB >= 0 && biB < numBuckets) {
+      cycleBucketCount[biB]!++
+    }
+  }
+
   for (let i = 0; i < numBuckets; i++) {
     const bStart = chartWindowStart + i * bucketMs
     const bEnd = bStart + bucketMs
     const bMid = bStart + bucketMs / 2
     const isPartial = bStart <= now && now < bEnd
 
-    // Check vibration intensity in this bucket (rolling X-axis stddev)
-    let maxVibration = 0
-    for (const p of magData) {
-      if (p.timestamp >= bStart && p.timestamp < bEnd) {
-        const v = vibMap.get(p.timestamp) ?? 0
-        if (v > maxVibration) maxVibration = v
-      }
-    }
+    const maxVibration = magBucketVib[i]!
+    let flowRateLph = 0
+    let cyclesInBucket = 0
 
-    let sum = 0
-    let count = 0
     if (maxVibration >= minVibration) {
-      for (const p of flowData) {
-        if (p.timestamp >= bStart && p.timestamp < bEnd) {
-          sum += p.flowRateLph
-          count++
-        }
-      }
+      const count = flowBucketCount[i]!
+      flowRateLph = count > 0 ? Math.round((flowBucketSum[i]! / count) * 100) / 100 : 0
+      cyclesInBucket = cycleBucketCount[i]!
     }
 
-    const flowRateLph = count > 0 ? Math.round((sum / count) * 100) / 100 : 0
-    const effectiveDurationMs = isPartial
-      ? Math.max(0, Math.min(now, bEnd) - bStart)
-      : bucketMs
     const bucketVolumeL =
-      Math.round(flowRateLph * (effectiveDurationMs / 3_600_000) * 10000) / 10000
+      Math.round(cyclesInBucket * litresPerCycle * 10000) / 10000
     buckets.push({
       timestamp: bMid,
       flowRateLph,
@@ -578,7 +640,6 @@ export function computeBucketedFlow(
  *
  * @param magData - Raw mag data points.
  * @param sensorMultiplier - Cycles per litre from sensor calibration.
- * @param visibleRangeMs - Visible time range in ms (for window sizing).
  * @param sampleIntervalMs - Interval for zero-flow sampling points.
  * @param chartWindowStart - Start of the display window (epoch ms).
  * @param chartWindowEnd - End of the display window (epoch ms).
@@ -588,7 +649,6 @@ export function computeBucketedFlow(
 export function computePeakFlow(
   magData: MagDataPoint[],
   sensorMultiplier: number,
-  visibleRangeMs: number,
   sampleIntervalMs: number,
   chartWindowStart: number,
   chartWindowEnd: number,
@@ -600,7 +660,7 @@ export function computePeakFlow(
   if (totalData.length < 5) return []
 
   const litresPerCycle = 1 / sensorMultiplier
-  const peaks = detectFlowPeaks(totalData, visibleRangeMs)
+  const peaks = detectFlowPeaks(totalData)
   if (peaks.length < 2) return []
 
   const vibMap = buildVibrationMap(magData)
@@ -625,17 +685,27 @@ export function computePeakFlow(
     }
   }
 
-  // Insert zero-flow points during quiet periods
+  // Insert zero-flow points during quiet periods.
+  // Pre-sort peak points and use a pointer to avoid O(n*m) .some() scans.
+  points.sort((a, b) => a.timestamp - b.timestamp)
+  const threshold = sampleIntervalMs * 0.4
+  const zeroPoints: PeakFlowPoint[] = []
+  let peakIdx = 0
   for (let t = chartWindowStart; t <= chartWindowEnd; t += sampleIntervalMs) {
-    const nearPeak = points.some(
-      (p) => Math.abs(p.timestamp - t) < sampleIntervalMs * 0.4,
-    )
+    while (peakIdx < points.length && points[peakIdx]!.timestamp < t - threshold) peakIdx++
+    const nearPeak =
+      peakIdx < points.length && Math.abs(points[peakIdx]!.timestamp - t) < threshold
     if (nearPeak) continue
     const vibration = getVibrationAtTime(vibMap, sortedTs, t)
     if (vibration < minVibration) {
-      points.push({ timestamp: t, flowRateLph: 0 })
+      zeroPoints.push({ timestamp: t, flowRateLph: 0 })
     }
   }
 
-  return points.sort((a, b) => a.timestamp - b.timestamp)
+  if (zeroPoints.length > 0) {
+    points.push(...zeroPoints)
+    points.sort((a, b) => a.timestamp - b.timestamp)
+  }
+
+  return points
 }

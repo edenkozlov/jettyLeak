@@ -31,6 +31,7 @@ import {
 import { useTheme } from '@/contexts/ThemeContext'
 import { useChartTags } from '@/hooks/useChartTags'
 import { useChartZoomPan } from '@/hooks/useChartZoomPan'
+import { useVolumeSummary } from '@/hooks/useVolumeSummary'
 import {
   getSignalColorByType,
   getSignalLabel,
@@ -406,7 +407,12 @@ export default function Reports() {
   const paramSensorId = sensorIdParam ? Number(sensorIdParam) : null
   const validTimeRanges = new Set(['1m', '5m', '15m', '1h', '6h', '12h', '24h', 'all'])
   const paramTimeRange = timeWindowParam && validTimeRanges.has(timeWindowParam) ? timeWindowParam as TimeRange : undefined
-  const showRawData = location.pathname.endsWith('/raw')
+  /** Raw is default; chart-only uses an explicit `/flow` suffix. Legacy `/sensorId/time` (no suffix) counts as raw. */
+  const showRawData =
+    location.pathname.endsWith('/raw') ||
+    (!location.pathname.endsWith('/flow') &&
+      (location.pathname === '/dashboard' ||
+        location.pathname.startsWith('/dashboard/reports')))
 
   const {
     sensors,
@@ -430,6 +436,7 @@ export default function Reports() {
     sensorMappings,
     updateMapping,
     customWindow,
+    magSensorIdsForQuery,
     handleSensorChange,
     handleTimeRangeChange,
     handleCustomRange,
@@ -440,8 +447,10 @@ export default function Reports() {
 
   const buildPath = useCallback((sensorId: number | string, range?: string, raw?: boolean) => {
     let path = `/dashboard/reports/${sensorId}`
-    if (range && range !== 'custom') path += `/${range}`
-    if (raw) path += '/raw'
+    if (range && range !== 'custom') {
+      path += `/${range}`
+      path += raw === false ? '/flow' : '/raw'
+    }
     return path
   }, [])
 
@@ -457,7 +466,7 @@ export default function Reports() {
   useEffect(() => {
     if (paramSensorId === null && sensors.length > 0) {
       const defaultId = sensors[sensors.length - 1]!.id
-      navigate(buildPath(defaultId, timeRange), { replace: true })
+      navigate(buildPath(defaultId, timeRange, true), { replace: true })
     }
   }, [paramSensorId, sensors, navigate, buildPath, timeRange])
 
@@ -465,6 +474,11 @@ export default function Reports() {
     if (selectedSensorId == null) return null
     return sensors.find((s) => s.id === selectedSensorId)?.building_id ?? null
   }, [sensors, selectedSensorId])
+
+  const { buckets: volumeBuckets } = useVolumeSummary(
+    magSensorIdsForQuery,
+    sensorMultiplier,
+  )
 
   /** Latest flow from report table (subscription + fetch), for the selected sensor — L/h */
   const liveSensorFlowLph = useMemo(() => {
@@ -778,22 +792,26 @@ export default function Reports() {
     [magXBaseMin, magXBaseMax],
   )
 
+  const magDeferZoomOpts = useMemo(() => ({ deferZoom: true }), [])
   const {
     chartWrapperRef: magRawChartWrapperRef,
     domain: magRawDomain,
     isZoomed: magRawIsZoomed,
     refAreaLeft: magRefAreaLeft,
     refAreaRight: magRefAreaRight,
+    pendingSelection: magPendingSelection,
     onChartMouseDown: onMagRawMouseDown,
     onChartMouseMove: onMagRawMouseMove,
     onChartMouseUp: onMagRawMouseUp,
     cancelSelection: cancelMagRawSelection,
+    clearSelection: clearMagRawSelection,
+    commitZoom: commitMagRawZoom,
     panLeft: magRawPanLeft,
     panRight: magRawPanRight,
     zoomIn: magRawZoomIn,
     zoomOut: magRawZoomOut,
     resetZoom: resetMagRawZoom,
-  } = useChartZoomPan(magXDataMin, magXDataMax, magXBaseMin, magXBaseMax)
+  } = useChartZoomPan(magXDataMin, magXDataMax, magXBaseMin, magXBaseMax, undefined, magDeferZoomOpts)
 
   useEffect(() => {
     resetMagRawZoom()
@@ -825,15 +843,6 @@ export default function Reports() {
     )
   }, [magRawDomain, magLayerBaseData, timeline])
 
-  /** Sliding-window size for peak detection: real ms from mag zoom when raw is open, else main chart span. */
-  const flowPeakDetectionRangeMs = useMemo(() => {
-    const fallback = RANGE_MS[timeRange] || 60_000
-    if (showRawData && magChartDataFull.length >= 2) {
-      return Math.max(magRawRealRangeMs, 10_000)
-    }
-    return Math.max(realVisibleRange > 0 ? realVisibleRange : fallback, 10_000)
-  }, [showRawData, magRawRealRangeMs, realVisibleRange, timeRange, magChartDataFull.length])
-
   const magZoomTimeBounds = useMemo(() => {
     const [left, right] = magRawDomain
     if (timeline.points.length > 0) {
@@ -847,9 +856,18 @@ export default function Reports() {
       computeFlowFromPeaks(
         magChartDataFull,
         sensorMultiplier ?? 0,
-        flowPeakDetectionRangeMs,
       ),
-    [magChartDataFull, sensorMultiplier, flowPeakDetectionRangeMs],
+    [magChartDataFull, sensorMultiplier],
+  )
+
+  const flowPeakTimestamps = useMemo(
+    () => getFlowPeakTimestamps(magChartDataFull),
+    [magChartDataFull],
+  )
+
+  const currentLitresPerCycle = useMemo(
+    () => litresPerCycleFromMultiplier(sensorMultiplier ?? 0),
+    [sensorMultiplier],
   )
 
   const bucketedFlowData = useMemo(
@@ -859,6 +877,8 @@ export default function Reports() {
         : computeBucketedFlow(
             magChartDataFull,
             magFlowChartData,
+            flowPeakTimestamps,
+            currentLitresPerCycle,
             bucketMs,
             chartWindowStart,
             numFlowBuckets,
@@ -866,6 +886,8 @@ export default function Reports() {
     [
       magChartDataFull,
       magFlowChartData,
+      flowPeakTimestamps,
+      currentLitresPerCycle,
       bucketMs,
       chartWindowStart,
       numFlowBuckets,
@@ -878,7 +900,6 @@ export default function Reports() {
       computePeakFlow(
         magChartDataFull,
         sensorMultiplier ?? 0,
-        flowPeakDetectionRangeMs,
         Math.max(bucketMs / 2, 5000),
         chartWindowStart,
         chartWindowEnd,
@@ -886,7 +907,6 @@ export default function Reports() {
     [
       magChartDataFull,
       sensorMultiplier,
-      flowPeakDetectionRangeMs,
       bucketMs,
       chartWindowStart,
       chartWindowEnd,
@@ -918,23 +938,43 @@ export default function Reports() {
   )
 
   const magVolumeFromCycles = useMemo(() => {
-    const m = sensorMultiplier ?? 0
-    if (m <= 0 || magChartDataFull.length < 5) return null
-    const litresPerCycle = litresPerCycleFromMultiplier(m)
-    const peaks = getFlowPeakTimestamps(magChartDataFull, flowPeakDetectionRangeMs)
+    if (currentLitresPerCycle <= 0 || flowPeakTimestamps.length < 2) return null
     const { start, end } = magZoomTimeBounds
     const { fullCycles, volumeL } = volumeFromFullCyclesInWindow(
-      peaks,
+      flowPeakTimestamps,
       start,
       end,
-      litresPerCycle,
+      currentLitresPerCycle,
     )
-    return { litresPerCycle, fullCycles, volumeL, peakCount: peaks.length }
+    return { litresPerCycle: currentLitresPerCycle, fullCycles, volumeL, peakCount: flowPeakTimestamps.length }
   }, [
-    sensorMultiplier,
-    magChartDataFull,
-    flowPeakDetectionRangeMs,
+    currentLitresPerCycle,
+    flowPeakTimestamps,
     magZoomTimeBounds,
+  ])
+
+  const magSelectionVolume = useMemo(() => {
+    if (!magPendingSelection) return null
+    if (currentLitresPerCycle <= 0 || flowPeakTimestamps.length < 2) return null
+    const realLeft = timeline.points.length > 0
+      ? timeline.toReal(magPendingSelection.left)
+      : magPendingSelection.left
+    const realRight = timeline.points.length > 0
+      ? timeline.toReal(magPendingSelection.right)
+      : magPendingSelection.right
+    const { fullCycles, volumeL } = volumeFromFullCyclesInWindow(
+      flowPeakTimestamps,
+      Math.min(realLeft, realRight),
+      Math.max(realLeft, realRight),
+      currentLitresPerCycle,
+    )
+    const durationMs = Math.abs(realRight - realLeft)
+    return { fullCycles, volumeL, litresPerCycle: currentLitresPerCycle, durationMs }
+  }, [
+    magPendingSelection,
+    currentLitresPerCycle,
+    flowPeakTimestamps,
+    timeline,
   ])
 
   const onMagRawMouseLeave = useCallback(() => {
@@ -1268,6 +1308,24 @@ export default function Reports() {
             <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
               Latest sample for this sensor
             </p>
+          </div>
+        )}
+        {volumeBuckets.some((b) => b.volumeL > 0) && (
+          <div className="min-w-0 flex-[2] rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              Volume Used
+            </p>
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              {volumeBuckets.map((b) => (
+                <div key={b.label} className="min-w-[70px]">
+                  <p className="text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                    {b.volumeL < 1 ? b.volumeL.toFixed(3) : b.volumeL < 100 ? b.volumeL.toFixed(1) : Math.round(b.volumeL)}{' '}
+                    <span className="text-xs font-normal text-gray-400">L</span>
+                  </p>
+                  <p className="text-[11px] text-gray-500 dark:text-gray-400">{b.label}</p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -1628,7 +1686,7 @@ export default function Reports() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={bucketedFlowData}
-                  margin={{ top: 5, right: 12, left: 8, bottom: 14 }}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 14 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
                   <XAxis
@@ -1647,7 +1705,7 @@ export default function Reports() {
                   />
                   <YAxis
                     yAxisId="left"
-                    width={55}
+                    width={50}
                     domain={[-1, (dataMax: number) => Math.max(dataMax * 1.1, 100)]}
                     allowDataOverflow
                     tickFormatter={(v: number) => v < 0 ? '' : String(v)}
@@ -1744,7 +1802,7 @@ export default function Reports() {
                     axisLine={{ stroke: colors.grid }}
                   />
                   <YAxis
-                    width={55}
+                    width={50}
                     domain={[-1, (dataMax: number) => Math.max(dataMax * 1.1, 100)]}
                     allowDataOverflow
                     tickFormatter={(v: number) => v < 0 ? '' : String(Math.round(v))}
@@ -2001,9 +2059,51 @@ export default function Reports() {
                 </button>
               )}
               <span className="hidden text-xs text-gray-400 dark:text-gray-500 sm:inline">
-                Drag to zoom · Scroll to zoom · Swipe to pan
+                Drag to select · Scroll to zoom · Swipe to pan
               </span>
             </div>
+            {magPendingSelection && (
+              <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50/80 px-4 py-2.5 dark:border-emerald-800 dark:bg-emerald-900/20">
+                {magSelectionVolume ? (
+                  <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                    <span className="text-sm font-semibold tabular-nums text-emerald-700 dark:text-emerald-300">
+                      {magSelectionVolume.volumeL.toFixed(3)} L
+                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {magSelectionVolume.fullCycles} cycle{magSelectionVolume.fullCycles !== 1 ? 's' : ''}
+                      <span className="mx-1">·</span>
+                      {magSelectionVolume.litresPerCycle.toFixed(4)} L/cycle
+                    </span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                      {magSelectionVolume.durationMs < 60_000
+                        ? `${(magSelectionVolume.durationMs / 1000).toFixed(1)}s`
+                        : `${(magSelectionVolume.durationMs / 60_000).toFixed(1)}m`}
+                      {' '}selected
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    No calibration — cannot compute volume
+                  </span>
+                )}
+                <div className="ml-auto flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={commitMagRawZoom}
+                    className="rounded-md border border-emerald-300 bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700 transition-colors hover:bg-emerald-200 dark:border-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-900/60"
+                  >
+                    Zoom in
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearMagRawSelection}
+                    className="rounded-md px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            )}
             {magDisplayData.length === 0 && magRawIsZoomed && (
               <p className="mb-3 text-center text-xs text-amber-600 dark:text-amber-400">
                 No samples in this zoom range — reset zoom or drag a wider selection.
@@ -2082,6 +2182,16 @@ export default function Reports() {
                         fillOpacity={0.15}
                       />
                     )}
+                  {magPendingSelection && (
+                    <ReferenceArea
+                      x1={magPendingSelection.left}
+                      x2={magPendingSelection.right}
+                      strokeOpacity={0.4}
+                      stroke="#10b981"
+                      fill="#10b981"
+                      fillOpacity={0.12}
+                    />
+                  )}
                   <Line
                     type="monotone"
                     dataKey="total"
@@ -2169,6 +2279,16 @@ export default function Reports() {
                         fillOpacity={0.15}
                       />
                     )}
+                  {magPendingSelection && (
+                    <ReferenceArea
+                      x1={magPendingSelection.left}
+                      x2={magPendingSelection.right}
+                      strokeOpacity={0.4}
+                      stroke="#10b981"
+                      fill="#10b981"
+                      fillOpacity={0.12}
+                    />
+                  )}
                   <Line
                     type="monotone"
                     dataKey="x"
@@ -2256,6 +2376,16 @@ export default function Reports() {
                         fillOpacity={0.15}
                       />
                     )}
+                  {magPendingSelection && (
+                    <ReferenceArea
+                      x1={magPendingSelection.left}
+                      x2={magPendingSelection.right}
+                      strokeOpacity={0.4}
+                      stroke="#10b981"
+                      fill="#10b981"
+                      fillOpacity={0.12}
+                    />
+                  )}
                   <Line
                     type="monotone"
                     dataKey="y"
@@ -2343,6 +2473,16 @@ export default function Reports() {
                         fillOpacity={0.15}
                       />
                     )}
+                  {magPendingSelection && (
+                    <ReferenceArea
+                      x1={magPendingSelection.left}
+                      x2={magPendingSelection.right}
+                      strokeOpacity={0.4}
+                      stroke="#10b981"
+                      fill="#10b981"
+                      fillOpacity={0.12}
+                    />
+                  )}
                   <Line
                     type="monotone"
                     dataKey="z"
@@ -2429,6 +2569,16 @@ export default function Reports() {
                         fillOpacity={0.15}
                       />
                     )}
+                  {magPendingSelection && (
+                    <ReferenceArea
+                      x1={magPendingSelection.left}
+                      x2={magPendingSelection.right}
+                      strokeOpacity={0.4}
+                      stroke="#10b981"
+                      fill="#10b981"
+                      fillOpacity={0.12}
+                    />
+                  )}
                   <Line
                     type="monotone"
                     dataKey="activity"
@@ -2517,6 +2667,16 @@ export default function Reports() {
                         fillOpacity={0.15}
                       />
                     )}
+                  {magPendingSelection && (
+                    <ReferenceArea
+                      x1={magPendingSelection.left}
+                      x2={magPendingSelection.right}
+                      strokeOpacity={0.4}
+                      stroke="#10b981"
+                      fill="#10b981"
+                      fillOpacity={0.12}
+                    />
+                  )}
                   <Line
                     type="monotone"
                     dataKey="bandEnergy10s"
@@ -2632,6 +2792,16 @@ export default function Reports() {
                         fillOpacity={0.15}
                       />
                     )}
+                  {magPendingSelection && (
+                    <ReferenceArea
+                      x1={magPendingSelection.left}
+                      x2={magPendingSelection.right}
+                      strokeOpacity={0.4}
+                      stroke="#10b981"
+                      fill="#10b981"
+                      fillOpacity={0.12}
+                    />
+                  )}
                   <Line
                     type="monotone"
                     dataKey="x"

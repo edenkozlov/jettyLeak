@@ -22,19 +22,50 @@ function clampDomain(
   return { left: Math.max(l, dMin), right: Math.min(r, dMax) }
 }
 
+export interface PendingSelection {
+  left: number
+  right: number
+}
+
+export interface UseChartZoomPanOptions {
+  /** When true, releasing the mouse shows a pending selection instead of zooming immediately. */
+  deferZoom?: boolean
+}
+
 export function useChartZoomPan(
   dataMin: number,
   dataMax: number,
   homeMin: number,
   homeMax: number,
   onClickTimestamp?: (timestamp: number) => void,
+  options?: UseChartZoomPanOptions,
 ) {
+  const deferZoom = options?.deferZoom ?? false
+  const deferZoomRef = useRef(deferZoom)
+  deferZoomRef.current = deferZoom
+
   const [zoomDomain, setZoomDomain] = useState<{
     left: number
     right: number
   } | null>(null)
-  const [refAreaLeft, setRefAreaLeft] = useState<number | null>(null)
-  const [refAreaRight, setRefAreaRight] = useState<number | null>(null)
+
+  const [pendingSelection, setPendingSelection] =
+    useState<PendingSelection | null>(null)
+
+  // Drag overlay via refs + rAF throttle
+  const refAreaLeftRef = useRef<number | null>(null)
+  const refAreaRightRef = useRef<number | null>(null)
+  const [selectionVersion, setSelectionVersion] = useState(0)
+  const rafIdRef = useRef<number | null>(null)
+
+  const scheduleSelectionRender = useCallback(() => {
+    if (rafIdRef.current != null) return
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = null
+      setSelectionVersion((v) => v + 1)
+    })
+  }, [])
+
   const chartWrapperRef = useRef<HTMLDivElement>(null)
 
   const zoomRef = useRef(zoomDomain)
@@ -56,20 +87,28 @@ export function useChartZoomPan(
   const visibleRangeMs = currentRight - currentLeft
   const isZoomed = zoomDomain !== null
 
+  const refAreaLeft = refAreaLeftRef.current
+  const refAreaRight = refAreaRightRef.current
+
   const resetZoom = useCallback(() => {
     setZoomDomain(null)
-    setRefAreaLeft(null)
-    setRefAreaRight(null)
+    setPendingSelection(null)
+    refAreaLeftRef.current = null
+    refAreaRightRef.current = null
   }, [])
 
-  // --- Drag-to-zoom ---
+  // --- Drag-to-zoom (ref-based, no re-render on move) ---
+
+  const isDraggingRef = useRef(false)
 
   const onChartMouseDown = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (e: any) => {
       if (e?.activeLabel != null) {
-        setRefAreaLeft(Number(e.activeLabel))
-        setRefAreaRight(null)
+        isDraggingRef.current = true
+        refAreaLeftRef.current = Number(e.activeLabel)
+        refAreaRightRef.current = null
+        setPendingSelection(null)
       }
     },
     [],
@@ -78,48 +117,93 @@ export function useChartZoomPan(
   const onChartMouseMove = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (e: any) => {
-      if (refAreaLeft !== null && e?.activeLabel != null) {
-        setRefAreaRight(Number(e.activeLabel))
+      if (!isDraggingRef.current) return
+      if (refAreaLeftRef.current !== null && e?.activeLabel != null) {
+        refAreaRightRef.current = Number(e.activeLabel)
+        scheduleSelectionRender()
       }
     },
-    [refAreaLeft],
+    [scheduleSelectionRender],
   )
 
   const onChartMouseUp = useCallback(() => {
-    if (refAreaLeft !== null && refAreaRight === null) {
-      onClickRef.current?.(refAreaLeft)
-      setRefAreaLeft(null)
+    isDraggingRef.current = false
+    if (rafIdRef.current != null) {
+      cancelAnimationFrame(rafIdRef.current)
+      rafIdRef.current = null
+    }
+
+    const left = refAreaLeftRef.current
+    const right = refAreaRightRef.current
+
+    if (left !== null && right === null) {
+      onClickRef.current?.(left)
+      refAreaLeftRef.current = null
+      setSelectionVersion((v) => v + 1)
       return
     }
 
-    if (refAreaLeft === null || refAreaRight === null) {
-      setRefAreaLeft(null)
-      setRefAreaRight(null)
+    if (left === null || right === null) {
+      refAreaLeftRef.current = null
+      refAreaRightRef.current = null
+      setSelectionVersion((v) => v + 1)
       return
     }
 
-    const left = Math.min(refAreaLeft, refAreaRight)
-    const right = Math.max(refAreaLeft, refAreaRight)
-    const totalRange = dataMax - dataMin
+    const lo = Math.min(left, right)
+    const hi = Math.max(left, right)
+    const totalRange = maxRef.current - minRef.current
 
-    if (totalRange > 0 && right - left < totalRange * 0.005) {
-      onClickRef.current?.((refAreaLeft + refAreaRight) / 2)
-      setRefAreaLeft(null)
-      setRefAreaRight(null)
+    if (totalRange > 0 && hi - lo < totalRange * 0.005) {
+      onClickRef.current?.((left + right) / 2)
+      refAreaLeftRef.current = null
+      refAreaRightRef.current = null
+      setSelectionVersion((v) => v + 1)
       return
     }
 
-    setZoomDomain(clampDomain(left, right, dataMin, dataMax))
-    setRefAreaLeft(null)
-    setRefAreaRight(null)
-  }, [refAreaLeft, refAreaRight, dataMin, dataMax])
+    if (deferZoomRef.current) {
+      // Keep the highlight visible and expose the selection for the parent to act on
+      setPendingSelection({ left: lo, right: hi })
+      setSelectionVersion((v) => v + 1)
+    } else {
+      refAreaLeftRef.current = null
+      refAreaRightRef.current = null
+      setZoomDomain(clampDomain(lo, hi, minRef.current, maxRef.current))
+      setSelectionVersion((v) => v + 1)
+    }
+  }, [])
+
+  /** Commit a pending (deferred) selection as a zoom. */
+  const commitZoom = useCallback(() => {
+    if (!pendingSelection) return
+    const { left, right } = pendingSelection
+    refAreaLeftRef.current = null
+    refAreaRightRef.current = null
+    setPendingSelection(null)
+    setZoomDomain(clampDomain(left, right, minRef.current, maxRef.current))
+    setSelectionVersion((v) => v + 1)
+  }, [pendingSelection])
+
+  /** Dismiss a pending selection without zooming. */
+  const clearSelection = useCallback(() => {
+    refAreaLeftRef.current = null
+    refAreaRightRef.current = null
+    setPendingSelection(null)
+    setSelectionVersion((v) => v + 1)
+  }, [])
 
   const cancelSelection = useCallback(() => {
-    if (refAreaLeft !== null) {
-      setRefAreaLeft(null)
-      setRefAreaRight(null)
+    isDraggingRef.current = false
+    refAreaLeftRef.current = null
+    refAreaRightRef.current = null
+    setPendingSelection(null)
+    if (rafIdRef.current != null) {
+      cancelAnimationFrame(rafIdRef.current)
+      rafIdRef.current = null
     }
-  }, [refAreaLeft])
+    setSelectionVersion((v) => v + 1)
+  }, [])
 
   // --- Wheel: vertical scroll / pinch = zoom, horizontal swipe = pan ---
 
@@ -220,6 +304,9 @@ export function useChartZoomPan(
     )
   }, [zoomDomain, homeMin, homeMax, dataMin, dataMax])
 
+  // Force reads of selectionVersion so React knows about ref updates
+  void selectionVersion
+
   return {
     chartWrapperRef,
     domain,
@@ -227,10 +314,13 @@ export function useChartZoomPan(
     isZoomed,
     refAreaLeft,
     refAreaRight,
+    pendingSelection,
     onChartMouseDown,
     onChartMouseMove,
     onChartMouseUp,
     cancelSelection,
+    clearSelection,
+    commitZoom,
     panLeft,
     panRight,
     zoomIn,

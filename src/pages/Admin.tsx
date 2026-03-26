@@ -174,8 +174,7 @@ function SegmentPanel({
 
   const flowData = useMemo<FlowPoint[]>(() => {
     if (!detail.sensorMultiplier || detail.sensorMultiplier <= 0 || chartData.length < 5) return []
-    const durationMs = chartData[chartData.length - 1]!.timestamp - chartData[0]!.timestamp
-    return computeFlowFromPeaks(chartData, detail.sensorMultiplier, durationMs || 60_000)
+    return computeFlowFromPeaks(chartData, detail.sensorMultiplier)
   }, [chartData, detail.sensorMultiplier])
 
   const flowStats = useMemo(() => {

@@ -6,6 +6,7 @@ import { GET_MAG_REPORTS } from '@/queries/getMagReports'
 import { GET_SENSORS_BY_BUILDING_ID } from '@/queries/getSensorsByBuildingId'
 import { computeFlowFromPeaks, type MagDataPoint } from '@/utils/flowComputation'
 import { graphqlFetch, GraphqlError } from '@/utils/graphqlFetch'
+import { logger } from '@/utils/logger/logger'
 import type { MagReport, Sensor } from '@/types'
 
 export type FlowStatus =
@@ -52,9 +53,16 @@ export function useLiveFlow(
 
   const pollFlow = useCallback(async (): Promise<boolean> => {
     const info = sensorInfoRef.current
-    if (!info) return false
+    if (!info) {
+      logger.info('LIVE_FLOW', 'pollFlow skipped (no sensor info)', {})
+      return false
+    }
 
     const now = Date.now()
+    logger.info('LIVE_FLOW', 'pollFlow fetch', {
+      magIds: info.magIds,
+      lookbackMs: LOOKBACK_MS,
+    })
     const result = await graphqlFetch<{ mag_report: MagReport[] }>(
       GET_MAG_REPORTS,
       {
@@ -66,6 +74,7 @@ export function useLiveFlow(
     )
 
     const reports = result?.mag_report ?? []
+    logger.info('LIVE_FLOW', 'pollFlow rows', { count: reports.length })
     if (reports.length < 5) {
       setFlowRate(0)
       setStatus('idle')
@@ -88,15 +97,18 @@ export function useLiveFlow(
         bandEnergy60s: r.band_energy_60s,
       }))
 
-    const flowPoints = computeFlowFromPeaks(magData, info.multiplier, LOOKBACK_MS)
+    const flowPoints = computeFlowFromPeaks(magData, info.multiplier)
 
     if (flowPoints.length === 0) {
       setFlowRate(0)
       setStatus('idle')
+      logger.info('LIVE_FLOW', 'status → idle (no flow points)', {})
     } else {
       const lastRate = flowPoints[flowPoints.length - 1]!.flowRateLph
       setFlowRate(Math.round(lastRate * 10) / 10)
-      setStatus(lastRate > 0 ? 'flowing' : 'idle')
+      const next = lastRate > 0 ? 'flowing' : 'idle'
+      setStatus(next)
+      logger.info('LIVE_FLOW', `status → ${next}`, { lastRateLph: lastRate })
     }
     const ts = Date.now()
     setLastUpdated(ts)
@@ -147,12 +159,18 @@ export function useLiveFlow(
 
   useEffect(() => {
     if (buildingId == null) {
+      logger.info('LIVE_FLOW', 'effect: no buildingId → no-sensor', {})
       setStatus('no-sensor')
       setFlowRate(null)
       setLastUpdated(null)
       sensorInfoRef.current = null
       return
     }
+
+    logger.info('LIVE_FLOW', 'effect start', {
+      buildingId,
+      hasToken: Boolean(token),
+    })
 
     let cancelled = false
     let timeoutId: ReturnType<typeof setTimeout> | null = null
@@ -176,6 +194,7 @@ export function useLiveFlow(
       if (cancelled) return
 
       if (document.hidden) {
+        logger.info('LIVE_FLOW', 'tick: tab hidden, skip', {})
         scheduleNext()
         return
       }
@@ -184,27 +203,44 @@ export function useLiveFlow(
         let retries = 0
         while (!cancelled && retries < MAX_INIT_RETRIES) {
           try {
+            logger.info('LIVE_FLOW', 'initSensors attempt', {
+              buildingId,
+              attempt: retries + 1,
+              max: MAX_INIT_RETRIES,
+            })
             const result = await initSensors(buildingId)
             if (cancelled) return
             if (result === 'no-sensor') {
+              logger.info('LIVE_FLOW', 'init → no-sensor', {})
               setStatus('no-sensor')
               return
             }
             if (result === 'needs-cal') {
+              logger.info('LIVE_FLOW', 'init → needs-cal', {})
               setStatus('needs-cal')
               return
             }
             sensorInfoRef.current = result
+            logger.info('LIVE_FLOW', 'init ok', {
+              magIds: result.magIds,
+              multiplier: result.multiplier,
+            })
             break
           } catch (err) {
             retries++
+            const msg = err instanceof Error ? err.message : String(err)
+            const isTransient =
+              err instanceof GraphqlError ? err.transient : true
+            logger.warn('LIVE_FLOW', 'initSensors error', {
+              retries,
+              msg,
+              isTransient,
+            })
             if (retries >= MAX_INIT_RETRIES) {
               if (!cancelled) setStatus('error')
               scheduleNext()
               return
             }
-            const isTransient =
-              err instanceof GraphqlError ? err.transient : true
             if (!isTransient) {
               if (!cancelled) setStatus('error')
               scheduleNext()
@@ -214,6 +250,14 @@ export function useLiveFlow(
               setTimeout(r, Math.min(2000 * 2 ** retries, 10_000)),
             )
           }
+        }
+        if (!cancelled && !sensorInfoRef.current) {
+          logger.warn('LIVE_FLOW', 'init finished without sensorInfo (unexpected)', {
+            buildingId,
+          })
+          setStatus('error')
+          scheduleNext()
+          return
         }
       }
 
@@ -228,13 +272,28 @@ export function useLiveFlow(
         consecutiveErrorsRef.current++
         const isTransient =
           err instanceof GraphqlError ? err.transient : true
-        if (consecutiveErrorsRef.current >= 3 && !isTransient) {
-          setStatus('error')
+        const msg = err instanceof Error ? err.message : String(err)
+        logger.warn('LIVE_FLOW', 'pollFlow failed', {
+          consecutive: consecutiveErrorsRef.current,
+          msg,
+          isTransient,
+        })
+        // Non-transient: surface error quickly. Transient: still must leave
+        // "loading" after a few failures or the UI spins forever (521, etc.).
+        if (consecutiveErrorsRef.current >= 3) {
+          if (!isTransient) {
+            setStatus('error')
+            logger.info('LIVE_FLOW', 'status → error (poll failures)', {})
+          } else {
+            setStatus('stale')
+            logger.info('LIVE_FLOW', 'status → stale (transient poll failures)', {})
+          }
         } else if (
           lastUpdatedRef.current != null &&
           Date.now() - lastUpdatedRef.current > STALE_THRESHOLD_MS
         ) {
           setStatus('stale')
+          logger.info('LIVE_FLOW', 'status → stale (old lastUpdated)', {})
         }
       }
 

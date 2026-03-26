@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useDeferredValue, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import {
   CartesianGrid,
@@ -180,6 +180,10 @@ export default function MagReports() {
     handleDeleteRangeLabel,
   } = useMagReportsPage(paramBuildingId)
 
+  // Defer chartData so expensive downstream computations (FFT, cycle counts)
+  // don't block rendering when new data arrives.
+  const deferredChartData = useDeferredValue(chartData)
+
   const periodLabel = useMemo(() => {
     if (periodOffset === 0 || timeRange === 'all' || timeRange === 'custom') return null
     const rangeMs = RANGE_MS[timeRange]
@@ -229,18 +233,18 @@ export default function MagReports() {
   }, [chartData])
 
   const waveFreqData = useMemo(() => {
-    const samples = chartData
+    const samples = deferredChartData
       .filter((p) => p.x != null)
       .map((p) => ({ timestamp: p.timestamp, value: p.x! }))
     if (samples.length < 3) return []
     return computeWaveFrequency(samples, 5000)
-  }, [chartData])
+  }, [deferredChartData])
 
   const multiAxisSamples = useMemo<MultiAxisSample[]>(() => {
-    return chartData
+    return deferredChartData
       .filter((p) => p.x != null && p.y != null && p.z != null)
       .map((p) => ({ timestamp: p.timestamp, values: [p.x!, p.y!, p.z!] }))
-  }, [chartData])
+  }, [deferredChartData])
 
   const fftChartData = useMemo(() => {
     if (multiAxisSamples.length < 8) return []
@@ -266,10 +270,9 @@ export default function MagReports() {
     }))
   }, [multiAxisSamples])
 
-  // --- Flow rate & accumulated consumption ---
   const flowChartData = useMemo(
-    () => computeFlowFromPeaks(chartData, sensorMultiplier ?? 0, visibleRangeMs || 60_000),
-    [chartData, sensorMultiplier, visibleRangeMs],
+    () => computeFlowFromPeaks(deferredChartData, sensorMultiplier ?? 0),
+    [deferredChartData, sensorMultiplier],
   )
 
   // --- Cycle counter state ---
@@ -287,13 +290,13 @@ export default function MagReports() {
 
   const cycleResult = useMemo<CycleDetectionResult | null>(() => {
     if (!cycleSelection) return null
-    const rangeData = chartData
+    const rangeData = deferredChartData
       .filter((p) => p.timestamp >= cycleSelection.startTs && p.timestamp <= cycleSelection.endTs)
       .filter((p) => p[cycleSelection.axis] != null)
       .map((p) => ({ timestamp: p.timestamp, value: p[cycleSelection.axis]! }))
     if (rangeData.length < 5) return null
     return detectCycles(rangeData, cycleOptions)
-  }, [chartData, cycleSelection, cycleOptions])
+  }, [deferredChartData, cycleSelection, cycleOptions])
 
   const [showAutoWindow, setShowAutoWindow] = useState<AxisKey | null>(null)
 
@@ -303,13 +306,13 @@ export default function MagReports() {
     const axes: AxisKey[] = ['total', 'x', 'y', 'z']
     const results: Record<AxisKey, AutoCycleCountResult | null> = { total: null, x: null, y: null, z: null }
     for (const axis of axes) {
-      const pts = chartData
+      const pts = deferredChartData
         .filter((p) => p[axis] != null)
         .map((p) => ({ timestamp: p.timestamp, value: p[axis]! }))
       results[axis] = autoCycleCount(pts, { windowMs: autoWindowMs })
     }
     return results
-  }, [chartData, autoWindowMs])
+  }, [deferredChartData, autoWindowMs])
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const makeSelMouseDown = useCallback((axis: AxisKey) => (e: any) => {

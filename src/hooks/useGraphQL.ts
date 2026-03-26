@@ -24,10 +24,20 @@ export function useGraphQL<T = Record<string, unknown>>(
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const requestIdRef = useRef(0)
+  const inFlightRef = useRef(0)
 
   const executeQuery = useCallback(
     async (variables?: Record<string, unknown>): Promise<T | null> => {
       const thisRequestId = ++requestIdRef.current
+      inFlightRef.current += 1
+      const queryPreview = query.replace(/\s+/g, ' ').slice(0, 56)
+      logger.info('GRAPHQL', 'request start', {
+        id: thisRequestId,
+        inFlight: inFlightRef.current,
+        endpoint: GRAPHQL_ENDPOINT,
+        queryPreview,
+        hasToken: Boolean(token),
+      })
       setLoading(true)
       setError(null)
 
@@ -58,6 +68,11 @@ export function useGraphQL<T = Record<string, unknown>>(
 
         // Ignore stale responses — only accept the most recent request
         if (thisRequestId !== requestIdRef.current) {
+          logger.info('GRAPHQL', 'stale response ignored', {
+            id: thisRequestId,
+            latestId: requestIdRef.current,
+            queryPreview,
+          })
           return json.data ?? null
         }
 
@@ -69,7 +84,10 @@ export function useGraphQL<T = Record<string, unknown>>(
         }
 
         const result = json.data ?? null
-        console.log('[useGraphQL] setData', { query: query.slice(0, 50), thisRequestId, keys: result ? Object.keys(result) : null, reportCount: (result as Record<string, unknown[]> | null)?.report?.length })
+        logger.info('GRAPHQL', 'request ok', {
+          id: thisRequestId,
+          keys: result && typeof result === 'object' ? Object.keys(result as object) : null,
+        })
         setData(result)
         return result
       } catch (err) {
@@ -79,7 +97,13 @@ export function useGraphQL<T = Record<string, unknown>>(
         setError(message)
         return null
       } finally {
-        if (thisRequestId === requestIdRef.current) {
+        inFlightRef.current = Math.max(0, inFlightRef.current - 1)
+        logger.info('GRAPHQL', 'request finally', {
+          id: thisRequestId,
+          inFlight: inFlightRef.current,
+          clearsLoading: inFlightRef.current === 0,
+        })
+        if (inFlightRef.current === 0) {
           setLoading(false)
         }
       }

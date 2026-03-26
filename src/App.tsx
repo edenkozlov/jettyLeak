@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router'
 
 import { Provider } from 'react-redux'
@@ -7,25 +7,26 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 import AuthLayout from '@/layouts/AuthLayout'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import AdminRoute from '@/routes/AdminRoute'
-import BuildingDetail from '@/pages/BuildingDetail'
-import Buildings from '@/pages/Buildings'
-import Clients from '@/pages/Clients'
-import Home from '@/pages/Home'
-import CaseStudy from '@/pages/CaseStudy'
-import Demo from '@/pages/Demo'
-import Landing from '@/pages/Landing'
-import Login from '@/pages/Login'
-import Support from '@/pages/Support'
-import Privacy from '@/pages/Privacy'
-import Terms from '@/pages/Terms'
-import MagReports from '@/pages/MagReports'
-import Reports from '@/pages/Reports'
-import Sensors from '@/pages/Sensors'
-import Admin from '@/pages/Admin'
-import Settings from '@/pages/Settings'
 import { store } from '@/redux/store'
 import { restoreSession } from '@/hooks/auth/useAuth'
 import { useAppDispatch } from '@/hooks/useAppSelector'
+
+const BuildingDetail = lazy(() => import('@/pages/BuildingDetail'))
+const Buildings = lazy(() => import('@/pages/Buildings'))
+const Clients = lazy(() => import('@/pages/Clients'))
+const Home = lazy(() => import('@/pages/Home'))
+const CaseStudy = lazy(() => import('@/pages/CaseStudy'))
+const Demo = lazy(() => import('@/pages/Demo'))
+const Landing = lazy(() => import('@/pages/Landing'))
+const Login = lazy(() => import('@/pages/Login'))
+const Support = lazy(() => import('@/pages/Support'))
+const Privacy = lazy(() => import('@/pages/Privacy'))
+const Terms = lazy(() => import('@/pages/Terms'))
+const MagReports = lazy(() => import('@/pages/MagReports'))
+const Reports = lazy(() => import('@/pages/Reports'))
+const Sensors = lazy(() => import('@/pages/Sensors'))
+const Admin = lazy(() => import('@/pages/Admin'))
+const Settings = lazy(() => import('@/pages/Settings'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -51,6 +52,7 @@ function AppRoutes() {
     <BrowserRouter>
       <ScrollToTop />
       <SessionRestorer>
+        <Suspense fallback={<div className="flex h-screen items-center justify-center text-gray-500">Loading…</div>}>
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/case-study" element={<CaseStudy />} />
@@ -66,8 +68,9 @@ function AppRoutes() {
             <Route path="buildings" element={<Buildings />} />
             <Route path="buildings/:id" element={<BuildingDetail />} />
             <Route path="reports/:sensorId?" element={<Reports />} />
-            <Route path="reports/:sensorId/:timeWindow" element={<Reports />} />
             <Route path="reports/:sensorId/:timeWindow/raw" element={<Reports />} />
+            <Route path="reports/:sensorId/:timeWindow/flow" element={<Reports />} />
+            <Route path="reports/:sensorId/:timeWindow" element={<Reports />} />
             <Route path="mag-reports/:buildingId?" element={<MagReports />} />
             <Route path="settings" element={<Settings />} />
             <Route element={<AdminRoute />}>
@@ -78,6 +81,7 @@ function AppRoutes() {
             </Route>
           </Route>
         </Routes>
+        </Suspense>
       </SessionRestorer>
     </BrowserRouter>
   )

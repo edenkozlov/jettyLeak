@@ -1,6 +1,12 @@
 import * as Sentry from '@sentry/react'
 
-type LogSource = 'GRAPHQL' | 'AUTH' | 'NAVIGATION' | 'APP' | 'OVERPASS'
+type LogSource =
+  | 'GRAPHQL'
+  | 'AUTH'
+  | 'NAVIGATION'
+  | 'APP'
+  | 'OVERPASS'
+  | 'LIVE_FLOW'
 
 class Logger {
   info(source: LogSource, message: string, data?: unknown) {
