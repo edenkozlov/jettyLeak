@@ -16,6 +16,11 @@
   --color-indigo-950: #082f49;
 }
 
+/* Skeleton shimmer */
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
 /* Landing page animations */
 @keyframes slide-up {
   from { opacity: 0; transform: translateY(24px); }

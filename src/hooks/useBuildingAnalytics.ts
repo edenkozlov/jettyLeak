@@ -6,6 +6,9 @@ import { GET_MAG_REPORTS } from '@/queries/getMagReports'
 import { GET_SENSORS_BY_BUILDING_ID } from '@/queries/getSensorsByBuildingId'
 import {
   computeFlowFromPeaks,
+  getFlowPeakTimestamps,
+  litresPerCycleFromMultiplier,
+  volumeFromFullCyclesInWindow,
   type FlowPoint,
   type MagDataPoint,
 } from '@/utils/flowComputation'
@@ -58,22 +61,34 @@ function getStartOfMonth(date: Date = new Date()): Date {
   return d
 }
 
-function computeFlowData(
+function computeVolumeForRange(
   allMagData: MagDataPoint[],
   since: number,
   until: number,
   multiplier: number,
-): { litres: number; flowPoints: FlowPoint[] } {
+): number {
   const rangeData = allMagData.filter(
     (d) => d.timestamp >= since && d.timestamp <= until,
   )
-  if (rangeData.length < 5) return { litres: 0, flowPoints: [] }
-  const flowPoints = computeFlowFromPeaks(rangeData, multiplier, until - since)
-  const litres =
-    flowPoints.length > 0
-      ? Math.round(flowPoints[flowPoints.length - 1]!.accumulatedL * 10) / 10
-      : 0
-  return { litres, flowPoints }
+  if (rangeData.length < 5) return 0
+  const peaks = getFlowPeakTimestamps(rangeData)
+  const litresPerCycle = litresPerCycleFromMultiplier(multiplier)
+  return Math.round(
+    volumeFromFullCyclesInWindow(peaks, since, until, litresPerCycle).volumeL * 10,
+  ) / 10
+}
+
+function computeFlowPointsForRange(
+  allMagData: MagDataPoint[],
+  since: number,
+  until: number,
+  multiplier: number,
+): FlowPoint[] {
+  const rangeData = allMagData.filter(
+    (d) => d.timestamp >= since && d.timestamp <= until,
+  )
+  if (rangeData.length < 5) return []
+  return computeFlowFromPeaks(rangeData, multiplier, until - since)
 }
 
 function computeActiveFlow(flowPoints: FlowPoint[]): {
@@ -221,66 +236,47 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
             bandEnergy60s: r.band_energy_60s,
           }))
 
-        const todayResult = computeFlowData(
-          allMagData,
-          todayStart.getTime(),
-          nowMs,
-          multiplier,
-        )
-        const yesterdayResult = computeFlowData(
-          allMagData,
-          yesterdayStart.getTime(),
-          todayStart.getTime(),
-          multiplier,
-        )
-        const thisWeekResult = computeFlowData(
-          allMagData,
-          thisWeekStart.getTime(),
-          nowMs,
-          multiplier,
-        )
-        const lastWeekResult = computeFlowData(
-          allMagData,
-          lastWeekStart.getTime(),
-          thisWeekStart.getTime(),
-          multiplier,
-        )
-        const thisMonthResult = computeFlowData(
-          allMagData,
-          thisMonthStart.getTime(),
-          nowMs,
-          multiplier,
-        )
-        const sevenDayResult = computeFlowData(
-          allMagData,
-          sevenDaysAgo.getTime(),
-          nowMs,
-          multiplier,
-        )
+        // Detect peaks per-window (same approach as useVolumeSummary in
+        // Reports): filter mag data to the window, detect peaks on just that
+        // slice, then count cycles.  This keeps peak-detection context
+        // consistent with Reports so the numbers match.
+        const todayLitres = computeVolumeForRange(allMagData, todayStart.getTime(), nowMs, multiplier)
+        const yesterdayLitres = computeVolumeForRange(allMagData, yesterdayStart.getTime(), todayStart.getTime(), multiplier)
+        const thisWeekLitres = computeVolumeForRange(allMagData, thisWeekStart.getTime(), nowMs, multiplier)
+        const lastWeekLitres = computeVolumeForRange(allMagData, lastWeekStart.getTime(), thisWeekStart.getTime(), multiplier)
+        const thisMonthLitres = computeVolumeForRange(allMagData, thisMonthStart.getTime(), nowMs, multiplier)
 
         if (cancelled) return
 
-        // Active flow today
-        const { activeFlowMs, sessionCount } = computeActiveFlow(
-          todayResult.flowPoints,
+        // Active flow today — needs flow points for session detection
+        const todayFlowPoints = computeFlowPointsForRange(
+          allMagData,
+          todayStart.getTime(),
+          nowMs,
+          multiplier,
         )
-        const idleMs = DAY_MS - activeFlowMs
-        const activePercent = (activeFlowMs / DAY_MS) * 100
+        const { activeFlowMs, sessionCount } = computeActiveFlow(
+          todayFlowPoints,
+        )
+        const elapsedTodayMs = nowMs - todayStart.getTime()
+        const idleMs = Math.max(0, elapsedTodayMs - activeFlowMs)
+        const activePercent =
+          elapsedTodayMs > 0 ? (activeFlowMs / elapsedTodayMs) * 100 : 0
 
         // Trends
         const dayChangePercent =
-          yesterdayResult.litres > 0
+          yesterdayLitres > 0
             ? Math.round(
-                ((todayResult.litres - yesterdayResult.litres) /
-                  yesterdayResult.litres) *
+                ((todayLitres - yesterdayLitres) /
+                  yesterdayLitres) *
                   100,
               )
             : null
         const weekChangePercent =
-          lastWeekResult.litres > 0
+          lastWeekLitres > 0
             ? Math.round(
-                ((thisWeekResult.litres - lastWeekResult.litres) /
-                  lastWeekResult.litres) *
+                ((thisWeekLitres - lastWeekLitres) /
+                  lastWeekLitres) *
                   100,
               )
             : null
@@ -291,7 +287,7 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
         const todayProjected =
           hoursElapsedToday > 0.5
             ? Math.round(
-                (todayResult.litres / hoursElapsedToday) * 24 * 10,
+                (todayLitres / hoursElapsedToday) * 24 * 10,
               ) / 10
             : 0
 
@@ -300,7 +296,7 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
         const weekProjected =
           daysElapsedThisWeek > 0.5
             ? Math.round(
-                (thisWeekResult.litres / daysElapsedThisWeek) * 7 * 10,
+                (thisWeekLitres / daysElapsedThisWeek) * 7 * 10,
               ) / 10
             : 0
 
@@ -314,21 +310,27 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
         const monthProjected =
           daysElapsedThisMonth > 0.5
             ? Math.round(
-                (thisMonthResult.litres / daysElapsedThisMonth) *
+                (thisMonthLitres / daysElapsedThisMonth) *
                   daysInMonth *
                   10,
               ) / 10
             : 0
 
-        // Peak hours
-        const peakHours = computeHourlyUsage(sevenDayResult.flowPoints)
+        // Peak hours — needs flow points for hourly distribution
+        const sevenDayFlowPoints = computeFlowPointsForRange(
+          allMagData,
+          sevenDaysAgo.getTime(),
+          nowMs,
+          multiplier,
+        )
+        const peakHours = computeHourlyUsage(sevenDayFlowPoints)
 
         setData({
-          today: todayResult.litres,
-          thisWeek: thisWeekResult.litres,
-          thisMonth: thisMonthResult.litres,
-          yesterday: yesterdayResult.litres,
-          lastWeek: lastWeekResult.litres,
+          today: todayLitres,
+          thisWeek: thisWeekLitres,
+          thisMonth: thisMonthLitres,
+          yesterday: yesterdayLitres,
+          lastWeek: lastWeekLitres,
           dayChangePercent,
           weekChangePercent,
           activeFlowMs,
