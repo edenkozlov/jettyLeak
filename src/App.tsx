@@ -19,6 +19,7 @@ const Home = lazy(() => import('@/pages/Home'))
 const CaseStudy = lazy(() => import('@/pages/CaseStudy'))
 const Demo = lazy(() => import('@/pages/Demo'))
 const Landing = lazy(() => import('@/pages/Landing'))
+const ClientsDirectoryPage = lazy(() => import('@/pages/ClientsDirectoryPage'))
 const Login = lazy(() => import('@/pages/Login'))
 const Support = lazy(() => import('@/pages/Support'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
@@ -56,6 +57,7 @@ function AppRoutes() {
         <Suspense fallback={<div className="flex h-screen items-center justify-center text-gray-500">Loading…</div>}>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/clients" element={<ClientsDirectoryPage />} />
           <Route path="/case-study" element={<CaseStudy />} />
           <Route path="/demo" element={<Demo />} />
           <Route path="/support" element={<Support />} />
