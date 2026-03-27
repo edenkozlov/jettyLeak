@@ -1,5 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { Link } from 'react-router'
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts'
 
 import logo from '@/assets/belugaLogo.png'
 import heroVideo from '@/assets/water.mp4'
@@ -10,6 +19,21 @@ import ScrollToTopButton from '@/components/ScrollToTopButton'
 
 export default function Landing() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [pillarsModalOpen, setPillarsModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (!pillarsModalOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setPillarsModalOpen(false)
+    }
+    document.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [pillarsModalOpen])
 
   return (
     <div className="min-h-screen overflow-x-hidden antialiased">
@@ -21,8 +45,8 @@ export default function Landing() {
           </Link>
           <div className="flex items-center gap-4 sm:gap-8">
             <div className="hidden gap-7 md:flex">
-              {['Product', 'Features', 'How It Works'].map((l, i) => (
-                <a key={l} href={['#product', '#features', '#how-it-works'][i]} className="text-[13px] text-gray-400 transition hover:text-gray-700">{l}</a>
+              {['Product', 'Features', 'Health', 'How It Works'].map((l, i) => (
+                <a key={l} href={['#product', '#features', '#building-health', '#how-it-works'][i]} className="text-[13px] text-gray-400 transition hover:text-gray-700">{l}</a>
               ))}
               <Link to="/case-study" className="text-[13px] text-gray-400 transition hover:text-gray-700">Case Study</Link>
               <a href="https://pitch.com/v/belugapitchdeck-j52a9r" target="_blank" rel="noopener noreferrer" className="text-[13px] text-gray-400 transition hover:text-gray-700">Investor</a>
@@ -50,6 +74,7 @@ export default function Landing() {
             <div className="flex flex-col gap-3">
               <a href="#product" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Product</a>
               <a href="#features" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Features</a>
+              <a href="#building-health" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Health</a>
               <a href="#how-it-works" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">How It Works</a>
               <Link to="/case-study" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Case Study</Link>
               <a href="https://pitch.com/v/belugapitchdeck-j52a9r" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)} className="text-[14px] text-gray-500 transition hover:text-gray-900">Investor</a>
@@ -293,6 +318,103 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ━━━ BUILDING HEALTH INDEX ━━━ */}
+      <section
+        id="building-health"
+        className="relative border-t border-gray-100 bg-gradient-to-b from-slate-50/80 to-white pt-12 pb-20 sm:pt-16 sm:pb-28 lg:pt-20 lg:pb-36"
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(99,102,241,0.06),transparent_45%),radial-gradient(circle_at_85%_70%,rgba(6,182,212,0.05),transparent_45%)]" />
+
+        <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-semibold tracking-[0.3em] text-indigo-500 uppercase">
+              Building Health Index
+            </p>
+            <h2 className="mt-4 text-[26px] leading-tight font-bold tracking-tight text-gray-900 sm:mt-5 sm:text-[34px] md:text-[42px]">
+              Your building’s water fingerprint
+            </h2>
+            <p className="mx-auto mt-3 max-w-md text-[15px] leading-snug text-gray-600 sm:mt-4 sm:text-[16px]">
+              One score for drift from <em>your</em> normal—not a generic benchmark.
+            </p>
+          </div>
+
+          <div className="mx-auto mt-10 max-w-lg sm:mt-12 lg:mx-0 lg:mt-14 lg:max-w-none lg:grid lg:grid-cols-2 lg:items-stretch lg:gap-8">
+            <div
+              className="flex min-h-[28rem] w-full flex-col rounded-2xl border border-gray-200/80 bg-white p-5 shadow-lg shadow-indigo-500/[0.07] ring-1 ring-black/[0.02] sm:min-h-[30rem] sm:p-6 lg:min-h-0 lg:h-full"
+              aria-label="Example: Building Health Index card"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-100 pb-4">
+                <div>
+                  <p className="text-[11px] font-semibold tracking-wide text-gray-400 uppercase">
+                    My property
+                  </p>
+                  <p className="mt-1 text-[13px] text-gray-500">
+                    Self-baseline · illustrative dashboard
+                  </p>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-4xl font-bold tabular-nums text-gray-900">78</span>
+                  <span className="text-sm font-medium text-gray-400">/ 100</span>
+                </div>
+              </div>
+
+              <p className="mt-3 text-[12px] leading-snug text-gray-600">
+                Sustained flow pattern vs your norm—could be drift or a new continuous use; worth checking
+                before it becomes damage.
+              </p>
+
+              <div className="mt-6 grid flex-1 grid-cols-2 content-start gap-2 sm:gap-3">
+                {[
+                  { k: 'Stability', v: 82, hint: '30% · drift & new patterns' },
+                  { k: 'Hydraulic stress', v: 76, hint: '25% · load over time' },
+                  { k: 'Appliance health', v: 74, hint: '30% · signatures aging' },
+                  { k: 'Mechanical', v: 88, hint: '15% · vibration layer' },
+                ].map((row) => (
+                  <div
+                    key={row.k}
+                    className="rounded-xl border border-gray-100 bg-gray-50/80 px-3 py-2.5 sm:px-3.5 sm:py-3"
+                  >
+                    <p className="text-[10px] font-medium tracking-wider text-gray-500 uppercase">
+                      {row.k}
+                    </p>
+                    <p className="mt-0.5 text-xl font-bold tabular-nums text-gray-900">{row.v}</p>
+                    <p className="mt-0.5 text-[11px] leading-tight text-gray-400">{row.hint}</p>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPillarsModalOpen(true)}
+                className="mt-5 flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-indigo-200/80 bg-gradient-to-r from-indigo-50/90 to-white px-4 py-3.5 text-left shadow-sm ring-1 ring-indigo-100/80 transition hover:border-indigo-300 hover:from-indigo-50 hover:shadow-md"
+                aria-haspopup="dialog"
+                aria-expanded={pillarsModalOpen}
+                aria-label="Learn what signals go into your Building Health Index"
+              >
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-indigo-600">
+                    Learn more
+                  </p>
+                  <p className="mt-0.5 text-[14px] font-semibold text-gray-900">
+                    What we look at to build this score
+                  </p>
+                </div>
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-white shadow-sm">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M5 12h14" />
+                    <path d="m12 5 7 7-7 7" />
+                  </svg>
+                </span>
+              </button>
+            </div>
+
+            <div className="mt-10 flex min-h-[28rem] w-full flex-col lg:mt-0 lg:min-h-0 lg:h-full">
+              <LandingBhiTrendChart />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ━━━ THE SENSOR ━━━ */}
       <section className="relative bg-white pt-12 pb-20 sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
@@ -407,8 +529,8 @@ export default function Landing() {
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 sm:gap-6 sm:px-6 md:flex-row">
           <Link to="/" className="flex items-center gap-2"><img src={logo} alt="Beluga" className="h-7" /><span className="text-sm font-bold text-gray-900">Beluga</span></Link>
           <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
-            {['Product', 'Features', 'How It Works'].map((l, i) => (
-              <a key={l} href={['#product', '#features', '#how-it-works'][i]} className="text-[12px] text-gray-400 transition hover:text-gray-600">{l}</a>
+            {['Product', 'Features', 'Health', 'How It Works'].map((l, i) => (
+              <a key={l} href={['#product', '#features', '#building-health', '#how-it-works'][i]} className="text-[12px] text-gray-400 transition hover:text-gray-600">{l}</a>
             ))}
             <Link to="/case-study" className="text-[12px] text-gray-400 transition hover:text-gray-600">Case Study</Link>
             <a href="https://pitch.com/v/belugapitchdeck-j52a9r" target="_blank" rel="noopener noreferrer" className="text-[12px] text-gray-400 transition hover:text-gray-600">Investor</a>
@@ -423,7 +545,181 @@ export default function Landing() {
         </div>
       </footer>
 
+      {pillarsModalOpen ? (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center sm:items-center sm:p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-[2px]"
+            aria-hidden
+            onClick={() => setPillarsModalOpen(false)}
+          />
+          <div
+            className="relative z-10 flex max-h-[min(88dvh,640px)] w-full max-w-lg flex-col rounded-t-2xl border border-gray-200 bg-white shadow-2xl sm:rounded-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="landing-pillars-modal-title"
+          >
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 py-4 sm:px-6">
+              <h3 id="landing-pillars-modal-title" className="text-[17px] font-semibold text-gray-900">
+                What goes into your score
+              </h3>
+              <button
+                type="button"
+                onClick={() => setPillarsModalOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+                aria-label="Close"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round">
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="overflow-y-auto px-5 py-4 text-[13px] leading-relaxed text-gray-600 sm:px-6 sm:py-5">
+              <p className="text-[14px] text-gray-700">
+                We learn how water usually behaves in <em>your</em> building, then compare new behavior to
+                that history. The index blends four kinds of signal—each one uses sensor data you already have
+                on the main line.
+              </p>
+              <ul className="mt-5 space-y-4 text-[13px]">
+                <li>
+                  <strong className="text-gray-900">System stability</strong> <span className="text-gray-400">(largest share)</span>
+                  — whether usage patterns, timing, and flow duration still match what we’ve learned is normal
+                  for you—new or drifting behavior gets flagged.
+                </li>
+                <li>
+                  <strong className="text-gray-900">Hydraulic stress</strong> — how hard and how long the system
+                  is working versus its usual load (quick spikes vs sustained strain add up differently).
+                </li>
+                <li>
+                  <strong className="text-gray-900">Appliance &amp; fixture health</strong> — whether toilets,
+                  dishwashers, and other draws still match their typical “signatures”; drift can mean wear or
+                  inefficiency before a obvious failure.
+                </li>
+                <li>
+                  <strong className="text-gray-900">Mechanical health</strong> — vibration from the same sensor:
+                  turbulence and instability that don’t line up with normal flow can point to strain in the
+                  plumbing system.
+                </li>
+              </ul>
+              <p className="mt-5 text-[12px] text-gray-500">
+                Exact weighting stays tuned as we ship; the app will always show what drove a given score.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <ScrollToTopButton />
+    </div>
+  )
+}
+
+/** Mock weekly series for landing — illustrative only */
+const LANDING_BHI_WEEKLY = [
+  { day: 'Mon', bhi: 72 },
+  { day: 'Tue', bhi: 73 },
+  { day: 'Wed', bhi: 74 },
+  { day: 'Thu', bhi: 74 },
+  { day: 'Fri', bhi: 76 },
+  { day: 'Sat', bhi: 77 },
+  { day: 'Sun', bhi: 78 },
+] as const
+
+function LandingBhiTrendChart() {
+  const fillId = `landing-bhi-area-${useId().replace(/:/g, '')}`
+
+  return (
+    <div
+      className="flex h-full min-h-0 w-full flex-1 flex-col rounded-2xl border border-gray-200/80 bg-white p-5 shadow-lg shadow-indigo-500/[0.07] ring-1 ring-black/[0.02] sm:p-6"
+      aria-label="Example: BHI trend in the Beluga dashboard"
+    >
+      <div className="flex shrink-0 flex-wrap items-start justify-between gap-3 border-b border-gray-100 pb-3">
+        <div>
+          <p className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase">
+            Analytics
+          </p>
+          <p className="mt-0.5 text-[15px] font-semibold text-gray-900">Building Health Index</p>
+          <p className="mt-0.5 text-[12px] text-gray-500">
+            Drift vs your normal · last 7 days · My property
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-1 text-[13px] font-bold tabular-nums text-emerald-800">
+            <svg className="h-3.5 w-3.5 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="m18 15-6-6-6 6" />
+            </svg>
+            +3
+          </p>
+          <p className="mt-1 text-[11px] text-gray-500">vs prior week avg.</p>
+        </div>
+      </div>
+
+      <div className="mt-3 flex shrink-0 gap-8 border-b border-dashed border-gray-100 pb-3">
+        <div>
+          <p className="text-[11px] font-medium text-gray-400">Now</p>
+          <p className="text-lg font-bold tabular-nums text-gray-900">78</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-medium text-gray-400">Prior week</p>
+          <p className="text-lg font-bold tabular-nums text-gray-400">75</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-medium text-gray-400">Range</p>
+          <p className="text-lg font-bold tabular-nums text-gray-700">72–78</p>
+        </div>
+      </div>
+
+      <div className="mt-2 min-h-[180px] flex-1 w-full min-w-0 lg:min-h-[200px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={[...LANDING_BHI_WEEKLY]}
+            margin={{ top: 6, right: 4, left: 0, bottom: 0 }}
+          >
+            <defs>
+              <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
+            <XAxis
+              dataKey="day"
+              tick={{ fontSize: 11, fill: '#9ca3af' }}
+              axisLine={false}
+              tickLine={false}
+              dy={6}
+            />
+            <YAxis
+              domain={[68, 82]}
+              tick={{ fontSize: 11, fill: '#9ca3af' }}
+              axisLine={false}
+              tickLine={false}
+              width={28}
+              tickCount={5}
+            />
+            <Tooltip
+              cursor={{ stroke: '#d1d5db', strokeDasharray: '4 4' }}
+              contentStyle={{
+                borderRadius: 8,
+                border: '1px solid #e5e7eb',
+                fontSize: 12,
+                boxShadow: '0 4px 14px rgba(0,0,0,0.06)',
+              }}
+              formatter={(value: number | undefined) => [value != null ? `${value}` : '—', 'BHI']}
+              labelFormatter={(label) => `${label}`}
+            />
+            <Area
+              type="monotone"
+              dataKey="bhi"
+              stroke="#059669"
+              strokeWidth={2}
+              fill={`url(#${fillId})`}
+              dot={{ r: 3, fill: '#059669', strokeWidth: 0 }}
+              activeDot={{ r: 5, fill: '#047857', stroke: '#fff', strokeWidth: 2 }}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }
