@@ -12,8 +12,14 @@ import {
   type FlowPoint,
   type MagDataPoint,
 } from '@/utils/flowComputation'
+import {
+  computeBuildingHealth,
+  type BuildingHealth,
+} from '@/utils/buildingHealth'
 import { graphqlFetch } from '@/utils/graphqlFetch'
 import type { MagReport, Sensor } from '@/types'
+
+export type { BuildingHealth }
 
 export interface AnalyticsData {
   today: number
@@ -128,6 +134,7 @@ function computeHourlyUsage(flowPoints: FlowPoint[]): number[] {
 export function useBuildingAnalytics(buildingId: number | null | undefined) {
   const token = useAppSelector((state) => state.login.token)
   const [data, setData] = useState<AnalyticsData | null>(null)
+  const [health, setHealth] = useState<BuildingHealth | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const tokenRef = useRef(token)
@@ -137,6 +144,7 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
     if (buildingId == null) {
       setLoading(false)
       setData(null)
+      setHealth(null)
       return
     }
 
@@ -155,6 +163,7 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           magResult?.mag_to_building?.map((m) => m.mag_id) ?? []
         if (magIds.length === 0) {
           setData(null)
+          setHealth(null)
           setLoading(false)
           return
         }
@@ -181,6 +190,7 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
         }
         if (multiplier === null || multiplier <= 0) {
           setData(null)
+          setHealth(null)
           setLoading(false)
           return
         }
@@ -198,8 +208,13 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
         sevenDaysAgo.setHours(0, 0, 0, 0)
 
+        const twentyEightDaysAgo = new Date(now)
+        twentyEightDaysAgo.setDate(twentyEightDaysAgo.getDate() - 28)
+        twentyEightDaysAgo.setHours(0, 0, 0, 0)
+
         const fetchSince = new Date(
           Math.min(
+            twentyEightDaysAgo.getTime(),
             sevenDaysAgo.getTime(),
             lastWeekStart.getTime(),
             thisMonthStart.getTime(),
@@ -324,7 +339,14 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
         )
         const peakHours = computeHourlyUsage(sevenDayFlowPoints)
 
-        setData({
+        const historyFlowPoints = computeFlowPointsForRange(
+          allMagData,
+          fetchSince.getTime(),
+          nowMs,
+          multiplier,
+        )
+
+        const analyticsPayload = {
           today: todayLitres,
           thisWeek: thisWeekLitres,
           thisMonth: thisMonthLitres,
@@ -340,12 +362,30 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           weekProjected,
           monthProjected,
           peakHours,
+        }
+
+        const healthPayload = computeBuildingHealth({
+          allMagData,
+          historyFlowPoints,
+          todayFlowPoints,
+          todayStartMs: todayStart.getTime(),
+          nowMs,
+          todayLitres,
+          yesterdayLitres,
+          multiplier,
         })
+
+        if (cancelled) return
+
+        setHealth(healthPayload)
+        setData(analyticsPayload)
       } catch (err) {
-        if (!cancelled)
+        if (!cancelled) {
+          setHealth(null)
           setError(
             err instanceof Error ? err.message : 'Failed to load analytics',
           )
+        }
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -356,5 +396,5 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
     }
   }, [buildingId, token])
 
-  return { data, loading, error }
+  return { data, health, loading, error }
 }

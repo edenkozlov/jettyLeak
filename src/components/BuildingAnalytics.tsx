@@ -13,6 +13,7 @@ import LiveFlowIndicator from '@/components/LiveFlowIndicator'
 import {
   useBuildingAnalytics,
   type AnalyticsData,
+  type BuildingHealth,
 } from '@/hooks/useBuildingAnalytics'
 
 interface Props {
@@ -476,14 +477,158 @@ function LoadingSkeleton() {
 }
 
 // ---------------------------------------------------------------------------
+// Building health (BHI)
+// ---------------------------------------------------------------------------
+
+const HEALTH_LABEL_COPY: Record<BuildingHealth['label'], string> = {
+  healthy: 'Healthy',
+  watch: 'Watch',
+  investigate: 'Investigate',
+  critical: 'Critical',
+}
+
+const HEALTH_LABEL_CLASS: Record<BuildingHealth['label'], string> = {
+  healthy:
+    'text-emerald-700 dark:text-emerald-300',
+  watch:
+    'text-amber-700 dark:text-amber-300',
+  investigate:
+    'text-orange-700 dark:text-orange-300',
+  critical:
+    'text-red-700 dark:text-red-300',
+}
+
+function HealthHoverPanel({ title, formula }: { title: string; formula: string }) {
+  return (
+    <div
+      className="pointer-events-none invisible absolute bottom-full left-1/2 z-20 mb-2 w-[min(20rem,calc(100vw-2rem))] -translate-x-1/2 rounded-lg border border-gray-200 bg-white p-3 text-left text-xs text-gray-700 opacity-0 shadow-lg transition-opacity group-hover:pointer-events-auto group-hover:visible group-hover:opacity-100 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 group-focus-within:pointer-events-auto group-focus-within:visible group-focus-within:opacity-100"
+      role="tooltip"
+    >
+      <p className="font-semibold text-gray-900 dark:text-white">{title}</p>
+      <p className="mt-2 leading-relaxed text-gray-600 dark:text-gray-300">{formula}</p>
+    </div>
+  )
+}
+
+function BuildingHealthSection({
+  health,
+  loading,
+}: {
+  health: BuildingHealth | null
+  loading: boolean
+}) {
+  if (loading) {
+    return (
+      <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <Bone className="mb-3 h-4 w-40" />
+        <div className="flex flex-wrap gap-3">
+          <Bone className="h-16 w-24" />
+          <Bone className="h-10 flex-1 min-w-[8rem]" />
+          <Bone className="h-10 flex-1 min-w-[8rem]" />
+          <Bone className="h-10 flex-1 min-w-[8rem]" />
+          <Bone className="h-10 flex-1 min-w-[8rem]" />
+        </div>
+      </div>
+    )
+  }
+
+  if (!health) {
+    return (
+      <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-600 dark:bg-gray-900/40 dark:text-gray-400">
+        Building health unavailable. Link magnetometers to this building (
+        <span className="font-mono text-xs">mag_to_building</span>) and ensure a sensor has a flow{' '}
+        <span className="font-mono text-xs">multiplier</span> so usage can be scored.
+      </div>
+    )
+  }
+
+  const { bhi, label, insufficientData, isEstimate, calibration, subScores, overallFormula } =
+    health
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            Building health
+          </h3>
+          <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">{calibration.summary}</p>
+          {insufficientData && (
+            <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+              Not enough magnetometer samples today to fully score reliability — BHI is capped.
+            </p>
+          )}
+        </div>
+        <div className="group relative flex items-baseline gap-2 outline-none" tabIndex={0}>
+          <span className="text-4xl font-bold tabular-nums text-gray-900 dark:text-white">
+            {bhi}
+          </span>
+          <span className="text-sm font-medium text-gray-400">/ 100</span>
+          {isEstimate && (
+            <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Est.
+            </span>
+          )}
+          <button
+            type="button"
+            className="ml-1 flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs font-semibold text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+            aria-label="How overall score is calculated"
+          >
+            ?
+          </button>
+          <HealthHoverPanel title="Building Health Index (BHI)" formula={overallFormula} />
+          <span
+            className={`ml-2 text-sm font-semibold uppercase tracking-wide ${HEALTH_LABEL_CLASS[label]}`}
+          >
+            {HEALTH_LABEL_COPY[label]}
+          </span>
+        </div>
+      </div>
+      <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
+        Hover or focus each pillar for how it is calculated. Same data as usage charts below.
+      </p>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {(
+          [
+            ['Trust', subScores.trust] as const,
+            ['Leak / idle', subScores.leak] as const,
+            ['Hydraulic', subScores.hydraulic] as const,
+            ['Mechanical', subScores.mechanical] as const,
+          ] as const
+        ).map(([name, sub]) => (
+          <div
+            key={name}
+            className="group relative cursor-default rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 outline-none hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-900/50 dark:hover:border-indigo-800"
+            tabIndex={0}
+          >
+            <HealthHoverPanel title={`${name} pillar`} formula={sub.formula} />
+            <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              {name}
+            </p>
+            <p className="mt-0.5 text-xl font-bold tabular-nums text-gray-900 dark:text-white">
+              {Math.round(sub.score)}
+            </p>
+            <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-gray-500 dark:text-gray-400">
+              {sub.summary}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
 export default function BuildingAnalytics({ buildingId }: Props) {
-  const { data, loading, error } = useBuildingAnalytics(buildingId)
+  const { data, health, loading, error } = useBuildingAnalytics(buildingId)
 
   return (
     <div className="space-y-4">
+      <BuildingHealthSection health={health} loading={loading} />
+
       {/* Top row: Live Flow + Water Usage stats */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <LiveFlowIndicator buildingId={buildingId} />
