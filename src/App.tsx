@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router'
+import { Analytics } from '@vercel/analytics/react'
 
 import { Provider } from 'react-redux'
 
@@ -92,6 +93,7 @@ export default function App() {
     <Provider store={store}>
       <ThemeProvider>
         <AppRoutes />
+        <Analytics />
       </ThemeProvider>
     </Provider>
   )
