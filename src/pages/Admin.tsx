@@ -22,7 +22,7 @@ import type { MagReport } from '@/types/magReport'
 
 const EXPRESS_URL = import.meta.env.VITE_EXPRESS_ENDPOINT || 'http://localhost:3000'
 
-type Tab = 'predictions' | 'labels' | 'retrain'
+type Tab = 'predictions' | 'labels' | 'retrain' | 'firmware' | 'bluetooth'
 
 interface PredictedSignal {
   id: number
@@ -105,7 +105,28 @@ const TAB_ITEMS: { key: Tab; label: string }[] = [
   { key: 'predictions', label: 'Predicted Signals' },
   { key: 'labels', label: 'Training Labels' },
   { key: 'retrain', label: 'Tools' },
+  { key: 'firmware', label: 'Firmware' },
+  { key: 'bluetooth', label: 'Bluetooth' },
 ]
+
+// BLE UUIDs — must match the sensor firmware
+const WIFI_SERVICE_UUID = import.meta.env.VITE_BLE_WIFI_SERVICE_UUID
+const WIFI_SSID_CHAR_UUID = import.meta.env.VITE_BLE_WIFI_SSID_CHAR_UUID
+const WIFI_PASS_CHAR_UUID = import.meta.env.VITE_BLE_WIFI_PASS_CHAR_UUID
+const WIFI_STATUS_CHAR_UUID = import.meta.env.VITE_BLE_WIFI_STATUS_CHAR_UUID
+const WIFI_COMMAND_CHAR_UUID = import.meta.env.VITE_BLE_WIFI_COMMAND_CHAR_UUID
+
+interface FirmwareEntry {
+  id: string
+  sensor_type: string
+  version: string
+  filename: string
+  file_size: number
+  checksum: string
+  uploaded_at: string
+  notes: string
+  target_sensors: number[]
+}
 
 const CHART_COLORS = {
   light: { grid: '#e5e7eb', axis: '#6b7280', tooltipBg: '#fff', tooltipBorder: '#e5e7eb', tooltipText: '#111827' },
@@ -745,6 +766,37 @@ export default function Admin() {
   const [sanitizeResult, setSanitizeResult] = useState<{ totalDeleted: number; totalKept: number } | null>(null)
   const [sanitizeError, setSanitizeError] = useState('')
 
+  // Firmware OTA state
+  const [fwSensorType, setFwSensorType] = useState<'receiver' | 'dual'>('receiver')
+  const [fwVersion, setFwVersion] = useState('')
+  const [fwNotes, setFwNotes] = useState('')
+  const [fwFile, setFwFile] = useState<File | null>(null)
+  const [fwTargetSensors, setFwTargetSensors] = useState<number[]>([]) // empty = all
+  const [fwUploading, setFwUploading] = useState(false)
+  const [fwUploadResult, setFwUploadResult] = useState<string>('')
+  const [fwUploadError, setFwUploadError] = useState('')
+  const [fwHistory, setFwHistory] = useState<{ receiver: FirmwareEntry[]; dual: FirmwareEntry[] }>({ receiver: [], dual: [] })
+  const [rebootingSensorId, setRebootingSensorId] = useState<number | null>(null)
+  const [rebootSearch, setRebootSearch] = useState('')
+  const [targetSearch, setTargetSearch] = useState('')
+
+  // Bluetooth state
+  const [bleDevice, setBleDevice] = useState<BluetoothDevice | null>(null)
+  const [bleConnected, setBleConnected] = useState(false)
+  const [bleConnecting, setBleConnecting] = useState(false)
+  const [bleCurrentSSID, setBleCurrentSSID] = useState('')
+  const [bleWifiStatus, setBleWifiStatus] = useState('')
+  const [bleNewSSID, setBleNewSSID] = useState('')
+  const [bleNewPass, setBleNewPass] = useState('')
+  const [bleSending, setBleSending] = useState(false)
+  const [bleError, setBleError] = useState('')
+  const [bleChars, setBleChars] = useState<{
+    ssid: BluetoothRemoteGATTCharacteristic
+    pass: BluetoothRemoteGATTCharacteristic
+    status: BluetoothRemoteGATTCharacteristic
+    command: BluetoothRemoteGATTCharacteristic
+  } | null>(null)
+
   const sensors = sensorsData?.sensor ?? []
   const predictions = predictionsData?.predicted_signal ?? []
   const labels = labelsData?.signal ?? []
@@ -825,6 +877,176 @@ export default function Admin() {
       setSanitizeError(e instanceof Error ? e.message : 'Sanitize failed')
     } finally {
       setSanitizeLoading(false)
+    }
+  }
+
+  // ── Firmware OTA handlers ──────────────────
+  async function fetchFirmwareHistory() {
+    try {
+      const [recRes, dualRes] = await Promise.all([
+        fetch(`${EXPRESS_URL}/api/ota/history/receiver`),
+        fetch(`${EXPRESS_URL}/api/ota/history/dual`),
+      ])
+      const receiver = recRes.ok ? await recRes.json() : []
+      const dual = dualRes.ok ? await dualRes.json() : []
+      setFwHistory({ receiver, dual })
+    } catch { /* ignore */ }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'firmware') fetchFirmwareHistory()
+  }, [activeTab])
+
+  async function handleFirmwareUpload() {
+    if (!fwFile || !fwVersion) return
+    setFwUploading(true)
+    setFwUploadError('')
+    setFwUploadResult('')
+    try {
+      const buffer = await fwFile.arrayBuffer()
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/octet-stream',
+        'x-sensor-type': fwSensorType,
+        'x-version': fwVersion,
+        'x-notes': fwNotes,
+      }
+      if (fwTargetSensors.length > 0) {
+        headers['x-target-sensors'] = fwTargetSensors.join(',')
+      }
+      const res = await fetch(`${EXPRESS_URL}/api/ota/upload`, {
+        method: 'POST',
+        headers,
+        body: buffer,
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || `${res.status}`)
+      const targetDesc = result.target_sensors?.length > 0
+        ? `sensors [${result.target_sensors.join(', ')}]`
+        : 'all sensors'
+      setFwUploadResult(`Uploaded v${result.version} for ${result.sensor_type} → ${targetDesc} (${(result.file_size / 1024).toFixed(0)} KB)`)
+      setFwVersion('')
+      setFwNotes('')
+      setFwFile(null)
+      setFwTargetSensors([])
+      fetchFirmwareHistory()
+    } catch (e: unknown) {
+      setFwUploadError(e instanceof Error ? e.message : 'Upload failed')
+    } finally {
+      setFwUploading(false)
+    }
+  }
+
+  async function handleFirmwareDelete(id: string) {
+    try {
+      await fetch(`${EXPRESS_URL}/api/ota/firmware/${id}`, { method: 'DELETE' })
+      fetchFirmwareHistory()
+    } catch { /* ignore */ }
+  }
+
+  async function handleReboot(sensorId: number) {
+    setRebootingSensorId(sensorId)
+    try {
+      const res = await fetch(`${EXPRESS_URL}/api/ota/command`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sensor_id: sensorId, command: 'reboot' }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || `${res.status}`)
+    } catch { /* ignore */ }
+    // Keep the "rebooting" state for a few seconds as visual feedback
+    setTimeout(() => setRebootingSensorId(null), 3000)
+  }
+
+  function toggleTargetSensor(sensorId: number) {
+    setFwTargetSensors((prev) =>
+      prev.includes(sensorId) ? prev.filter((id) => id !== sensorId) : [...prev, sensorId]
+    )
+  }
+
+  // ── Bluetooth handlers ──────────────────
+  async function handleBleScan() {
+    setBleError('')
+    setBleConnecting(true)
+    try {
+      if (!navigator.bluetooth) {
+        throw new Error('Web Bluetooth is not supported in this browser. Use Chrome or Edge.')
+      }
+      const device = await navigator.bluetooth.requestDevice({
+        filters: [{ services: [WIFI_SERVICE_UUID] }],
+      })
+      setBleDevice(device)
+
+      device.addEventListener('gattserverdisconnected', () => {
+        setBleConnected(false)
+        setBleChars(null)
+        setBleCurrentSSID('')
+        setBleWifiStatus('')
+      })
+
+      const server = await device.gatt!.connect()
+      const service = await server.getPrimaryService(WIFI_SERVICE_UUID)
+
+      const ssidChar = await service.getCharacteristic(WIFI_SSID_CHAR_UUID)
+      const passChar = await service.getCharacteristic(WIFI_PASS_CHAR_UUID)
+      const statusChar = await service.getCharacteristic(WIFI_STATUS_CHAR_UUID)
+      const commandChar = await service.getCharacteristic(WIFI_COMMAND_CHAR_UUID)
+
+      setBleChars({ ssid: ssidChar, pass: passChar, status: statusChar, command: commandChar })
+
+      // Read current SSID
+      const ssidValue = await ssidChar.readValue()
+      setBleCurrentSSID(new TextDecoder().decode(ssidValue))
+
+      // Read current status
+      const statusValue = await statusChar.readValue()
+      setBleWifiStatus(new TextDecoder().decode(statusValue))
+
+      // Subscribe to status notifications
+      await statusChar.startNotifications()
+      statusChar.addEventListener('characteristicvaluechanged', ((event: Event) => {
+        const target = event.target as BluetoothRemoteGATTCharacteristic
+        const value = new TextDecoder().decode(target.value!)
+        setBleWifiStatus(value)
+        if (value.startsWith('connected:') || value.startsWith('error:') || value === 'disconnected') {
+          setBleSending(false)
+        }
+      }) as EventListener)
+
+      setBleConnected(true)
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name !== 'NotFoundError') {
+        setBleError(e.message)
+      }
+    } finally {
+      setBleConnecting(false)
+    }
+  }
+
+  async function handleBleDisconnect() {
+    if (bleDevice?.gatt?.connected) {
+      bleDevice.gatt.disconnect()
+    }
+    setBleDevice(null)
+    setBleConnected(false)
+    setBleChars(null)
+    setBleCurrentSSID('')
+    setBleWifiStatus('')
+  }
+
+  async function handleBleSendWiFi() {
+    if (!bleChars || !bleNewSSID) return
+    setBleSending(true)
+    setBleError('')
+    try {
+      const encoder = new TextEncoder()
+      await bleChars.ssid.writeValue(encoder.encode(bleNewSSID))
+      await bleChars.pass.writeValue(encoder.encode(bleNewPass))
+      await bleChars.command.writeValue(encoder.encode('CONNECT'))
+      // Status will update via notification
+    } catch (e: unknown) {
+      setBleError(e instanceof Error ? e.message : 'Failed to send WiFi config')
+      setBleSending(false)
     }
   }
 
@@ -1163,6 +1385,331 @@ export default function Admin() {
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Firmware OTA */}
+      {activeTab === 'firmware' && (
+        <div className="mx-auto max-w-3xl space-y-6">
+          {/* Sensor Management — Reboot */}
+          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Sensor Controls</h2>
+            <input
+              type="text"
+              placeholder="Search sensors by name or ID..."
+              value={rebootSearch}
+              onChange={(e) => setRebootSearch(e.target.value)}
+              className="mb-3 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            />
+            <div className="max-h-64 space-y-1.5 overflow-y-auto">
+              {sensors
+                .filter((s) => {
+                  if (!rebootSearch) return true
+                  const q = rebootSearch.toLowerCase()
+                  return (s.name || '').toLowerCase().includes(q) || String(s.id).includes(q)
+                })
+                .map((s) => (
+                  <div key={s.id} className="flex items-center justify-between rounded-md border border-gray-200 px-4 py-2 dark:border-gray-700">
+                    <div>
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{s.name || `Sensor #${s.id}`}</span>
+                      <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">ID: {s.id}</span>
+                    </div>
+                    <button
+                      onClick={() => handleReboot(s.id)}
+                      disabled={rebootingSensorId === s.id}
+                      className="rounded-md bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200 disabled:opacity-50 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
+                    >
+                      {rebootingSensorId === s.id ? 'Reboot queued...' : 'Reboot'}
+                    </button>
+                  </div>
+                ))}
+              {sensors.length === 0 && (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No sensors found.</p>
+              )}
+            </div>
+            <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+              Sensors poll for commands every ~30 seconds. Reboot will take effect on the next check-in.
+            </p>
+          </div>
+
+          {/* Upload */}
+          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Upload Firmware</h2>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Sensor Type</label>
+                  <select
+                    value={fwSensorType}
+                    onChange={(e) => setFwSensorType(e.target.value as 'receiver' | 'dual')}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  >
+                    <option value="receiver">Receiver</option>
+                    <option value="dual">Dual</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Version</label>
+                  <input
+                    type="text"
+                    placeholder="1.0.1"
+                    value={fwVersion}
+                    onChange={(e) => setFwVersion(e.target.value)}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Target Sensors</label>
+                {/* Selected sensors chips */}
+                {fwTargetSensors.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-1.5">
+                    {fwTargetSensors.map((id) => {
+                      const s = sensors.find((s) => s.id === id)
+                      return (
+                        <span key={id} className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                          {s?.name || `#${id}`}
+                          <button
+                            onClick={() => toggleTargetSensor(id)}
+                            className="ml-0.5 hover:text-blue-600 dark:hover:text-blue-100"
+                          >
+                            &times;
+                          </button>
+                        </span>
+                      )
+                    })}
+                    <button
+                      onClick={() => setFwTargetSensors([])}
+                      className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                )}
+                {/* Search + list */}
+                <input
+                  type="text"
+                  placeholder={fwTargetSensors.length === 0 ? 'All sensors (search to select specific ones)' : 'Search to add more...'}
+                  value={targetSearch}
+                  onChange={(e) => setTargetSearch(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                />
+                {targetSearch && (
+                  <div className="mt-1 max-h-40 overflow-y-auto rounded-md border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+                    {sensors
+                      .filter((s) => {
+                        const q = targetSearch.toLowerCase()
+                        return ((s.name || '').toLowerCase().includes(q) || String(s.id).includes(q)) && !fwTargetSensors.includes(s.id)
+                      })
+                      .map((s) => (
+                        <button
+                          key={s.id}
+                          onClick={() => { toggleTargetSensor(s.id); setTargetSearch('') }}
+                          className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
+                        >
+                          <span className="text-gray-900 dark:text-white">{s.name || `Sensor #${s.id}`}</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">ID: {s.id}</span>
+                        </button>
+                      ))}
+                    {sensors.filter((s) => {
+                      const q = targetSearch.toLowerCase()
+                      return ((s.name || '').toLowerCase().includes(q) || String(s.id).includes(q)) && !fwTargetSensors.includes(s.id)
+                    }).length === 0 && (
+                      <p className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">No matching sensors.</p>
+                    )}
+                  </div>
+                )}
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  {fwTargetSensors.length === 0 ? 'All sensors of this type will receive the update.' : `${fwTargetSensors.length} sensor${fwTargetSensors.length === 1 ? '' : 's'} selected.`}
+                </p>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Notes</label>
+                <input
+                  type="text"
+                  placeholder="What changed in this version..."
+                  value={fwNotes}
+                  onChange={(e) => setFwNotes(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Compiled Binary (.bin)</label>
+                <input
+                  type="file"
+                  accept=".bin"
+                  onChange={(e) => setFwFile(e.target.files?.[0] ?? null)}
+                  className="w-full text-sm text-gray-700 dark:text-gray-300 file:mr-4 file:rounded-md file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-blue-700 dark:file:bg-blue-900/30 dark:file:text-blue-300"
+                />
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Export from Arduino IDE: Sketch &gt; Export Compiled Binary
+                </p>
+              </div>
+              <button
+                onClick={handleFirmwareUpload}
+                disabled={fwUploading || !fwFile || !fwVersion}
+                className="w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+              >
+                {fwUploading ? 'Uploading...' : 'Upload Firmware'}
+              </button>
+              {fwUploadError && (
+                <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">{fwUploadError}</p>
+              )}
+              {fwUploadResult && (
+                <p className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-800 dark:border-green-700 dark:bg-green-900/30 dark:text-green-300">{fwUploadResult}</p>
+              )}
+            </div>
+          </div>
+
+          {/* History */}
+          {(['receiver', 'dual'] as const).map((type) => (
+            <div key={type} className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+              <h2 className="mb-4 text-lg font-semibold capitalize text-gray-900 dark:text-white">{type} Firmware History</h2>
+              {fwHistory[type].length === 0 ? (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No firmware uploaded yet.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700">
+                    <thead className="bg-gray-50 dark:bg-gray-800">
+                      <tr>
+                        {['Version', 'Size', 'Target', 'Uploaded', 'Notes', ''].map((h) => (
+                          <th key={h} className="px-3 py-2 text-left font-semibold text-gray-500 dark:text-gray-400">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+                      {fwHistory[type].map((fw) => (
+                        <tr key={fw.id}>
+                          <td className="px-3 py-2 font-medium text-gray-900 dark:text-white">v{fw.version}</td>
+                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{(fw.file_size / 1024).toFixed(0)} KB</td>
+                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">
+                            {fw.target_sensors?.length > 0
+                              ? fw.target_sensors.map((id) => {
+                                  const s = sensors.find((s) => s.id === id)
+                                  return s?.name || `#${id}`
+                                }).join(', ')
+                              : 'All'
+                            }
+                          </td>
+                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{new Date(fw.uploaded_at).toLocaleDateString()}</td>
+                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{fw.notes || '—'}</td>
+                          <td className="px-3 py-2">
+                            <button
+                              onClick={() => handleFirmwareDelete(fw.id)}
+                              className="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                            >
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Bluetooth WiFi Config */}
+      {activeTab === 'bluetooth' && (
+        <div className="mx-auto max-w-lg space-y-6">
+          {!('bluetooth' in navigator) ? (
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-4 dark:border-amber-700 dark:bg-amber-900/30">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
+                Web Bluetooth is not supported in this browser. Please use Chrome or Edge.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Connection */}
+              <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+                <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Connect to Sensor</h2>
+                <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                  Make sure you are near the sensor and Bluetooth is enabled on this device.
+                </p>
+                {!bleConnected ? (
+                  <button
+                    onClick={handleBleScan}
+                    disabled={bleConnecting}
+                    className="w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+                  >
+                    {bleConnecting ? 'Scanning...' : 'Scan for Sensors'}
+                  </button>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between rounded-md border border-green-200 bg-green-50 px-4 py-3 dark:border-green-700 dark:bg-green-900/30">
+                      <div>
+                        <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                          Connected: {bleDevice?.name || 'Unknown'}
+                        </p>
+                        <p className="text-xs text-green-700 dark:text-green-400">
+                          Current SSID: {bleCurrentSSID || '—'} | Status: {bleWifiStatus || '—'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleBleDisconnect}
+                        className="rounded-md bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
+                      >
+                        Disconnect
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {bleError && (
+                  <p className="mt-3 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">{bleError}</p>
+                )}
+              </div>
+
+              {/* WiFi Config (only when connected) */}
+              {bleConnected && (
+                <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+                  <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Configure WiFi</h2>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">WiFi Network (SSID)</label>
+                      <input
+                        type="text"
+                        value={bleNewSSID}
+                        onChange={(e) => setBleNewSSID(e.target.value)}
+                        placeholder="Enter network name"
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">WiFi Password</label>
+                      <input
+                        type="password"
+                        value={bleNewPass}
+                        onChange={(e) => setBleNewPass(e.target.value)}
+                        placeholder="Enter password"
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                      />
+                    </div>
+                    <button
+                      onClick={handleBleSendWiFi}
+                      disabled={bleSending || !bleNewSSID}
+                      className="w-full rounded-md bg-green-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 dark:bg-green-500 dark:hover:bg-green-600"
+                    >
+                      {bleSending ? 'Connecting sensor to WiFi...' : 'Update WiFi Credentials'}
+                    </button>
+                    {bleWifiStatus && bleWifiStatus !== 'initializing' && (
+                      <div className={`rounded-md px-4 py-3 text-sm ${
+                        bleWifiStatus.startsWith('connected:')
+                          ? 'border border-green-200 bg-green-50 text-green-800 dark:border-green-700 dark:bg-green-900/30 dark:text-green-300'
+                          : bleWifiStatus.startsWith('error:')
+                            ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            : 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                      }`}>
+                        Sensor WiFi: {bleWifiStatus}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
