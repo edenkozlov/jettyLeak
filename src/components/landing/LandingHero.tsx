@@ -41,18 +41,18 @@ export function LandingHero() {
             className="max-w-4xl text-[36px] leading-[1.08] font-bold tracking-tight text-gray-900 animate-slide-up sm:text-5xl md:text-6xl lg:text-[72px]"
             style={{ animationDelay: '0.1s' }}
           >
-            Understand your building's
-            <br />
+            Full{' '}
             <span className="bg-gradient-to-r from-indigo-500 via-cyan-500 to-emerald-400 bg-clip-text text-transparent">
               water system
-            </span>
+            </span>{' '}
+            visibility
           </h1>
 
           <p
-            className="mx-auto mt-6 max-w-xl text-[18px] leading-relaxed text-gray-700 animate-slide-up sm:mt-7 sm:text-[22px]"
+            className="mx-auto mt-6 max-w-2xl animate-slide-up text-[18px] font-medium leading-snug text-gray-700 sm:mt-7 sm:text-[20px] md:text-[22px]"
             style={{ animationDelay: '0.2s' }}
           >
-            One sensor. Every fixture. No guesswork.
+            One sensor. Every fixture.
           </p>
 
           <div className="mt-10 animate-slide-up" style={{ animationDelay: '0.3s' }}>

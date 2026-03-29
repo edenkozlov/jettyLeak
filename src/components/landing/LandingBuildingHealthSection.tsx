@@ -61,7 +61,7 @@ export function LandingBuildingHealthSection({
             </div>
 
             <p className="text-center text-[11px] leading-snug text-gray-500">
-              Example: flow pattern off your norm—flagged before damage.
+              Leak repaired—score’s up from last week. Still in watch until the trend holds.
             </p>
 
             <div className="mt-3 grid grid-cols-2 gap-1.5 sm:gap-2">
