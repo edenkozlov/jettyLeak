@@ -15,6 +15,9 @@ export interface Building {
   bhi: number | null
   bhi_label: string | null
   bhi_updated_at: string | null
+  sensors_aggregate?: {
+    aggregate: { count: number }
+  }
   client?: Client
   sensors?: Sensor[]
   fixtures?: Fixture[]

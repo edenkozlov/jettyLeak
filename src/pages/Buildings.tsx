@@ -9,7 +9,7 @@ import { useBuildingsPage } from '@/hooks/useBuildingsPage'
 import useAuth from '@/hooks/auth/useAuth'
 import { CREATE_BUILDING } from '@/mutations/buildingMutations'
 import { GET_CLIENTS } from '@/queries/getClients'
-import type { Client } from '@/types'
+import type { Building, Client } from '@/types'
 import { formatDate } from '@/utils/formatDate'
 import { prefetchBuilding } from '@/utils/prefetchBuilding'
 
@@ -17,22 +17,227 @@ interface ClientsResponse {
   client: Client[]
 }
 
-const BHI_COLORS: Record<string, string> = {
-  healthy: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
-  watch: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400',
-  investigate: 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400',
-  critical: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400',
+type ViewMode = 'cards' | 'table'
+
+// ---------------------------------------------------------------------------
+// BHI helpers
+// ---------------------------------------------------------------------------
+
+const BHI_COLORS: Record<string, { bg: string; text: string; ring: string }> = {
+  healthy: { bg: 'bg-emerald-50 dark:bg-emerald-900/20', text: 'text-emerald-700 dark:text-emerald-400', ring: 'ring-emerald-200 dark:ring-emerald-800' },
+  watch: { bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-700 dark:text-amber-400', ring: 'ring-amber-200 dark:ring-amber-800' },
+  investigate: { bg: 'bg-orange-50 dark:bg-orange-900/20', text: 'text-orange-700 dark:text-orange-400', ring: 'ring-orange-200 dark:ring-orange-800' },
+  critical: { bg: 'bg-red-50 dark:bg-red-900/20', text: 'text-red-700 dark:text-red-400', ring: 'ring-red-200 dark:ring-red-800' },
+}
+
+const BHI_LABELS: Record<string, string> = {
+  healthy: 'Healthy',
+  watch: 'Watch',
+  investigate: 'Investigate',
+  critical: 'Critical',
 }
 
 function BhiBadge({ bhi, label }: { bhi: number | null; label: string | null }) {
   if (bhi == null) return <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
-  const color = BHI_COLORS[label ?? ''] ?? 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+  const c = BHI_COLORS[label ?? '']
+  if (!c) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold tabular-nums text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+        {bhi}
+      </span>
+    )
+  }
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${color}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${c.bg} ${c.text}`}>
       {bhi}
     </span>
   )
 }
+
+// ---------------------------------------------------------------------------
+// Icons
+// ---------------------------------------------------------------------------
+
+const ICON = 'h-4 w-4 shrink-0'
+
+function BuildingIcon({ className = ICON }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  )
+}
+
+function SensorIcon() {
+  return (
+    <svg className={ICON} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.858 15.355-5.858 21.213 0" />
+    </svg>
+  )
+}
+
+function FloorIcon() {
+  return (
+    <svg className={ICON} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+    </svg>
+  )
+}
+
+function GridIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    </svg>
+  )
+}
+
+function ListIcon() {
+  return (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function clientName(building: Building): string | null {
+  if (!building.client) return null
+  return [building.client.first_name, building.client.last_name]
+    .filter(Boolean)
+    .join(' ') || null
+}
+
+function sensorCount(building: Building): number {
+  return building.sensors_aggregate?.aggregate?.count ?? building.sensors?.length ?? 0
+}
+
+// ---------------------------------------------------------------------------
+// Building Card
+// ---------------------------------------------------------------------------
+
+function BuildingCard({
+  building,
+  onMouseEnter,
+  onClick,
+}: {
+  building: Building
+  onMouseEnter: () => void
+  onClick: () => void
+}) {
+  const bhiC = BHI_COLORS[building.bhi_label ?? '']
+  const bhiLabel = BHI_LABELS[building.bhi_label ?? '']
+  const client = clientName(building)
+  const sensors = sensorCount(building)
+  const floors = building.number_of_floors
+
+  return (
+    <div
+      className="group cursor-pointer rounded-xl border border-gray-200 bg-white transition-all hover:border-gray-300 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600"
+      onMouseEnter={onMouseEnter}
+      onClick={onClick}
+    >
+      {/* Header with BHI accent stripe */}
+      <div className={`flex items-start gap-3 rounded-t-xl p-4 pb-3 ${bhiC ? `${bhiC.bg}` : ''}`}>
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+          bhiC ? `${bhiC.bg} ${bhiC.text} ring-1 ${bhiC.ring}` : 'bg-gray-100 text-gray-400 ring-1 ring-gray-200 dark:bg-gray-700 dark:text-gray-500 dark:ring-gray-600'
+        }`}>
+          <BuildingIcon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+            {building.name ?? 'Unnamed Building'}
+          </h3>
+          {building.full_address && (
+            <p className="mt-0.5 truncate text-xs text-gray-500 dark:text-gray-400">
+              {building.full_address}
+            </p>
+          )}
+        </div>
+        {building.bhi != null && (
+          <div className="shrink-0 text-right">
+            <p className={`text-lg font-bold tabular-nums leading-none ${bhiC?.text ?? 'text-gray-500'}`}>
+              {building.bhi}
+            </p>
+            {bhiLabel && (
+              <p className={`mt-0.5 text-[10px] font-medium uppercase tracking-wider ${bhiC?.text ?? 'text-gray-400'}`}>
+                {bhiLabel}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Body */}
+      <div className="space-y-3 px-4 pb-4 pt-3">
+        {/* Live Flow */}
+        <div className="flex items-center justify-between">
+          <LiveFlowIndicator buildingId={building.id} compact />
+        </div>
+
+        {/* Meta row */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400 dark:text-gray-500">
+          {client && (
+            <span className="flex items-center gap-1">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+              </svg>
+              {client}
+            </span>
+          )}
+          {sensors > 0 && (
+            <span className="flex items-center gap-1">
+              <SensorIcon />
+              {sensors} sensor{sensors !== 1 ? 's' : ''}
+            </span>
+          )}
+          {floors != null && floors > 0 && (
+            <span className="flex items-center gap-1">
+              <FloorIcon />
+              {floors} floor{floors !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Loading skeleton
+// ---------------------------------------------------------------------------
+
+const shimmer =
+  'relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/40 before:to-transparent dark:before:via-white/[0.06]'
+
+function CardSkeleton() {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <div className="flex items-start gap-3 p-4 pb-3">
+        <div className={`h-10 w-10 shrink-0 rounded-lg bg-gray-200/70 dark:bg-gray-700/50 ${shimmer}`} />
+        <div className="flex-1 space-y-2">
+          <div className={`h-4 w-32 rounded bg-gray-200/70 dark:bg-gray-700/50 ${shimmer}`} />
+          <div className={`h-3 w-48 rounded bg-gray-200/70 dark:bg-gray-700/50 ${shimmer}`} />
+        </div>
+        <div className={`h-6 w-8 rounded bg-gray-200/70 dark:bg-gray-700/50 ${shimmer}`} />
+      </div>
+      <div className="space-y-3 px-4 pb-4 pt-3">
+        <div className={`h-3.5 w-20 rounded bg-gray-200/70 dark:bg-gray-700/50 ${shimmer}`} />
+        <div className="flex gap-4">
+          <div className={`h-3 w-24 rounded bg-gray-200/70 dark:bg-gray-700/50 ${shimmer}`} />
+          <div className={`h-3 w-16 rounded bg-gray-200/70 dark:bg-gray-700/50 ${shimmer}`} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 
 export default function Buildings() {
   const navigate = useNavigate()
@@ -46,6 +251,7 @@ export default function Buildings() {
     [token],
   )
 
+  const [viewMode, setViewMode] = useState<ViewMode>('cards')
   const [showForm, setShowForm] = useState(false)
   const [address, setAddress] = useState('')
   const [clientId, setClientId] = useState('')
@@ -62,13 +268,20 @@ export default function Buildings() {
     if (showForm) fetchClients()
   }, [showForm, fetchClients])
 
+  const goToBuilding = useCallback(
+    (building: Building) =>
+      navigate(`/dashboard/buildings/${building.id}`, {
+        state: { bhi: building.bhi, bhiLabel: building.bhi_label },
+      }),
+    [navigate],
+  )
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
       const trimmed = address.trim()
       if (!trimmed) return
 
-      // Geocode address via Mapbox
       let latitude: number | null = null
       let longitude: number | null = null
       if (MAPBOX_TOKEN) {
@@ -84,7 +297,7 @@ export default function Buildings() {
             }
           }
         } catch {
-          // Geocoding failed, create without coordinates
+          // Geocoding failed
         }
       }
 
@@ -101,14 +314,6 @@ export default function Buildings() {
     [address, clientId, createBuilding, navigate],
   )
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center text-gray-500 dark:text-gray-400">
-        Loading…
-      </div>
-    )
-  }
-
   if (error) {
     return (
       <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
@@ -119,16 +324,43 @@ export default function Buildings() {
 
   return (
     <div>
+      {/* Header */}
       <div className="mb-4 flex items-center justify-between sm:mb-6">
-        <h1 className="text-xl font-bold sm:text-2xl">Buildings</h1>
-        {isAdmin && (
-          <button
-            onClick={() => setShowForm((v) => !v)}
-            className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600"
-          >
-            {showForm ? 'Cancel' : '+ Add Building'}
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-bold sm:text-2xl">Buildings</h1>
+          {!loading && (
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium tabular-nums text-gray-500 dark:bg-gray-700 dark:text-gray-400">
+              {buildings.length}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {/* View toggle */}
+          <div className="hidden items-center rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-gray-700 dark:bg-gray-800 sm:flex">
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`rounded-md p-1.5 transition-colors ${viewMode === 'cards' ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+              aria-label="Card view"
+            >
+              <GridIcon />
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`rounded-md p-1.5 transition-colors ${viewMode === 'table' ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
+              aria-label="Table view"
+            >
+              <ListIcon />
+            </button>
+          </div>
+          {isAdmin && (
+            <button
+              onClick={() => setShowForm((v) => !v)}
+              className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-600"
+            >
+              {showForm ? 'Cancel' : '+ Add Building'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Add building form */}
@@ -181,114 +413,132 @@ export default function Buildings() {
         </form>
       )}
 
-      {/* Desktop table */}
-      <div className="hidden overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800 sm:block">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-gray-200 bg-gray-50 text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400">
-            <tr>
-              <th className="px-4 py-3 sm:px-6">Name</th>
-              <th className="px-4 py-3 sm:px-6">Address</th>
-              <th className="px-4 py-3 sm:px-6">Health</th>
-              <th className="px-4 py-3 sm:px-6">Flow</th>
-              <th className="px-4 py-3 sm:px-6">Client</th>
-              <th className="px-4 py-3 sm:px-6">Created</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {buildings.map((building) => (
-              <tr
-                key={building.id}
-                className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                onMouseEnter={() => handlePrefetch(building.id)}
-                onClick={() =>
-                  navigate(`/dashboard/buildings/${building.id}`, {
-                    state: { bhi: building.bhi, bhiLabel: building.bhi_label },
-                  })
-                }
-              >
-                <td className="whitespace-nowrap px-4 py-3 font-medium sm:px-6 sm:py-4">
-                  {building.name ?? '—'}
-                </td>
-                <td className="px-4 py-3 text-gray-500 dark:text-gray-400 sm:px-6 sm:py-4">
-                  {building.full_address ?? '—'}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
-                  <BhiBadge bhi={building.bhi} label={building.bhi_label} />
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
-                  <LiveFlowIndicator buildingId={building.id} compact />
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400 sm:px-6 sm:py-4">
-                  {building.client
-                    ? [building.client.first_name, building.client.last_name]
-                        .filter(Boolean)
-                        .join(' ')
-                    : '—'}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400 sm:px-6 sm:py-4">
-                  {formatDate(building.created_at)}
-                </td>
-              </tr>
-            ))}
-            {buildings.length === 0 && (
-              <tr>
-                <td
-                  colSpan={6}
-                  className="px-6 py-8 text-center text-gray-400"
-                >
-                  No buildings found
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* Loading */}
+      {loading && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <CardSkeleton key={i} />
+          ))}
+        </div>
+      )}
 
-      {/* Mobile cards */}
-      <div className="space-y-2 sm:hidden">
-        {buildings.map((building) => (
-          <div
-            key={building.id}
-            className="cursor-pointer rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800"
-            onMouseEnter={() => handlePrefetch(building.id)}
-            onClick={() =>
-              navigate(`/dashboard/buildings/${building.id}`, {
-                state: { bhi: building.bhi, bhiLabel: building.bhi_label },
-              })
-            }
-          >
-            <p className="text-sm font-medium text-gray-900 dark:text-white">
-              {building.name ?? '—'}
-            </p>
-            {building.full_address && (
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                {building.full_address}
+      {/* Card View (default) */}
+      {!loading && viewMode === 'cards' && (
+        <>
+          {buildings.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16 dark:border-gray-700">
+              <BuildingIcon className="mb-3 h-10 w-10 text-gray-300 dark:text-gray-600" />
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                No buildings yet
               </p>
-            )}
-            <div className="mt-2 flex items-center gap-3">
-              <BhiBadge bhi={building.bhi} label={building.bhi_label} />
-              <LiveFlowIndicator buildingId={building.id} compact />
+              {isAdmin && (
+                <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                  Click "+ Add Building" to get started
+                </p>
+              )}
             </div>
-            <div className="mt-2 flex items-center justify-between">
-              <span className="text-xs text-gray-400 dark:text-gray-500">
-                {building.client
-                  ? [building.client.first_name, building.client.last_name]
-                      .filter(Boolean)
-                      .join(' ')
-                  : '—'}
-              </span>
-              <span className="text-xs text-gray-400 dark:text-gray-500">
-                {formatDate(building.created_at)}
-              </span>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {buildings.map((building) => (
+                <BuildingCard
+                  key={building.id}
+                  building={building}
+                  onMouseEnter={() => handlePrefetch(building.id)}
+                  onClick={() => goToBuilding(building)}
+                />
+              ))}
             </div>
-          </div>
-        ))}
-        {buildings.length === 0 && (
-          <p className="py-8 text-center text-sm text-gray-400">
-            No buildings found
-          </p>
-        )}
-      </div>
+          )}
+        </>
+      )}
+
+      {/* Table View */}
+      {!loading && viewMode === 'table' && (
+        <>
+          {buildings.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16 dark:border-gray-700">
+              <BuildingIcon className="mb-3 h-10 w-10 text-gray-300 dark:text-gray-600" />
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                No buildings yet
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-gray-200 bg-gray-50 text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400">
+                  <tr>
+                    <th className="px-4 py-3 sm:px-6">
+                      <span className="inline-flex items-center gap-1.5">
+                        <BuildingIcon className="h-3.5 w-3.5" />
+                        Name
+                      </span>
+                    </th>
+                    <th className="px-4 py-3 sm:px-6">
+                      <span className="inline-flex items-center gap-1.5">
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                        Address
+                      </span>
+                    </th>
+                    <th className="px-4 py-3 sm:px-6">
+                      <span className="inline-flex items-center gap-1.5">
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
+                        Health
+                      </span>
+                    </th>
+                    <th className="px-4 py-3 sm:px-6">
+                      <span className="inline-flex items-center gap-1.5">
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Flow
+                      </span>
+                    </th>
+                    <th className="px-4 py-3 sm:px-6">
+                      <span className="inline-flex items-center gap-1.5">
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                        Client
+                      </span>
+                    </th>
+                    <th className="px-4 py-3 sm:px-6">
+                      <span className="inline-flex items-center gap-1.5">
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>
+                        Created
+                      </span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {buildings.map((building) => (
+                    <tr
+                      key={building.id}
+                      className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                      onMouseEnter={() => handlePrefetch(building.id)}
+                      onClick={() => goToBuilding(building)}
+                    >
+                      <td className="whitespace-nowrap px-4 py-3 font-medium sm:px-6 sm:py-4">
+                        {building.name ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 sm:px-6 sm:py-4">
+                        {building.full_address ?? '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
+                        <BhiBadge bhi={building.bhi} label={building.bhi_label} />
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
+                        <LiveFlowIndicator buildingId={building.id} compact />
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400 sm:px-6 sm:py-4">
+                        {clientName(building) ?? '—'}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400 sm:px-6 sm:py-4">
+                        {formatDate(building.created_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }

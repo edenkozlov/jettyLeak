@@ -13,6 +13,12 @@ export const GET_BUILDINGS_BY_CLIENT_ID = `
       client_id
       bhi
       bhi_label
+      number_of_floors
+      sensors_aggregate {
+        aggregate {
+          count
+        }
+      }
       client {
         id
         first_name
