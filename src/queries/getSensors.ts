@@ -8,6 +8,7 @@ export const GET_SENSORS = `
       building_id
       mappings
       multiplier
+      type
       building {
         id
         name

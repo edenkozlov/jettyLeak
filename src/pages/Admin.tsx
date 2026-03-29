@@ -48,6 +48,7 @@ interface Sensor {
   id: number
   name: string
   multiplier: number | null
+  type: string | null  // 'lora' | 'wifi'
   building: { id: number; name: string } | null
 }
 
@@ -117,7 +118,7 @@ const WIFI_STATUS_CHAR_UUID = import.meta.env.VITE_BLE_WIFI_STATUS_CHAR_UUID
 const WIFI_COMMAND_CHAR_UUID = import.meta.env.VITE_BLE_WIFI_COMMAND_CHAR_UUID
 
 interface FirmwareEntry {
-  id: string
+  id: number
   sensor_type: string
   version: string
   filename: string
@@ -779,6 +780,8 @@ export default function Admin() {
   const [rebootingSensorId, setRebootingSensorId] = useState<number | null>(null)
   const [rebootSearch, setRebootSearch] = useState('')
   const [targetSearch, setTargetSearch] = useState('')
+  const [targetDropdownOpen, setTargetDropdownOpen] = useState(false)
+  const targetDropdownRef = useRef<HTMLDivElement>(null)
 
   // Bluetooth state
   const [bleDevice, setBleDevice] = useState<BluetoothDevice | null>(null)
@@ -897,6 +900,18 @@ export default function Admin() {
     if (activeTab === 'firmware') fetchFirmwareHistory()
   }, [activeTab])
 
+  // Close target dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (targetDropdownRef.current && !targetDropdownRef.current.contains(e.target as Node)) {
+        setTargetDropdownOpen(false)
+        setTargetSearch('')
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   async function handleFirmwareUpload() {
     if (!fwFile || !fwVersion) return
     setFwUploading(true)
@@ -936,7 +951,7 @@ export default function Admin() {
     }
   }
 
-  async function handleFirmwareDelete(id: string) {
+  async function handleFirmwareDelete(id: number) {
     try {
       await fetch(`${EXPRESS_URL}/api/ota/firmware/${id}`, { method: 'DELETE' })
       fetchFirmwareHistory()
@@ -1413,6 +1428,11 @@ export default function Admin() {
                     <div>
                       <span className="text-sm font-medium text-gray-900 dark:text-white">{s.name || `Sensor #${s.id}`}</span>
                       <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">ID: {s.id}</span>
+                      {s.type && (
+                        <span className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${s.type === 'wifi' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'}`}>
+                          {s.type === 'wifi' ? 'WiFi' : 'LoRa'}
+                        </span>
+                      )}
                     </div>
                     <button
                       onClick={() => handleReboot(s.id)}
@@ -1441,11 +1461,11 @@ export default function Admin() {
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Sensor Type</label>
                   <select
                     value={fwSensorType}
-                    onChange={(e) => setFwSensorType(e.target.value as 'receiver' | 'dual')}
+                    onChange={(e) => { setFwSensorType(e.target.value as 'receiver' | 'dual'); setFwTargetSensors([]) }}
                     className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                   >
-                    <option value="receiver">Receiver</option>
-                    <option value="dual">Dual</option>
+                    <option value="receiver">LoRa (Receiver)</option>
+                    <option value="dual">WiFi (Dual)</option>
                   </select>
                 </div>
                 <div>
@@ -1461,64 +1481,97 @@ export default function Admin() {
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Target Sensors</label>
-                {/* Selected sensors chips */}
-                {fwTargetSensors.length > 0 && (
-                  <div className="mb-2 flex flex-wrap gap-1.5">
-                    {fwTargetSensors.map((id) => {
-                      const s = sensors.find((s) => s.id === id)
-                      return (
-                        <span key={id} className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
-                          {s?.name || `#${id}`}
-                          <button
-                            onClick={() => toggleTargetSensor(id)}
-                            className="ml-0.5 hover:text-blue-600 dark:hover:text-blue-100"
-                          >
-                            &times;
-                          </button>
-                        </span>
-                      )
-                    })}
-                    <button
-                      onClick={() => setFwTargetSensors([])}
-                      className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                    >
-                      Clear all
-                    </button>
-                  </div>
-                )}
-                {/* Search + list */}
-                <input
-                  type="text"
-                  placeholder={fwTargetSensors.length === 0 ? 'All sensors (search to select specific ones)' : 'Search to add more...'}
-                  value={targetSearch}
-                  onChange={(e) => setTargetSearch(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-                />
-                {targetSearch && (
-                  <div className="mt-1 max-h-40 overflow-y-auto rounded-md border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-                    {sensors
-                      .filter((s) => {
-                        const q = targetSearch.toLowerCase()
-                        return ((s.name || '').toLowerCase().includes(q) || String(s.id).includes(q)) && !fwTargetSensors.includes(s.id)
-                      })
-                      .map((s) => (
-                        <button
-                          key={s.id}
-                          onClick={() => { toggleTargetSensor(s.id); setTargetSearch('') }}
-                          className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
-                        >
-                          <span className="text-gray-900 dark:text-white">{s.name || `Sensor #${s.id}`}</span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">ID: {s.id}</span>
-                        </button>
-                      ))}
-                    {sensors.filter((s) => {
-                      const q = targetSearch.toLowerCase()
-                      return ((s.name || '').toLowerCase().includes(q) || String(s.id).includes(q)) && !fwTargetSensors.includes(s.id)
-                    }).length === 0 && (
-                      <p className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">No matching sensors.</p>
+                <div className="relative" ref={targetDropdownRef}>
+                  {/* Select box */}
+                  <div
+                    onClick={() => setTargetDropdownOpen(!targetDropdownOpen)}
+                    className="flex min-h-[42px] cursor-pointer flex-wrap items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-600 dark:bg-gray-700"
+                  >
+                    {fwTargetSensors.length === 0 ? (
+                      <span className="text-gray-400 dark:text-gray-500">All sensors of this type</span>
+                    ) : (
+                      <>
+                        {fwTargetSensors.map((id) => {
+                          const s = sensors.find((s) => s.id === id)
+                          return (
+                            <span key={id} className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                              {s?.name || `#${id}`}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleTargetSensor(id) }}
+                                className="ml-0.5 hover:text-blue-600 dark:hover:text-blue-100"
+                              >
+                                &times;
+                              </button>
+                            </span>
+                          )
+                        })}
+                      </>
                     )}
+                    <div className="ml-auto flex items-center gap-1.5 pl-2">
+                      {fwTargetSensors.length > 0 && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setFwTargetSensors([]) }}
+                          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                          title="Clear all"
+                        >
+                          <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" /></svg>
+                        </button>
+                      )}
+                      <svg className={`h-4 w-4 text-gray-400 transition-transform ${targetDropdownOpen ? 'rotate-180' : ''}`} viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" /></svg>
+                    </div>
                   </div>
-                )}
+                  {/* Dropdown */}
+                  {targetDropdownOpen && (
+                    <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800">
+                      <div className="border-b border-gray-200 p-2 dark:border-gray-700">
+                        <input
+                          type="text"
+                          placeholder="Search sensors..."
+                          value={targetSearch}
+                          onChange={(e) => setTargetSearch(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          autoFocus
+                          className="w-full rounded-md border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-500"
+                        />
+                      </div>
+                      <div className="max-h-48 overflow-y-auto py-1">
+                        {sensors
+                          .filter((s) => {
+                            const matchType = fwSensorType === 'receiver' ? 'lora' : 'wifi'
+                            if (s.type !== matchType) return false
+                            if (!targetSearch) return true
+                            const q = targetSearch.toLowerCase()
+                            return (s.name || '').toLowerCase().includes(q) || String(s.id).includes(q)
+                          })
+                          .map((s) => {
+                            const selected = fwTargetSensors.includes(s.id)
+                            return (
+                              <button
+                                key={s.id}
+                                onClick={(e) => { e.stopPropagation(); toggleTargetSensor(s.id) }}
+                                className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors ${selected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                              >
+                                <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${selected ? 'border-blue-500 bg-blue-500 text-white' : 'border-gray-300 dark:border-gray-600'}`}>
+                                  {selected && <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>}
+                                </span>
+                                <span className="flex-1 text-gray-900 dark:text-white">{s.name || `Sensor #${s.id}`}</span>
+                                <span className="text-xs text-gray-400 dark:text-gray-500">#{s.id}</span>
+                              </button>
+                            )
+                          })}
+                        {sensors.filter((s) => {
+                          const matchType = fwSensorType === 'receiver' ? 'lora' : 'wifi'
+                          if (s.type !== matchType) return false
+                          if (!targetSearch) return true
+                          const q = targetSearch.toLowerCase()
+                          return (s.name || '').toLowerCase().includes(q) || String(s.id).includes(q)
+                        }).length === 0 && (
+                          <p className="px-3 py-2 text-sm text-gray-500 dark:text-gray-400">No matching sensors.</p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   {fwTargetSensors.length === 0 ? 'All sensors of this type will receive the update.' : `${fwTargetSensors.length} sensor${fwTargetSensors.length === 1 ? '' : 's'} selected.`}
                 </p>
@@ -1564,7 +1617,7 @@ export default function Admin() {
           {/* History */}
           {(['receiver', 'dual'] as const).map((type) => (
             <div key={type} className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-              <h2 className="mb-4 text-lg font-semibold capitalize text-gray-900 dark:text-white">{type} Firmware History</h2>
+              <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{type === 'receiver' ? 'LoRa (Receiver)' : 'WiFi (Dual)'} Firmware History</h2>
               {fwHistory[type].length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400">No firmware uploaded yet.</p>
               ) : (
