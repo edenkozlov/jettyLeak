@@ -11,6 +11,8 @@ export const GET_BUILDINGS_BY_CLIENT_ID = `
       latitude
       longitude
       client_id
+      bhi
+      bhi_label
       client {
         id
         first_name

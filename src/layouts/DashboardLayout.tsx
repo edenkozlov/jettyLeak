@@ -1,21 +1,120 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type ReactNode } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 
 import logo from '@/assets/belugaLogo.png'
 import { useDashboardLayout } from '@/hooks/useDashboardLayout'
 import useAuth from '@/hooks/auth/useAuth'
 
-const NAV_ITEMS = [
-  { label: 'Reports', path: '/dashboard', adminOnly: false, alsoMatches: ['/dashboard/reports', '/dashboard/mag-reports'] },
-  { label: 'Home', path: '/dashboard/home', adminOnly: true },
-  { label: 'Clients', path: '/dashboard/clients', adminOnly: true },
-  { label: 'Buildings', path: '/dashboard/buildings', adminOnly: false },
-  { label: 'Sensors', path: '/dashboard/sensors', adminOnly: true },
-  { label: 'Admin', path: '/dashboard/admin', adminOnly: true },
-  { label: 'Settings', path: '/dashboard/settings', adminOnly: false },
+// ---------------------------------------------------------------------------
+// Nav item / group definitions
+// ---------------------------------------------------------------------------
+
+interface NavItem {
+  label: string
+  path: string
+  adminOnly: boolean
+  alsoMatches?: string[]
+  icon: ReactNode
+}
+
+interface NavGroup {
+  title: string
+  items: NavItem[]
+}
+
+const ICON_CLS = 'h-4 w-4 shrink-0'
+
+const NAV_GROUPS: NavGroup[] = [
+  {
+    title: 'Overview',
+    items: [
+      {
+        label: 'Home',
+        path: '/dashboard/home',
+        adminOnly: true,
+        icon: (
+          <svg className={ICON_CLS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Reports',
+        path: '/dashboard',
+        adminOnly: false,
+        alsoMatches: ['/dashboard/reports', '/dashboard/mag-reports'],
+        icon: (
+          <svg className={ICON_CLS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        ),
+      },
+    ],
+  },
+  {
+    title: 'Management',
+    items: [
+      {
+        label: 'Buildings',
+        path: '/dashboard/buildings',
+        adminOnly: false,
+        icon: (
+          <svg className={ICON_CLS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Clients',
+        path: '/dashboard/clients',
+        adminOnly: true,
+        icon: (
+          <svg className={ICON_CLS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Sensors',
+        path: '/dashboard/sensors',
+        adminOnly: true,
+        icon: (
+          <svg className={ICON_CLS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.858 15.355-5.858 21.213 0" />
+          </svg>
+        ),
+      },
+    ],
+  },
+  {
+    title: 'System',
+    items: [
+      {
+        label: 'Admin',
+        path: '/dashboard/admin',
+        adminOnly: true,
+        icon: (
+          <svg className={ICON_CLS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Settings',
+        path: '/dashboard/settings',
+        adminOnly: false,
+        icon: (
+          <svg className={ICON_CLS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        ),
+      },
+    ],
+  },
 ]
 
-function navLinkClass({ isActive }: { isActive: boolean }) {
+function navLinkClass(isActive: boolean) {
   return `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
     isActive
       ? 'bg-indigo-50 text-indigo-600 dark:bg-gray-800 dark:text-white'
@@ -23,15 +122,35 @@ function navLinkClass({ isActive }: { isActive: boolean }) {
   }`
 }
 
-export default function DashboardLayout() {
-  const { sidebarOpen, handleToggleSidebar } =
-    useDashboardLayout()
-  const { role } = useAuth()
+function navLinkCollapsedClass(isActive: boolean) {
+  return `flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${
+    isActive
+      ? 'bg-indigo-50 text-indigo-600 dark:bg-gray-800 dark:text-white'
+      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white'
+  }`
+}
 
-  const visibleNavItems = NAV_ITEMS.filter((item) => !item.adminOnly || role === 'admin')
+const HAMBURGER_ICON = (
+  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+)
+
+export default function DashboardLayout() {
+  const { sidebarOpen, handleToggleSidebar } = useDashboardLayout()
+  const { role } = useAuth()
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+
+  const visibleGroups = NAV_GROUPS
+    .map((g) => ({
+      ...g,
+      items: g.items.filter((item) => !item.adminOnly || role === 'admin'),
+    }))
+    .filter((g) => g.items.length > 0)
 
   return (
     <div className="flex h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-20 bg-black/50 lg:hidden"
@@ -40,60 +159,82 @@ export default function DashboardLayout() {
         />
       )}
 
+      {/* Sidebar */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-30 w-64 transform border-r border-gray-200 bg-white transition-transform duration-200 ease-in-out
-          dark:border-gray-700 dark:bg-gray-950 lg:relative lg:translate-x-0
+          fixed inset-y-0 left-0 z-30 flex w-64 flex-col border-r border-gray-200 bg-white
+          transition-all duration-200 ease-in-out dark:border-gray-700 dark:bg-gray-950
+          lg:relative lg:translate-x-0
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'}
         `}
       >
-        <div className="flex h-16 items-center justify-between border-b border-gray-200 px-6 dark:border-gray-700">
-          <Link to="/" className="flex items-center gap-2"><img src={logo} alt="Beluga" className="h-8" /><span className="text-lg font-bold text-gray-900 dark:text-white">Beluga</span></Link>
-          <button
-            onClick={handleToggleSidebar}
-            className="text-gray-400 hover:text-gray-700 dark:hover:text-white lg:hidden"
-            aria-label="Close sidebar"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+        {/* Sidebar header */}
+        <div className={`flex h-16 shrink-0 items-center border-b border-gray-200 dark:border-gray-700 ${sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''} px-4`}>
+          {/* Mobile: logo + close */}
+          <div className="flex flex-1 items-center justify-between lg:hidden">
+            <Link to="/" className="flex items-center gap-2">
+              <img src={logo} alt="Beluga" className="h-8" />
+              <span className="text-lg font-bold text-gray-900 dark:text-white">Beluga</span>
+            </Link>
+            <button
+              onClick={handleToggleSidebar}
+              className="text-gray-400 hover:text-gray-700 dark:hover:text-white"
+              aria-label="Close sidebar"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Desktop: collapse/expand toggle */}
+          <button
+            onClick={() => setSidebarCollapsed((c) => !c)}
+            className="hidden items-center justify-center text-gray-400 hover:text-gray-700 dark:hover:text-white lg:flex"
+            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {HAMBURGER_ICON}
           </button>
         </div>
 
-        <SidebarNav items={visibleNavItems} />
+        {/* Nav */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden">
+          <SidebarNav groups={visibleGroups} collapsed={sidebarCollapsed} />
+        </div>
+
+        {/* Collapse toggle at bottom (desktop only) */}
+        <div className={`hidden shrink-0 border-t border-gray-200 dark:border-gray-700 lg:block ${sidebarCollapsed ? 'px-2 py-2' : 'px-3 py-2'}`}>
+          <button
+            onClick={() => setSidebarCollapsed((c) => !c)}
+            className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-white ${sidebarCollapsed ? 'justify-center' : ''}`}
+          >
+            <svg className={`h-4 w-4 shrink-0 transition-transform duration-200 ${sidebarCollapsed ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            </svg>
+            {!sidebarCollapsed && <span>Collapse</span>}
+          </button>
+        </div>
       </aside>
 
+      {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-white px-3 dark:border-gray-700 dark:bg-gray-800 sm:h-16 sm:px-6">
-          <button
-            onClick={handleToggleSidebar}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-            aria-label="Toggle sidebar"
-          >
-            <svg
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div className="flex items-center gap-3">
+            {/* Mobile hamburger */}
+            <button
+              onClick={handleToggleSidebar}
+              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 lg:hidden"
+              aria-label="Open sidebar"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
+              {HAMBURGER_ICON}
+            </button>
+            {/* Logo in header */}
+            <Link to="/" className="flex items-center gap-2">
+              <img src={logo} alt="Beluga" className="h-7" />
+              <span className="text-lg font-bold text-gray-900 dark:text-white">Beluga</span>
+            </Link>
+          </div>
 
           <ProfileMenu />
         </header>
@@ -106,25 +247,105 @@ export default function DashboardLayout() {
   )
 }
 
-function SidebarNav({ items }: { items: typeof NAV_ITEMS }) {
-  const { pathname } = useLocation()
-
+function isItemActive(item: NavItem, pathname: string) {
   return (
-    <nav className="mt-4 flex flex-col gap-1 px-3">
-      {items.map((item) => {
-        const active =
-          pathname === item.path ||
-          (item.alsoMatches?.some((prefix) => pathname.startsWith(prefix)) ?? false)
+    pathname === item.path ||
+    (item.alsoMatches?.some((p) => pathname.startsWith(p)) ?? false)
+  )
+}
+
+function SidebarNav({ groups, collapsed }: { groups: NavGroup[]; collapsed: boolean }) {
+  const { pathname } = useLocation()
+  const [groupCollapsed, setGroupCollapsed] = useState<Record<string, boolean>>({})
+
+  const toggleGroup = (title: string) =>
+    setGroupCollapsed((prev) => ({ ...prev, [title]: !prev[title] }))
+
+  /* ── Icon-only mode ── */
+  if (collapsed) {
+    return (
+      <nav className="mt-3 flex flex-col items-center gap-0.5 px-1.5">
+        {groups.map((group, idx) => (
+          <div key={group.title} className="w-full">
+            {idx > 0 && (
+              <div className="mx-2 my-2 border-t border-gray-200 dark:border-gray-700" />
+            )}
+            <div className="flex flex-col items-center gap-1">
+              {group.items.map((item) => {
+                const active = isItemActive(item, pathname)
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    end={item.path === '/dashboard'}
+                    title={item.label}
+                    className={() => navLinkCollapsedClass(active)}
+                  >
+                    {item.icon}
+                  </NavLink>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+    )
+  }
+
+  /* ── Full mode with collapsible groups ── */
+  return (
+    <nav className="mt-2 flex flex-col gap-0.5 px-3">
+      {groups.map((group) => {
+        const isGrpCollapsed = groupCollapsed[group.title] ?? false
+        const hasActive = group.items.some((item) => isItemActive(item, pathname))
 
         return (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === '/dashboard'}
-            className={() => navLinkClass({ isActive: active })}
-          >
-            {item.label}
-          </NavLink>
+          <div key={group.title}>
+            <button
+              onClick={() => toggleGroup(group.title)}
+              className="flex w-full items-center justify-between rounded-md px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            >
+              <span>{group.title}</span>
+              <svg
+                className={`h-3 w-3 transition-transform duration-200 ${isGrpCollapsed ? '-rotate-90' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <div
+              className={`grid transition-all duration-200 ${
+                isGrpCollapsed ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'
+              }`}
+            >
+              <div className="overflow-hidden">
+                <div className="flex flex-col gap-0.5 pb-2">
+                  {group.items.map((item) => {
+                    const active = isItemActive(item, pathname)
+                    return (
+                      <NavLink
+                        key={item.path}
+                        to={item.path}
+                        end={item.path === '/dashboard'}
+                        className={() => navLinkClass(active)}
+                      >
+                        {item.icon}
+                        {item.label}
+                      </NavLink>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {isGrpCollapsed && hasActive && (
+              <div className="mx-3 mb-1 h-0.5 rounded-full bg-indigo-400/40" />
+            )}
+          </div>
         )
       })}
     </nav>

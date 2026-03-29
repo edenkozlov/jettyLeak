@@ -5,7 +5,7 @@ import { GET_MAG_SENSORS_BY_BUILDING_ID } from '@/queries/getMagDataByBuildingId
 import { GET_MAG_REPORTS } from '@/queries/getMagReports'
 import { GET_SENSORS_BY_BUILDING_ID } from '@/queries/getSensorsByBuildingId'
 import { computeFlowFromPeaks, type MagDataPoint } from '@/utils/flowComputation'
-import { graphqlFetch, GraphqlError } from '@/utils/graphqlFetch'
+import { graphqlFetch, cachedGraphqlFetch, GraphqlError } from '@/utils/graphqlFetch'
 import { logger } from '@/utils/logger/logger'
 import type { MagReport, Sensor } from '@/types'
 
@@ -118,9 +118,16 @@ export function useLiveFlow(
 
   const initSensors = useCallback(
     async (bid: number): Promise<SensorInfo | 'no-sensor' | 'needs-cal'> => {
-      const magResult = await graphqlFetch<{
-        mag_to_building: { mag_id: number }[]
-      }>(GET_MAG_SENSORS_BY_BUILDING_ID, { buildingId: bid }, tokenRef.current)
+      const [magResult, sensorResult] = await Promise.all([
+        cachedGraphqlFetch<{
+          mag_to_building: { mag_id: number }[]
+        }>(GET_MAG_SENSORS_BY_BUILDING_ID, { buildingId: bid }, tokenRef.current),
+        cachedGraphqlFetch<{ sensor: Sensor[] }>(
+          GET_SENSORS_BY_BUILDING_ID,
+          { buildingId: bid },
+          tokenRef.current,
+        ),
+      ])
 
       const fromBuilding =
         magResult?.mag_to_building?.map((m) => m.mag_id) ?? []
@@ -130,12 +137,6 @@ export function useLiveFlow(
           ? [...new Set([...fromBuilding, fb])]
           : fromBuilding
       if (magIds.length === 0) return 'no-sensor'
-
-      const sensorResult = await graphqlFetch<{ sensor: Sensor[] }>(
-        GET_SENSORS_BY_BUILDING_ID,
-        { buildingId: bid },
-        tokenRef.current,
-      )
 
       const sensors = sensorResult?.sensor ?? []
       let multiplier: number | null = null

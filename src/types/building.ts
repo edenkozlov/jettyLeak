@@ -12,6 +12,9 @@ export interface Building {
   client_id: string | null
   footprint: Array<{ lat: number; lon: number }> | null
   number_of_floors: number | null
+  bhi: number | null
+  bhi_label: string | null
+  bhi_updated_at: string | null
   client?: Client
   sensors?: Sensor[]
   fixtures?: Fixture[]

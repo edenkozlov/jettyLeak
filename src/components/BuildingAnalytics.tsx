@@ -10,6 +10,7 @@ import {
   YAxis,
 } from 'recharts'
 
+import CollapsibleSection from '@/components/CollapsibleSection'
 import LiveFlowIndicator from '@/components/LiveFlowIndicator'
 import {
   useBuildingAnalytics,
@@ -19,6 +20,8 @@ import {
 
 interface Props {
   buildingId: number
+  cachedBhi?: number | null
+  cachedBhiLabel?: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -464,17 +467,32 @@ function PeakHoursSkeleton() {
   )
 }
 
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-4">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <TrendSkeleton />
-        <ActiveFlowSkeleton />
-      </div>
-      <ProjectedSkeleton />
-      <PeakHoursSkeleton />
-    </div>
-  )
+// ---------------------------------------------------------------------------
+// Collapsed-state preview text
+// ---------------------------------------------------------------------------
+
+function trendsPreview(data: AnalyticsData): string | undefined {
+  const parts: string[] = []
+  if (data.dayChangePercent !== null) {
+    const arrow = data.dayChangePercent > 0 ? '↑' : data.dayChangePercent < 0 ? '↓' : '—'
+    parts.push(`${arrow} ${Math.abs(data.dayChangePercent)}% day`)
+  }
+  if (data.activeFlowMs > 0) {
+    parts.push(`${formatDuration(data.activeFlowMs)} active`)
+  }
+  return parts.length > 0 ? parts.join(' · ') : undefined
+}
+
+function projectedPreview(data: AnalyticsData): string | undefined {
+  if (data.todayProjected > 0) return `~${formatLitres(data.todayProjected)} L today est.`
+  return undefined
+}
+
+function peakHoursPreview(data: AnalyticsData): string | undefined {
+  const max = Math.max(...data.peakHours)
+  if (max === 0) return undefined
+  const hour = data.peakHours.indexOf(max)
+  return `Busiest ${formatHour(hour)}–${formatHour((hour + 1) % 24)}`
 }
 
 // ---------------------------------------------------------------------------
@@ -695,9 +713,13 @@ function HealthGauge({
 function BuildingHealthSection({
   health,
   loading,
+  cachedBhi,
+  cachedBhiLabel,
 }: {
   health: BuildingHealth | null
   loading: boolean
+  cachedBhi?: number | null
+  cachedBhiLabel?: string | null
 }) {
   const [open, setOpen] = useState(false)
 
@@ -713,6 +735,38 @@ function BuildingHealthSection({
       document.removeEventListener('keydown', onKey)
     }
   }, [open])
+
+  if (loading && cachedBhi != null) {
+    const lbl = (cachedBhiLabel ?? 'watch') as BuildingHealth['label']
+    return (
+      <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+        <div className="flex items-center gap-4">
+          <div className="w-[100px] shrink-0">
+            <HealthGauge score={cachedBhi} label={lbl} compact />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+              Building Health Index
+            </p>
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-3xl font-extrabold tabular-nums text-gray-900 dark:text-white">
+                {cachedBhi}
+              </span>
+              <span className="text-sm font-medium text-gray-400 dark:text-gray-500">/ 100</span>
+              <span
+                className={`text-xs font-bold uppercase tracking-wider ${HEALTH_LABEL_CLASS[lbl]}`}
+              >
+                {HEALTH_LABEL_COPY[lbl]}
+              </span>
+            </div>
+            <p className="mt-1 text-[11px] text-gray-400 dark:text-gray-500">
+              Refreshing…
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
@@ -914,14 +968,19 @@ function BuildingHealthSection({
 // Main component
 // ---------------------------------------------------------------------------
 
-export default function BuildingAnalytics({ buildingId }: Props) {
+export default function BuildingAnalytics({ buildingId, cachedBhi, cachedBhiLabel }: Props) {
   const { data, health, loading, error } = useBuildingAnalytics(buildingId)
 
   return (
     <div className="space-y-4">
-      <BuildingHealthSection health={health} loading={loading} />
+      <BuildingHealthSection
+        health={health}
+        loading={loading}
+        cachedBhi={cachedBhi}
+        cachedBhiLabel={cachedBhiLabel}
+      />
 
-      {/* Top row: Live Flow + Water Usage stats */}
+      {/* Top row: Live Flow + Water Usage stats — always visible */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <LiveFlowIndicator buildingId={buildingId} />
         {loading ? (
@@ -945,16 +1004,48 @@ export default function BuildingAnalytics({ buildingId }: Props) {
         </div>
       )}
 
-      {loading && <LoadingSkeleton />}
-
-      {data && (
+      {/* Collapsible detail sections — data loads in background,
+          so expanding a section after a moment reveals content instantly */}
+      {(loading || data) && (
         <>
-          <div className="grid gap-4 lg:grid-cols-2">
-            <UsageTrend data={data} />
-            <ActiveFlowToday data={data} />
-          </div>
-          <ProjectedUsageCards data={data} />
-          <PeakUsageHours peakHours={data.peakHours} />
+          <CollapsibleSection
+            title="Trends & Activity"
+            preview={data ? trendsPreview(data) : undefined}
+          >
+            {loading ? (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <TrendSkeleton />
+                <ActiveFlowSkeleton />
+              </div>
+            ) : data ? (
+              <div className="grid gap-4 lg:grid-cols-2">
+                <UsageTrend data={data} />
+                <ActiveFlowToday data={data} />
+              </div>
+            ) : null}
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="Projected Usage"
+            preview={data ? projectedPreview(data) : undefined}
+          >
+            {loading ? (
+              <ProjectedSkeleton />
+            ) : data ? (
+              <ProjectedUsageCards data={data} />
+            ) : null}
+          </CollapsibleSection>
+
+          <CollapsibleSection
+            title="Peak Hours"
+            preview={data ? peakHoursPreview(data) : undefined}
+          >
+            {loading ? (
+              <PeakHoursSkeleton />
+            ) : data ? (
+              <PeakUsageHours peakHours={data.peakHours} />
+            ) : null}
+          </CollapsibleSection>
         </>
       )}
     </div>

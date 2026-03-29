@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 
 import LiveFlowIndicator from '@/components/LiveFlowIndicator'
 import { MAPBOX_TOKEN } from '@/globals/constants'
+import { useAppSelector } from '@/hooks/useAppSelector'
 import { useGraphQL } from '@/hooks/useGraphQL'
 import { useBuildingsPage } from '@/hooks/useBuildingsPage'
 import useAuth from '@/hooks/auth/useAuth'
@@ -10,9 +11,27 @@ import { CREATE_BUILDING } from '@/mutations/buildingMutations'
 import { GET_CLIENTS } from '@/queries/getClients'
 import type { Client } from '@/types'
 import { formatDate } from '@/utils/formatDate'
+import { prefetchBuilding } from '@/utils/prefetchBuilding'
 
 interface ClientsResponse {
   client: Client[]
+}
+
+const BHI_COLORS: Record<string, string> = {
+  healthy: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400',
+  watch: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400',
+  investigate: 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-400',
+  critical: 'bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400',
+}
+
+function BhiBadge({ bhi, label }: { bhi: number | null; label: string | null }) {
+  if (bhi == null) return <span className="text-xs text-gray-300 dark:text-gray-600">—</span>
+  const color = BHI_COLORS[label ?? ''] ?? 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums ${color}`}>
+      {bhi}
+    </span>
+  )
 }
 
 export default function Buildings() {
@@ -20,6 +39,12 @@ export default function Buildings() {
   const { buildings, loading, error } = useBuildingsPage()
   const { role } = useAuth()
   const isAdmin = role === 'admin'
+  const token = useAppSelector((state) => state.login.token)
+
+  const handlePrefetch = useCallback(
+    (buildingId: number) => prefetchBuilding(buildingId, token),
+    [token],
+  )
 
   const [showForm, setShowForm] = useState(false)
   const [address, setAddress] = useState('')
@@ -163,6 +188,7 @@ export default function Buildings() {
             <tr>
               <th className="px-4 py-3 sm:px-6">Name</th>
               <th className="px-4 py-3 sm:px-6">Address</th>
+              <th className="px-4 py-3 sm:px-6">Health</th>
               <th className="px-4 py-3 sm:px-6">Flow</th>
               <th className="px-4 py-3 sm:px-6">Client</th>
               <th className="px-4 py-3 sm:px-6">Created</th>
@@ -173,13 +199,21 @@ export default function Buildings() {
               <tr
                 key={building.id}
                 className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                onClick={() => navigate(`/dashboard/buildings/${building.id}`)}
+                onMouseEnter={() => handlePrefetch(building.id)}
+                onClick={() =>
+                  navigate(`/dashboard/buildings/${building.id}`, {
+                    state: { bhi: building.bhi, bhiLabel: building.bhi_label },
+                  })
+                }
               >
                 <td className="whitespace-nowrap px-4 py-3 font-medium sm:px-6 sm:py-4">
                   {building.name ?? '—'}
                 </td>
                 <td className="px-4 py-3 text-gray-500 dark:text-gray-400 sm:px-6 sm:py-4">
                   {building.full_address ?? '—'}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
+                  <BhiBadge bhi={building.bhi} label={building.bhi_label} />
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
                   <LiveFlowIndicator buildingId={building.id} compact />
@@ -199,7 +233,7 @@ export default function Buildings() {
             {buildings.length === 0 && (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-6 py-8 text-center text-gray-400"
                 >
                   No buildings found
@@ -216,7 +250,12 @@ export default function Buildings() {
           <div
             key={building.id}
             className="cursor-pointer rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800"
-            onClick={() => navigate(`/dashboard/buildings/${building.id}`)}
+            onMouseEnter={() => handlePrefetch(building.id)}
+            onClick={() =>
+              navigate(`/dashboard/buildings/${building.id}`, {
+                state: { bhi: building.bhi, bhiLabel: building.bhi_label },
+              })
+            }
           >
             <p className="text-sm font-medium text-gray-900 dark:text-white">
               {building.name ?? '—'}
@@ -226,7 +265,8 @@ export default function Buildings() {
                 {building.full_address}
               </p>
             )}
-            <div className="mt-2">
+            <div className="mt-2 flex items-center gap-3">
+              <BhiBadge bhi={building.bhi} label={building.bhi_label} />
               <LiveFlowIndicator buildingId={building.id} compact />
             </div>
             <div className="mt-2 flex items-center justify-between">

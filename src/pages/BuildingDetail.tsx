@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate, useParams } from 'react-router'
+import { useLocation, useNavigate, useParams } from 'react-router'
 
 import BuildingAnalytics from '@/components/BuildingAnalytics'
+import CollapsibleSection from '@/components/CollapsibleSection'
 import BuildingFootprint from '@/components/BuildingFootprint'
 import BuildingMap3D from '@/components/BuildingMap3D'
 import { MAPBOX_TOKEN } from '@/globals/constants'
@@ -51,7 +52,13 @@ function pointInPolygon(
 export default function BuildingDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const { building, loading, error } = useBuildingDetail(id)
+
+  // BHI passed via navigation state from the buildings list — available instantly
+  const navState = location.state as { bhi?: number; bhiLabel?: string } | null
+  const instantBhi = building?.bhi ?? navState?.bhi ?? null
+  const instantBhiLabel = building?.bhi_label ?? navState?.bhiLabel ?? null
 
   const [geocodedCoords, setGeocodedCoords] = useState<{
     latitude: number
@@ -325,20 +332,17 @@ export default function BuildingDetail() {
     [building?.fixtures, deleteFixture],
   )
 
+  // Parse building ID from URL param so analytics can start immediately
+  const buildingIdNum = id ? parseInt(id, 10) : null
+  const validBuildingId =
+    buildingIdNum !== null && !Number.isNaN(buildingIdNum) ? buildingIdNum : null
+
   // Priority: user selection > saved in DB > Overpass API result
   const displayFootprints = selectedFootprint
     ? [selectedFootprint]
     : building?.footprint
       ? [{ id: building.id, coordinates: building.footprint }]
       : footprints
-
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center text-gray-500 dark:text-gray-400">
-        Loading…
-      </div>
-    )
-  }
 
   if (error) {
     return (
@@ -348,7 +352,7 @@ export default function BuildingDetail() {
     )
   }
 
-  if (!building) {
+  if (!loading && !building) {
     return (
       <div className="rounded-lg bg-yellow-50 p-4 text-sm text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400">
         Building not found
@@ -356,166 +360,181 @@ export default function BuildingDetail() {
     )
   }
 
-  const clientName = building.client
+  const clientName = building?.client
     ? [building.client.first_name, building.client.last_name]
         .filter(Boolean)
         .join(' ')
     : null
 
+  const shimmer =
+    'relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/40 before:to-transparent dark:before:via-white/[0.06]'
+
   return (
     <div>
-      {/* Back button + Header */}
-      <div className="mb-4 sm:mb-6">
+      {/* Compact header row */}
+      <div className="mb-3 flex items-center gap-3 sm:mb-4">
         <button
           onClick={() => navigate('/dashboard/buildings')}
-          className="mb-3 flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          title="Back to Buildings"
         >
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
-          Back to Buildings
         </button>
 
-        {editingName ? (
-          <input
-            ref={nameInputRef}
-            value={nameValue}
-            onChange={(e) => setNameValue(e.target.value)}
-            onBlur={() => {
-              const trimmed = nameValue.trim() || null
-              setEditingName(false)
-              setLocalName(trimmed)
-              updateBuildingName({ id: building.id, name: trimmed })
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') e.currentTarget.blur()
-              if (e.key === 'Escape') {
-                setNameValue(displayName ?? '')
-                setEditingName(false)
-              }
-            }}
-            className="w-full border-b-2 border-indigo-500 bg-transparent text-xl font-bold outline-none sm:text-2xl"
-            autoFocus
-          />
-        ) : (
-          <h1
-            className="cursor-pointer text-xl font-bold sm:text-2xl"
-            onClick={() => {
-              setNameValue(displayName ?? '')
-              setEditingName(true)
-            }}
-            title="Click to rename"
-          >
-            {displayName ?? (
-              <span className="text-gray-400">Unnamed Building</span>
-            )}
-          </h1>
-        )}
-
-        {building.full_address && (
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            {building.full_address}
-          </p>
-        )}
-
-        {clientName && (
-          <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
-            Client: {clientName}
-          </p>
-        )}
-      </div>
-
-      {/* Analytics */}
-      <div className="mb-4 sm:mb-6">
-        <BuildingAnalytics buildingId={building.id} />
-      </div>
-
-      {/* Map views */}
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        {/* 3D Mapbox View */}
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
-            3D View
-            <span className="ml-2 font-normal text-gray-400">
-              Click a building to select it
-            </span>
-          </h2>
-          {effectiveLat != null && effectiveLon != null ? (
-            <BuildingMap3D
-              latitude={effectiveLat}
-              longitude={effectiveLon}
-              className="h-72 sm:h-96"
-              savedFootprint={building.footprint}
-              onBuildingSelect={handleBuildingSelect}
-            />
-          ) : (
-            <div className="flex h-72 items-center justify-center rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 sm:h-96">
-              <p className="text-sm text-gray-400">No coordinates available</p>
-            </div>
-          )}
-        </div>
-
-        {/* 2D Footprint View with sensor placement */}
-        {!footprintExpanded && (
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Building Footprint
-                <span className="ml-2 font-normal text-gray-400">
-                  Drag sensors onto the floor plan
-                </span>
-              </h2>
-              <button
-                onClick={() => setFootprintExpanded(true)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                title="Expand"
-              >
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
-                </svg>
-              </button>
-            </div>
-            {footprintLoading && !selectedFootprint && !building.footprint ? (
-              <div className="flex h-72 items-center justify-center rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 sm:h-96">
-                <p className="text-sm text-gray-400">Loading footprint…</p>
-              </div>
-            ) : footprintError && !selectedFootprint && !building.footprint ? (
-              <div className="flex h-72 items-center justify-center rounded-xl border border-gray-200 bg-red-50 dark:border-gray-700 dark:bg-red-900/20 sm:h-96">
-                <p className="text-sm text-red-500">{footprintError}</p>
-              </div>
-            ) : (
-              <BuildingFootprint
-                footprints={displayFootprints}
-                sensors={sensors}
-                numberOfFloors={numberOfFloors}
-                onSensorPlaced={handleSensorPlaced}
-                onFloorsChange={handleFloorsChange}
-                onSensorCreate={handleSensorCreate}
-                onSensorRemoved={handleSensorRemoved}
-                onAreaDrawn={handleAreaDrawn}
-                fixtures={fixtures}
-                onFixtureCreate={handleFixtureCreate}
-                onFixturePlaced={handleFixturePlaced}
-                onFixtureRemoved={handleFixtureRemoved}
-                className="h-72 sm:h-96"
+        {loading ? (
+          <div className="flex items-center gap-3">
+            <div className={`h-6 w-40 rounded-md bg-gray-200/70 dark:bg-gray-700/50 ${shimmer}`} />
+            <div className={`hidden h-4 w-48 rounded-md bg-gray-200/70 dark:bg-gray-700/50 sm:block ${shimmer}`} />
+          </div>
+        ) : building ? (
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5">
+            {editingName ? (
+              <input
+                ref={nameInputRef}
+                value={nameValue}
+                onChange={(e) => setNameValue(e.target.value)}
+                onBlur={() => {
+                  const trimmed = nameValue.trim() || null
+                  setEditingName(false)
+                  setLocalName(trimmed)
+                  updateBuildingName({ id: building.id, name: trimmed })
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur()
+                  if (e.key === 'Escape') {
+                    setNameValue(displayName ?? '')
+                    setEditingName(false)
+                  }
+                }}
+                className="border-b-2 border-indigo-500 bg-transparent text-lg font-bold outline-none"
+                autoFocus
               />
+            ) : (
+              <h1
+                className="cursor-pointer truncate text-lg font-bold"
+                onClick={() => {
+                  setNameValue(displayName ?? '')
+                  setEditingName(true)
+                }}
+                title="Click to rename"
+              >
+                {displayName ?? (
+                  <span className="text-gray-400">Unnamed Building</span>
+                )}
+              </h1>
+            )}
+            {building.full_address && (
+              <span className="truncate text-sm text-gray-400 dark:text-gray-500">
+                {building.full_address}
+              </span>
+            )}
+            {clientName && (
+              <span className="text-xs text-gray-400 dark:text-gray-500">
+                · {clientName}
+              </span>
             )}
           </div>
+        ) : null}
+      </div>
+
+      {/* Analytics — starts immediately using URL param, no waiting for building data */}
+      <div className="mb-4 sm:mb-6">
+        {validBuildingId != null && (
+          <BuildingAnalytics
+            buildingId={validBuildingId}
+            cachedBhi={instantBhi}
+            cachedBhiLabel={instantBhiLabel}
+          />
         )}
       </div>
 
+      {/* Map views — collapsible, loads in bg */}
+      <CollapsibleSection title="3D View & Footprint">
+        {loading ? (
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+            <div className={`h-72 rounded-xl bg-gray-200/70 dark:bg-gray-700/50 sm:h-96 ${shimmer}`} />
+            <div className={`h-72 rounded-xl bg-gray-200/70 dark:bg-gray-700/50 sm:h-96 ${shimmer}`} />
+          </div>
+        ) : building ? (
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+            {/* 3D Mapbox View */}
+            <div>
+              <h2 className="mb-2 text-sm font-semibold text-gray-700 dark:text-gray-300">
+                3D View
+                <span className="ml-2 font-normal text-gray-400">
+                  Click a building to select it
+                </span>
+              </h2>
+              {effectiveLat != null && effectiveLon != null ? (
+                <BuildingMap3D
+                  latitude={effectiveLat}
+                  longitude={effectiveLon}
+                  className="h-72 sm:h-96"
+                  savedFootprint={building.footprint}
+                  onBuildingSelect={handleBuildingSelect}
+                />
+              ) : (
+                <div className="flex h-72 items-center justify-center rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 sm:h-96">
+                  <p className="text-sm text-gray-400">No coordinates available</p>
+                </div>
+              )}
+            </div>
+
+            {/* 2D Footprint View with sensor placement */}
+            {!footprintExpanded && (
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Building Footprint
+                    <span className="ml-2 font-normal text-gray-400">
+                      Drag sensors onto the floor plan
+                    </span>
+                  </h2>
+                  <button
+                    onClick={() => setFootprintExpanded(true)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                    title="Expand"
+                  >
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                    </svg>
+                  </button>
+                </div>
+                {footprintLoading && !selectedFootprint && !building.footprint ? (
+                  <div className="flex h-72 items-center justify-center rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 sm:h-96">
+                    <p className="text-sm text-gray-400">Loading footprint…</p>
+                  </div>
+                ) : footprintError && !selectedFootprint && !building.footprint ? (
+                  <div className="flex h-72 items-center justify-center rounded-xl border border-gray-200 bg-red-50 dark:border-gray-700 dark:bg-red-900/20 sm:h-96">
+                    <p className="text-sm text-red-500">{footprintError}</p>
+                  </div>
+                ) : (
+                  <BuildingFootprint
+                    footprints={displayFootprints}
+                    sensors={sensors}
+                    numberOfFloors={numberOfFloors}
+                    onSensorPlaced={handleSensorPlaced}
+                    onFloorsChange={handleFloorsChange}
+                    onSensorCreate={handleSensorCreate}
+                    onSensorRemoved={handleSensorRemoved}
+                    onAreaDrawn={handleAreaDrawn}
+                    fixtures={fixtures}
+                    onFixtureCreate={handleFixtureCreate}
+                    onFixturePlaced={handleFixturePlaced}
+                    onFixtureRemoved={handleFixtureRemoved}
+                    className="h-72 sm:h-96"
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        ) : null}
+      </CollapsibleSection>
+
       {/* Expanded footprint overlay */}
-      {footprintExpanded && (
+      {footprintExpanded && building && (
         <div className="fixed inset-0 z-20 lg:left-64">
           <div className="flex h-full flex-col bg-gray-50 dark:bg-gray-900">
             <div className="flex items-center justify-between px-4 py-3">

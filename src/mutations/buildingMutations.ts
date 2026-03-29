@@ -108,6 +108,20 @@ export const UPDATE_BUILDING_NAME = `
   }
 `
 
+export const UPDATE_BUILDING_BHI = `
+  mutation UpdateBuildingBhi($id: bigint!, $bhi: smallint, $bhi_label: String, $bhi_updated_at: timestamptz) {
+    update_building_by_pk(
+      pk_columns: { id: $id }
+      _set: { bhi: $bhi, bhi_label: $bhi_label, bhi_updated_at: $bhi_updated_at }
+    ) {
+      id
+      bhi
+      bhi_label
+      bhi_updated_at
+    }
+  }
+`
+
 export const DELETE_BUILDING = `
   mutation DeleteBuilding($id: bigint!) {
     delete_building_by_pk(id: $id) {

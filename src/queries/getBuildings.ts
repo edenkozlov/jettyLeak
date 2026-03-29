@@ -8,6 +8,8 @@ export const GET_BUILDINGS = `
       latitude
       longitude
       client_id
+      bhi
+      bhi_label
       client {
         id
         first_name

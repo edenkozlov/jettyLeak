@@ -1,7 +1,8 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { useGraphQL } from '@/hooks/useGraphQL'
+import { useAppSelector } from '@/hooks/useAppSelector'
 import { GET_BUILDING_BY_ID } from '@/queries/getBuildingById'
+import { cachedGraphqlFetch } from '@/utils/graphqlFetch'
 
 import type { Building } from '@/types'
 
@@ -10,14 +11,45 @@ interface BuildingByIdResponse {
 }
 
 export function useBuildingDetail(buildingId: string | undefined) {
-  const { data, loading, error, executeQuery } =
-    useGraphQL<BuildingByIdResponse>(GET_BUILDING_BY_ID)
+  const token = useAppSelector((state) => state.login.token)
+  const tokenRef = useRef(token)
+  tokenRef.current = token
+
+  const [data, setData] = useState<BuildingByIdResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (buildingId) {
-      executeQuery({ id: buildingId })
+    if (!buildingId) {
+      setLoading(false)
+      return
     }
-  }, [buildingId, executeQuery])
+
+    let cancelled = false
+    setLoading(true)
+    setError(null)
+
+    cachedGraphqlFetch<BuildingByIdResponse>(
+      GET_BUILDING_BY_ID,
+      { id: buildingId },
+      tokenRef.current,
+    )
+      .then((result) => {
+        if (cancelled) return
+        setData(result)
+      })
+      .catch((err) => {
+        if (cancelled) return
+        setError(err instanceof Error ? err.message : 'Failed to load building')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [buildingId, token])
 
   const building = useMemo(() => data?.building_by_pk ?? null, [data])
 

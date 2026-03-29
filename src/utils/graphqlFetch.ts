@@ -1,4 +1,5 @@
 import { GRAPHQL_ENDPOINT, HASURA_ADMIN_SECRET } from '@/globals/constants'
+import { getCached, setCache, dedupeInflight } from '@/utils/queryCache'
 
 export class GraphqlError extends Error {
   constructor(
@@ -51,4 +52,25 @@ export async function graphqlFetch<T>(
     throw new GraphqlError(msg, null, false)
   }
   return json.data ?? null
+}
+
+/**
+ * Cached + deduplicated wrapper around graphqlFetch.
+ * Returns cached data if available and fresh, otherwise fetches and caches.
+ * Identical in-flight requests are deduplicated automatically.
+ */
+export async function cachedGraphqlFetch<T>(
+  query: string,
+  variables: Record<string, unknown>,
+  token: string | null,
+  ttlMs?: number,
+): Promise<T | null> {
+  const cached = getCached<T | null>(query, variables, ttlMs)
+  if (cached !== undefined) return cached
+
+  return dedupeInflight(query, variables, async () => {
+    const result = await graphqlFetch<T>(query, variables, token)
+    setCache(query, variables, result)
+    return result
+  })
 }

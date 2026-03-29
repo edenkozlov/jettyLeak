@@ -10,6 +10,9 @@ export const GET_BUILDING_BY_ID = `
       client_id
       footprint
       number_of_floors
+      bhi
+      bhi_label
+      bhi_updated_at
       client {
         id
         first_name

@@ -16,7 +16,8 @@ import {
   computeBuildingHealth,
   type BuildingHealth,
 } from '@/utils/buildingHealth'
-import { graphqlFetch } from '@/utils/graphqlFetch'
+import { graphqlFetch, cachedGraphqlFetch } from '@/utils/graphqlFetch'
+import { UPDATE_BUILDING_BHI } from '@/mutations/buildingMutations'
 import type { MagReport, Sensor } from '@/types'
 
 export type { BuildingHealth }
@@ -154,9 +155,16 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
 
     ;(async () => {
       try {
-        const magResult = await graphqlFetch<{
-          mag_to_building: { mag_id: number }[]
-        }>(GET_MAG_SENSORS_BY_BUILDING_ID, { buildingId }, tokenRef.current)
+        const [magResult, sensorResult] = await Promise.all([
+          cachedGraphqlFetch<{
+            mag_to_building: { mag_id: number }[]
+          }>(GET_MAG_SENSORS_BY_BUILDING_ID, { buildingId }, tokenRef.current),
+          cachedGraphqlFetch<{ sensor: Sensor[] }>(
+            GET_SENSORS_BY_BUILDING_ID,
+            { buildingId },
+            tokenRef.current,
+          ),
+        ])
         if (cancelled) return
 
         const magIds =
@@ -167,13 +175,6 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           setLoading(false)
           return
         }
-
-        const sensorResult = await graphqlFetch<{ sensor: Sensor[] }>(
-          GET_SENSORS_BY_BUILDING_ID,
-          { buildingId },
-          tokenRef.current,
-        )
-        if (cancelled) return
 
         const sensors = sensorResult?.sensor ?? []
         let multiplier: number | null = null
@@ -379,6 +380,18 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
 
         setHealth(healthPayload)
         setData(analyticsPayload)
+
+        // Persist BHI to DB so the buildings list can show it without re-computing
+        graphqlFetch(
+          UPDATE_BUILDING_BHI,
+          {
+            id: buildingId,
+            bhi: healthPayload.bhi,
+            bhi_label: healthPayload.label,
+            bhi_updated_at: new Date().toISOString(),
+          },
+          tokenRef.current,
+        ).catch(() => {})
       } catch (err) {
         if (!cancelled) {
           setHealth(null)
