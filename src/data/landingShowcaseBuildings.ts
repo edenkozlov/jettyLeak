@@ -21,25 +21,24 @@ export interface LandingShowcaseBuilding {
 
 export const LANDING_SHOWCASE_BUILDINGS: LandingShowcaseBuilding[] = [
   {
-    id: 'pare-1',
+    id: 'demo-mixed-1',
     label: 'Mixed-use',
-    addressLine1: '5579 Pare',
-    cityLine: 'Montreal, QC',
-    imageSrc: 'https://picsum.photos/seed/beluga5579pare/960/640',
+    addressLine1: '400 Market Street',
+    cityLine: 'Portland, OR',
+    imageSrc: 'https://picsum.photos/seed/beluga-demo-market/960/640',
   },
   {
-    id: 'commune-1',
+    id: 'demo-waterfront-1',
     label: 'Waterfront',
-    addressLine1: '221 de la Commune',
-    cityLine: 'Montreal, QC',
-    imageSrc: 'https://picsum.photos/seed/beluga221commune/960/640',
+    addressLine1: '88 Riverfront Drive',
+    cityLine: 'Denver, CO',
+    imageSrc: 'https://picsum.photos/seed/beluga-demo-river/960/640',
   },
-  // Demo duplicate of a real site so the grid shows 3 cards — remove when you have a third building.
   {
-    id: 'pare-2',
+    id: 'demo-office-1',
     label: 'Office',
-    addressLine1: '5579 Pare',
-    cityLine: 'Montreal, QC',
-    imageSrc: 'https://picsum.photos/seed/beluga5579pare-b/960/640',
+    addressLine1: '2200 Commerce Place',
+    cityLine: 'Austin, TX',
+    imageSrc: 'https://picsum.photos/seed/beluga-demo-office/960/640',
   },
 ]

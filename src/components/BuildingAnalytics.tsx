@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   Bar,
   BarChart,
@@ -510,6 +511,187 @@ function HealthHoverPanel({ title, formula }: { title: string; formula: string }
   )
 }
 
+function HealthGauge({
+  score,
+  label,
+  compact = false,
+}: {
+  score: number
+  label: BuildingHealth['label']
+  compact?: boolean
+}) {
+  const cx = 150
+  const cy = 138
+  const r = 108
+  const sw = 20
+
+  const toAng = (s: number) => Math.PI * (1 - s / 100)
+  const xy = (a: number, rad = r) => ({
+    x: cx + rad * Math.cos(a),
+    y: cy - rad * Math.sin(a),
+  })
+  const arcD = (s1: number, s2: number) => {
+    const a1 = toAng(s1)
+    const a2 = toAng(s2)
+    const p1 = xy(a1)
+    const p2 = xy(a2)
+    return `M ${p1.x} ${p1.y} A ${r} ${r} 0 ${Math.abs(a1 - a2) > Math.PI ? 1 : 0} 1 ${p2.x} ${p2.y}`
+  }
+
+  const zones = [
+    { from: 0, to: 49.6, color: '#dc2626' },
+    { from: 50.4, to: 69.6, color: '#ea580c' },
+    { from: 70.4, to: 84.6, color: '#d97706' },
+    { from: 85.4, to: 100, color: '#16a34a' },
+  ]
+
+  const gaugeColor: Record<BuildingHealth['label'], string> = {
+    healthy: '#16a34a',
+    watch: '#d97706',
+    investigate: '#ea580c',
+    critical: '#dc2626',
+  }
+
+  const s = Math.min(100, Math.max(0, score))
+  const na = toAng(s)
+  const tipR = r - sw / 2 - 2
+  const tailR = 14
+  const hw = 4
+  const tip = xy(na, tipR)
+  const tail = {
+    x: cx + tailR * Math.cos(na + Math.PI),
+    y: cy - tailR * Math.sin(na + Math.PI),
+  }
+  const b1 = {
+    x: cx + hw * Math.cos(na + Math.PI / 2),
+    y: cy - hw * Math.sin(na + Math.PI / 2),
+  }
+  const b2 = {
+    x: cx + hw * Math.cos(na - Math.PI / 2),
+    y: cy - hw * Math.sin(na - Math.PI / 2),
+  }
+
+  return (
+    <svg
+      viewBox={compact ? '20 10 260 140' : '0 0 300 195'}
+      className={compact ? 'w-full' : 'mx-auto w-full max-w-[280px]'}
+      role="img"
+      aria-label={`Health score ${score}, ${HEALTH_LABEL_COPY[label]}`}
+    >
+      <defs>
+        <filter id="bhi-needle-shadow">
+          <feDropShadow
+            dx="0"
+            dy="1"
+            stdDeviation="2"
+            floodColor="#000"
+            floodOpacity="0.2"
+          />
+        </filter>
+      </defs>
+
+      {/* Background track */}
+      <path
+        d={arcD(0, 100)}
+        fill="none"
+        stroke="currentColor"
+        className="text-gray-100 dark:text-gray-700/40"
+        strokeWidth={sw + 6}
+        strokeLinecap="round"
+      />
+
+      {/* Colored zone arcs */}
+      {zones.map((z) => (
+        <path
+          key={z.from}
+          d={arcD(z.from, z.to)}
+          fill="none"
+          stroke={z.color}
+          strokeWidth={sw}
+          strokeLinecap="butt"
+        />
+      ))}
+      <path
+        d={arcD(0, 0.4)}
+        fill="none"
+        stroke={zones[0]!.color}
+        strokeWidth={sw}
+        strokeLinecap="round"
+      />
+      <path
+        d={arcD(99.6, 100)}
+        fill="none"
+        stroke={zones[zones.length - 1]!.color}
+        strokeWidth={sw}
+        strokeLinecap="round"
+      />
+
+      {/* Needle */}
+      <g filter="url(#bhi-needle-shadow)">
+        <path
+          d={`M ${tip.x} ${tip.y} L ${b1.x} ${b1.y} L ${tail.x} ${tail.y} L ${b2.x} ${b2.y} Z`}
+          fill="currentColor"
+          className="text-gray-800 dark:text-gray-100"
+        />
+      </g>
+      <circle
+        cx={cx}
+        cy={cy}
+        r={8}
+        fill="currentColor"
+        className="text-gray-200 dark:text-gray-600"
+      />
+      <circle
+        cx={cx}
+        cy={cy}
+        r={5}
+        fill="currentColor"
+        className="text-gray-700 dark:text-gray-200"
+      />
+      <circle
+        cx={cx}
+        cy={cy}
+        r={2.5}
+        fill="currentColor"
+        className="text-white dark:text-white"
+      />
+
+      {!compact && (
+        <>
+          <text
+            x={cx}
+            y={cy + 36}
+            textAnchor="middle"
+            className="fill-gray-900 dark:fill-white"
+            style={{
+              fontSize: 38,
+              fontWeight: 800,
+              fontFamily: 'system-ui, sans-serif',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            {score}
+          </text>
+          <text
+            x={cx}
+            y={cy + 53}
+            textAnchor="middle"
+            fill={gaugeColor[label]}
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              fontFamily: 'system-ui, sans-serif',
+              letterSpacing: '0.18em',
+            }}
+          >
+            {HEALTH_LABEL_COPY[label].toUpperCase()}
+          </text>
+        </>
+      )}
+    </svg>
+  )
+}
+
 function BuildingHealthSection({
   health,
   loading,
@@ -517,16 +699,31 @@ function BuildingHealthSection({
   health: BuildingHealth | null
   loading: boolean
 }) {
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.body.style.overflow = 'hidden'
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = ''
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
   if (loading) {
     return (
       <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-        <Bone className="mb-3 h-4 w-40" />
-        <div className="flex flex-wrap gap-3">
-          <Bone className="h-16 w-24" />
-          <Bone className="h-10 flex-1 min-w-[8rem]" />
-          <Bone className="h-10 flex-1 min-w-[8rem]" />
-          <Bone className="h-10 flex-1 min-w-[8rem]" />
-          <Bone className="h-10 flex-1 min-w-[8rem]" />
+        <div className="flex items-center gap-4">
+          <Bone className="h-[52px] w-[100px] shrink-0 rounded-lg" />
+          <div className="flex-1 space-y-2">
+            <Bone className="h-3 w-32" />
+            <Bone className="h-6 w-20" />
+            <Bone className="h-2.5 w-48" />
+          </div>
         </div>
       </div>
     )
@@ -546,75 +743,170 @@ function BuildingHealthSection({
     health
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-            Building health
-          </h3>
-          <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">{calibration.summary}</p>
-          {insufficientData && (
-            <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
-              Not enough magnetometer samples today to fully score reliability — BHI is capped.
+    <>
+      {/* Compact card */}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="group/card w-full cursor-pointer rounded-xl border border-gray-200 bg-white p-4 text-left transition hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600"
+      >
+        <div className="flex items-center gap-4">
+          <div className="w-[100px] shrink-0">
+            <HealthGauge score={bhi} label={label} compact />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">
+              Building Health Index
+              {isEstimate && (
+                <span className="ml-1.5 text-[10px] font-medium tracking-wide text-slate-400 dark:text-slate-500">
+                  EST.
+                </span>
+              )}
+              {insufficientData && (
+                <span
+                  className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-500"
+                  title="Limited data today"
+                />
+              )}
             </p>
-          )}
-        </div>
-        <div className="group relative flex items-baseline gap-2 outline-none" tabIndex={0}>
-          <span className="text-4xl font-bold tabular-nums text-gray-900 dark:text-white">
-            {bhi}
-          </span>
-          <span className="text-sm font-medium text-gray-400">/ 100</span>
-          {isEstimate && (
-            <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-              Est.
-            </span>
-          )}
-          <button
-            type="button"
-            className="ml-1 flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs font-semibold text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
-            aria-label="How overall score is calculated"
-          >
-            ?
-          </button>
-          <HealthHoverPanel title="Building Health Index (BHI)" formula={overallFormula} />
-          <span
-            className={`ml-2 text-sm font-semibold uppercase tracking-wide ${HEALTH_LABEL_CLASS[label]}`}
-          >
-            {HEALTH_LABEL_COPY[label]}
-          </span>
-        </div>
-      </div>
-      <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
-        Hover or focus each pillar for how it is calculated. Same data as usage charts below.
-      </p>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {(
-          [
-            ['Trust', subScores.trust] as const,
-            ['Leak / idle', subScores.leak] as const,
-            ['Hydraulic', subScores.hydraulic] as const,
-            ['Mechanical', subScores.mechanical] as const,
-          ] as const
-        ).map(([name, sub]) => (
-          <div
-            key={name}
-            className="group relative cursor-default rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 outline-none hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-900/50 dark:hover:border-indigo-800"
-            tabIndex={0}
-          >
-            <HealthHoverPanel title={`${name} pillar`} formula={sub.formula} />
-            <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-              {name}
-            </p>
-            <p className="mt-0.5 text-xl font-bold tabular-nums text-gray-900 dark:text-white">
-              {Math.round(sub.score)}
-            </p>
-            <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-gray-500 dark:text-gray-400">
-              {sub.summary}
+            <div className="mt-1 flex items-baseline gap-2">
+              <span className="text-3xl font-extrabold tabular-nums text-gray-900 dark:text-white">
+                {bhi}
+              </span>
+              <span className="text-sm font-medium text-gray-400 dark:text-gray-500">/ 100</span>
+              <span
+                className={`text-xs font-bold uppercase tracking-wider ${HEALTH_LABEL_CLASS[label]}`}
+              >
+                {HEALTH_LABEL_COPY[label]}
+              </span>
+            </div>
+            <p className="mt-1 line-clamp-1 text-[11px] text-gray-500 dark:text-gray-400">
+              {calibration.summary}
             </p>
           </div>
-        ))}
-      </div>
-    </div>
+          <div className="shrink-0 text-gray-300 transition group-hover/card:text-gray-400 dark:text-gray-600 dark:group-hover/card:text-gray-500">
+            <svg
+              className="h-5 w-5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="m9 18 6-6-6-6" />
+            </svg>
+          </div>
+        </div>
+      </button>
+
+      {/* Detail modal */}
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setOpen(false)}
+        >
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+          <div
+            className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-gray-200 bg-white p-6 shadow-2xl dark:border-gray-700 dark:bg-gray-800"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              aria-label="Close"
+            >
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </button>
+
+            {/* Header */}
+            <div className="flex items-start gap-3 pr-10">
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                  Building Health Index
+                </h3>
+                {isEstimate && (
+                  <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    Estimate — calibrating
+                  </span>
+                )}
+              </div>
+              <div className="group relative outline-none" tabIndex={0}>
+                <button
+                  type="button"
+                  className="flex h-6 w-6 items-center justify-center rounded-full border border-gray-300 text-xs font-semibold text-gray-500 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+                  aria-label="How overall score is calculated"
+                >
+                  ?
+                </button>
+                <HealthHoverPanel title="Building Health Index (BHI)" formula={overallFormula} />
+              </div>
+            </div>
+
+            {/* Full gauge */}
+            <div className="mt-4">
+              <HealthGauge score={bhi} label={label} />
+            </div>
+
+            {/* Calibration & warnings */}
+            <div className="mt-2 space-y-1 text-center">
+              <p className="text-xs text-gray-500 dark:text-gray-400">{calibration.summary}</p>
+              {insufficientData && (
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  Not enough magnetometer samples today — BHI is capped.
+                </p>
+              )}
+            </div>
+
+            {/* Pillar sub-scores */}
+            <div className="mt-5 border-t border-gray-100 pt-4 dark:border-gray-700/50">
+              <p className="mb-2.5 text-[11px] text-gray-400 dark:text-gray-500">
+                Hover each pillar for how it is calculated.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {(
+                  [
+                    ['Trust', subScores.trust] as const,
+                    ['Leak / idle', subScores.leak] as const,
+                    ['Hydraulic', subScores.hydraulic] as const,
+                    ['Mechanical', subScores.mechanical] as const,
+                  ] as const
+                ).map(([name, sub]) => (
+                  <div
+                    key={name}
+                    className="group relative cursor-default rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 outline-none hover:border-indigo-200 dark:border-gray-700 dark:bg-gray-900/50 dark:hover:border-indigo-800"
+                    tabIndex={0}
+                  >
+                    <HealthHoverPanel title={`${name} pillar`} formula={sub.formula} />
+                    <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      {name}
+                    </p>
+                    <p className="mt-0.5 text-xl font-bold tabular-nums text-gray-900 dark:text-white">
+                      {Math.round(sub.score)}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-[10px] leading-snug text-gray-500 dark:text-gray-400">
+                      {sub.summary}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 

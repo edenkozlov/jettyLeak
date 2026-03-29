@@ -1,0 +1,79 @@
+const SENSOR_POINTS = [
+  {
+    icon: <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />,
+    title: 'Real usage tracking',
+    desc: 'See how water is used across your building over time, from total consumption to detailed patterns.',
+  },
+  {
+    icon: (
+      <>
+        <rect x="4" y="4" width="16" height="16" rx="2" />
+        <rect x="9" y="9" width="6" height="6" />
+        <line x1="9" y1="2" x2="9" y2="4" />
+        <line x1="15" y1="2" x2="15" y2="4" />
+        <line x1="9" y1="20" x2="9" y2="22" />
+        <line x1="15" y1="20" x2="15" y2="22" />
+        <line x1="20" y1="9" x2="22" y2="9" />
+        <line x1="20" y1="14" x2="22" y2="14" />
+        <line x1="2" y1="9" x2="4" y2="9" />
+        <line x1="2" y1="14" x2="4" y2="14" />
+      </>
+    ),
+    title: 'Fixture intelligence',
+    desc: 'Automatically identifies toilets, sinks, showers, and appliances based on how water flows through the system.',
+  },
+  {
+    icon: (
+      <>
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+      </>
+    ),
+    title: 'Performance insights',
+    desc: "Understand what's inefficient, what's changing, and where to focus — without guesswork.",
+  },
+] as const
+
+export function LandingSensorSection() {
+  return (
+    <section className="relative bg-white pt-12 pb-20 sm:pt-16 sm:pb-32 lg:pt-24 lg:pb-40">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="text-xs font-semibold tracking-[0.3em] text-emerald-600 uppercase">The sensor</p>
+          <h2 className="mt-4 text-[26px] leading-tight font-bold tracking-tight text-gray-900 sm:mt-5 sm:text-[34px] md:text-[46px]">
+            One install. Full visibility.
+          </h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-gray-500 sm:mt-4 sm:text-[16px]">
+            Beluga installs on your building's main water line and observes how water moves through the system
+            — no pipe cutting or specialized labor required.
+          </p>
+        </div>
+
+        <div className="mt-12 grid gap-3 sm:mt-16 sm:grid-cols-3 sm:gap-4">
+          {SENSOR_POINTS.map((item) => (
+            <div
+              key={item.title}
+              className="rounded-xl border border-gray-100 bg-gray-50/50 p-5 text-center sm:p-6"
+            >
+              <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  {item.icon}
+                </svg>
+              </div>
+              <h3 className="mt-4 text-[14px] font-semibold text-gray-900">{item.title}</h3>
+              <p className="mt-1.5 text-[13px] leading-relaxed text-gray-500">{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
