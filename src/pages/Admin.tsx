@@ -49,6 +49,9 @@ interface Sensor {
   name: string
   multiplier: number | null
   type: string | null  // 'lora' | 'wifi'
+  last_wifi: string | null
+  last_lora: string | null
+  firmware_version: string | null
   building: { id: number; name: string } | null
 }
 
@@ -117,6 +120,11 @@ const WIFI_PASS_CHAR_UUID = import.meta.env.VITE_BLE_WIFI_PASS_CHAR_UUID
 const WIFI_STATUS_CHAR_UUID = import.meta.env.VITE_BLE_WIFI_STATUS_CHAR_UUID
 const WIFI_COMMAND_CHAR_UUID = import.meta.env.VITE_BLE_WIFI_COMMAND_CHAR_UUID
 
+interface FirmwareTarget {
+  sensor_id: number
+  is_updated: boolean
+}
+
 interface FirmwareEntry {
   id: number
   sensor_type: string
@@ -127,6 +135,7 @@ interface FirmwareEntry {
   uploaded_at: string
   notes: string
   target_sensors: number[]
+  targets: FirmwareTarget[]
 }
 
 const CHART_COLORS = {
@@ -806,6 +815,17 @@ export default function Admin() {
 
   useEffect(() => { fetchSensors() }, [fetchSensors])
 
+  // Poll sensors + firmware history every 30s on firmware tab for live status
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => {
+    if (activeTab !== 'firmware') return
+    fetchSensors()
+    fetchFirmwareHistory()
+    const pollInterval = setInterval(() => { fetchSensors(); fetchFirmwareHistory() }, 30000)
+    const tickInterval = setInterval(() => setNow(Date.now()), 10000)
+    return () => { clearInterval(pollInterval); clearInterval(tickInterval) }
+  }, [activeTab, fetchSensors])
+
   useEffect(() => {
     if (activeTab !== 'predictions') return
     const where = sensorFilter ? { sensor_id: { _eq: parseInt(sensorFilter) } } : {}
@@ -881,6 +901,28 @@ export default function Admin() {
     } finally {
       setSanitizeLoading(false)
     }
+  }
+
+  // ── Sensor status helpers ──────────────────
+  const DEAD_THRESHOLD_MS = 3 * 60 * 1000 // 3 minutes
+
+  function timeAgo(ts: string | null): string {
+    if (!ts) return 'never'
+    const diff = now - new Date(ts).getTime()
+    if (diff < 0) return 'just now'
+    const secs = Math.floor(diff / 1000)
+    if (secs < 60) return `${secs}s ago`
+    const mins = Math.floor(secs / 60)
+    if (mins < 60) return `${mins}m ago`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h ago`
+    const days = Math.floor(hrs / 24)
+    return `${days}d ago`
+  }
+
+  function isAlive(ts: string | null): boolean {
+    if (!ts) return false
+    return (now - new Date(ts).getTime()) < DEAD_THRESHOLD_MS
   }
 
   // ── Firmware OTA handlers ──────────────────
@@ -1406,9 +1448,12 @@ export default function Admin() {
       {/* Firmware OTA */}
       {activeTab === 'firmware' && (
         <div className="mx-auto max-w-3xl space-y-6">
-          {/* Sensor Management — Reboot */}
+          {/* Sensor Status & Controls */}
           <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Sensor Controls</h2>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Sensors</h2>
+              <span className="text-xs text-gray-400 dark:text-gray-500">Auto-refreshes every 30s</span>
+            </div>
             <input
               type="text"
               placeholder="Search sensors by name or ID..."
@@ -1416,39 +1461,70 @@ export default function Admin() {
               onChange={(e) => setRebootSearch(e.target.value)}
               className="mb-3 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             />
-            <div className="max-h-64 space-y-1.5 overflow-y-auto">
+            <div className="max-h-[500px] space-y-2 overflow-y-auto">
               {sensors
                 .filter((s) => {
                   if (!rebootSearch) return true
                   const q = rebootSearch.toLowerCase()
                   return (s.name || '').toLowerCase().includes(q) || String(s.id).includes(q)
                 })
-                .map((s) => (
-                  <div key={s.id} className="flex items-center justify-between rounded-md border border-gray-200 px-4 py-2 dark:border-gray-700">
-                    <div>
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{s.name || `Sensor #${s.id}`}</span>
-                      <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">ID: {s.id}</span>
-                      {s.type && (
-                        <span className={`ml-2 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${s.type === 'wifi' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'}`}>
-                          {s.type === 'wifi' ? 'WiFi' : 'LoRa'}
-                        </span>
-                      )}
+                .map((s) => {
+                  const wifiAlive = isAlive(s.last_wifi)
+                  const loraAlive = isAlive(s.last_lora)
+                  const isLora = s.type === 'lora'
+                  // Overall alive: wifi must be alive, and for lora sensors lora must also be alive
+                  const alive = wifiAlive && (!isLora || loraAlive)
+
+                  return (
+                    <div key={s.id} className={`rounded-md border px-4 py-3 ${alive ? 'border-gray-200 dark:border-gray-700' : 'border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-900/10'}`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${alive ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`} />
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">{s.name || `Sensor #${s.id}`}</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500">#{s.id}</span>
+                          {s.type && (
+                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${s.type === 'wifi' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'}`}>
+                              {s.type === 'wifi' ? 'WiFi' : 'LoRa'}
+                            </span>
+                          )}
+                          {s.firmware_version && (
+                            <span className="text-[10px] text-gray-400 dark:text-gray-500">v{s.firmware_version}</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleReboot(s.id)}
+                          disabled={rebootingSensorId === s.id}
+                          className="rounded-md bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200 disabled:opacity-50 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
+                        >
+                          {rebootingSensorId === s.id ? 'Reboot queued...' : 'Reboot'}
+                        </button>
+                      </div>
+                      {/* Status row */}
+                      <div className="mt-1.5 flex items-center gap-4 pl-[18px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`inline-block h-1.5 w-1.5 rounded-full ${wifiAlive ? 'bg-green-400' : 'bg-red-400'}`} />
+                          <span className={`text-xs ${wifiAlive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            WiFi {wifiAlive ? 'alive' : s.last_wifi ? timeAgo(s.last_wifi) : 'never'}
+                          </span>
+                        </div>
+                        {isLora && (
+                          <div className="flex items-center gap-1.5">
+                            <span className={`inline-block h-1.5 w-1.5 rounded-full ${loraAlive ? 'bg-green-400' : 'bg-red-400'}`} />
+                            <span className={`text-xs ${loraAlive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                              LoRa {loraAlive ? 'alive' : s.last_lora ? timeAgo(s.last_lora) : 'never'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <button
-                      onClick={() => handleReboot(s.id)}
-                      disabled={rebootingSensorId === s.id}
-                      className="rounded-md bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200 disabled:opacity-50 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
-                    >
-                      {rebootingSensorId === s.id ? 'Reboot queued...' : 'Reboot'}
-                    </button>
-                  </div>
-                ))}
+                  )
+                })}
               {sensors.length === 0 && (
                 <p className="text-sm text-gray-500 dark:text-gray-400">No sensors found.</p>
               )}
             </div>
             <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
-              Sensors poll for commands every ~30 seconds. Reboot will take effect on the next check-in.
+              Sensors poll for commands every ~30s. Dead = no heartbeat for 3+ minutes.
             </p>
           </div>
 
@@ -1621,43 +1697,79 @@ export default function Admin() {
               {fwHistory[type].length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400">No firmware uploaded yet.</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200 text-sm dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-800">
-                      <tr>
-                        {['Version', 'Size', 'Target', 'Uploaded', 'Notes', ''].map((h) => (
-                          <th key={h} className="px-3 py-2 text-left font-semibold text-gray-500 dark:text-gray-400">{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                      {fwHistory[type].map((fw) => (
-                        <tr key={fw.id}>
-                          <td className="px-3 py-2 font-medium text-gray-900 dark:text-white">v{fw.version}</td>
-                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{(fw.file_size / 1024).toFixed(0)} KB</td>
-                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">
-                            {fw.target_sensors?.length > 0
-                              ? fw.target_sensors.map((id) => {
-                                  const s = sensors.find((s) => s.id === id)
-                                  return s?.name || `#${id}`
-                                }).join(', ')
-                              : 'All'
-                            }
-                          </td>
-                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{new Date(fw.uploaded_at).toLocaleDateString()}</td>
-                          <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{fw.notes || '—'}</td>
-                          <td className="px-3 py-2">
+                <div className="space-y-3">
+                  {fwHistory[type].map((fw) => {
+                    const targets = fw.targets || []
+                    const hasTargets = targets.length > 0
+                    const updatedCount = targets.filter((t) => t.is_updated).length
+                    const totalTargets = targets.length
+                    const allUpdated = hasTargets && updatedCount === totalTargets
+                    const progressPct = hasTargets ? Math.round((updatedCount / totalTargets) * 100) : null
+
+                    return (
+                      <div key={fw.id} className="rounded-md border border-gray-200 dark:border-gray-700">
+                        {/* Header row */}
+                        <div className="flex items-center justify-between px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white">v{fw.version}</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">{(fw.file_size / 1024).toFixed(0)} KB</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">{new Date(fw.uploaded_at).toLocaleDateString()}</span>
+                            {fw.notes && <span className="text-xs text-gray-500 dark:text-gray-400">— {fw.notes}</span>}
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {hasTargets && (
+                              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${allUpdated ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'}`}>
+                                {updatedCount}/{totalTargets} updated
+                              </span>
+                            )}
+                            {!hasTargets && (
+                              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-400">All sensors</span>
+                            )}
                             <button
                               onClick={() => handleFirmwareDelete(fw.id)}
                               className="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                             >
                               Delete
                             </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                          </div>
+                        </div>
+                        {/* Progress bar */}
+                        {hasTargets && !allUpdated && (
+                          <div className="px-4 pb-2">
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                              <div
+                                className="h-full rounded-full bg-blue-500 transition-all"
+                                style={{ width: `${progressPct}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {/* Per-sensor breakdown */}
+                        {hasTargets && (
+                          <div className="border-t border-gray-100 px-4 py-2 dark:border-gray-700/50">
+                            <div className="flex flex-wrap gap-1.5">
+                              {targets.map((t) => {
+                                const s = sensors.find((s) => s.id === t.sensor_id)
+                                return (
+                                  <span
+                                    key={t.sensor_id}
+                                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${t.is_updated ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'}`}
+                                  >
+                                    {t.is_updated ? (
+                                      <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" /></svg>
+                                    ) : (
+                                      <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24" fill="none"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                                    )}
+                                    {s?.name || `#${t.sensor_id}`}
+                                  </span>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>

@@ -9,6 +9,9 @@ export const GET_SENSORS = `
       mappings
       multiplier
       type
+      last_wifi
+      last_lora
+      firmware_version
       building {
         id
         name
