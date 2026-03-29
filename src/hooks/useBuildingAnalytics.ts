@@ -5,10 +5,12 @@ import { GET_MAG_SENSORS_BY_BUILDING_ID } from '@/queries/getMagDataByBuildingId
 import { GET_MAG_REPORTS } from '@/queries/getMagReports'
 import { GET_SENSORS_BY_BUILDING_ID } from '@/queries/getSensorsByBuildingId'
 import {
+  computeBucketedFlow,
   computeFlowFromPeaks,
   getFlowPeakTimestamps,
   litresPerCycleFromMultiplier,
   volumeFromFullCyclesInWindow,
+  type BucketedFlowPoint,
   type FlowPoint,
   type MagDataPoint,
 } from '@/utils/flowComputation'
@@ -20,7 +22,15 @@ import { graphqlFetch, cachedGraphqlFetch } from '@/utils/graphqlFetch'
 import { UPDATE_BUILDING_BHI } from '@/mutations/buildingMutations'
 import type { MagReport, Sensor } from '@/types'
 
-export type { BuildingHealth }
+export type { BuildingHealth, BucketedFlowPoint }
+
+export interface MagChartPoint {
+  timestamp: number
+  total: number | null
+  x: number | null
+  y: number | null
+  z: number | null
+}
 
 export interface AnalyticsData {
   today: number
@@ -136,6 +146,8 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
   const token = useAppSelector((state) => state.login.token)
   const [data, setData] = useState<AnalyticsData | null>(null)
   const [health, setHealth] = useState<BuildingHealth | null>(null)
+  const [bucketedFlow, setBucketedFlow] = useState<BucketedFlowPoint[]>([])
+  const [magChart, setMagChart] = useState<MagChartPoint[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const tokenRef = useRef(token)
@@ -146,6 +158,8 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
       setLoading(false)
       setData(null)
       setHealth(null)
+      setBucketedFlow([])
+      setMagChart([])
       return
     }
 
@@ -237,19 +251,25 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
         if (cancelled) return
 
         const reports = magReports?.mag_report ?? []
-        const allMagData: MagDataPoint[] = reports
-          .sort(
-            (a, b) =>
-              new Date(a.created_at).getTime() -
-              new Date(b.created_at).getTime(),
-          )
-          .map((r) => ({
-            timestamp: new Date(r.created_at).getTime(),
-            x: r.x_axis_reading,
-            total: r.total_magnitude,
-            bandEnergy10s: r.band_energy_10s,
-            bandEnergy60s: r.band_energy_60s,
-          }))
+        const sorted = reports.sort(
+          (a, b) =>
+            new Date(a.created_at).getTime() -
+            new Date(b.created_at).getTime(),
+        )
+        const allMagData: MagDataPoint[] = sorted.map((r) => ({
+          timestamp: new Date(r.created_at).getTime(),
+          x: r.x_axis_reading,
+          total: r.total_magnitude,
+          bandEnergy10s: r.band_energy_10s,
+          bandEnergy60s: r.band_energy_60s,
+        }))
+        const allMagChart: MagChartPoint[] = sorted.map((r) => ({
+          timestamp: new Date(r.created_at).getTime(),
+          total: r.total_magnitude,
+          x: r.x_axis_reading,
+          y: r.y_axis_reading,
+          z: r.z_axis_reading,
+        }))
 
         // Detect peaks per-window (same approach as useVolumeSummary in
         // Reports): filter mag data to the window, detect peaks on just that
@@ -347,6 +367,33 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           multiplier,
         )
 
+        // Bucketed flow for the bar chart (today's window, 15-min buckets)
+        const todayMagData = allMagData.filter(
+          (d) => d.timestamp >= todayStart.getTime() && d.timestamp <= nowMs,
+        )
+        const BUCKET_MS = 15 * 60_000
+        const numBuckets = Math.max(
+          1,
+          Math.ceil((nowMs - todayStart.getTime()) / BUCKET_MS),
+        )
+        const litresPerCycle = litresPerCycleFromMultiplier(multiplier)
+        const todayPeaks = getFlowPeakTimestamps(todayMagData)
+        const todayBucketed = computeBucketedFlow(
+          todayMagData,
+          todayFlowPoints,
+          todayPeaks,
+          litresPerCycle,
+          BUCKET_MS,
+          todayStart.getTime(),
+          numBuckets,
+        )
+
+        // Last 24h of mag chart data for the raw signal viewer
+        const last24h = nowMs - 24 * 3_600_000
+        const recentMagChart = allMagChart.filter(
+          (d) => d.timestamp >= last24h,
+        )
+
         const analyticsPayload = {
           today: todayLitres,
           thisWeek: thisWeekLitres,
@@ -380,6 +427,8 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
 
         setHealth(healthPayload)
         setData(analyticsPayload)
+        setBucketedFlow(todayBucketed)
+        setMagChart(recentMagChart)
 
         // Persist BHI to DB so the buildings list can show it without re-computing
         graphqlFetch(
@@ -409,5 +458,5 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
     }
   }, [buildingId, token])
 
-  return { data, health, loading, error }
+  return { data, health, bucketedFlow, magChart, loading, error }
 }

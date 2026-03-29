@@ -4,6 +4,8 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -15,13 +17,16 @@ import LiveFlowIndicator from '@/components/LiveFlowIndicator'
 import {
   useBuildingAnalytics,
   type AnalyticsData,
+  type BucketedFlowPoint,
   type BuildingHealth,
+  type MagChartPoint,
 } from '@/hooks/useBuildingAnalytics'
 
 interface Props {
   buildingId: number
   cachedBhi?: number | null
   cachedBhiLabel?: string | null
+  onMagData?: (data: MagChartPoint[]) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -965,11 +970,238 @@ function BuildingHealthSection({
 }
 
 // ---------------------------------------------------------------------------
+// Flow Rate bar chart (today)
+// ---------------------------------------------------------------------------
+
+function formatTime(ts: number): string {
+  const d = new Date(ts)
+  const h = d.getHours()
+  const m = d.getMinutes()
+  const ampm = h >= 12 ? 'p' : 'a'
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h
+  return m === 0 ? `${h12}${ampm}` : `${h12}:${String(m).padStart(2, '0')}${ampm}`
+}
+
+function FlowRateChart({ data }: { data: BucketedFlowPoint[] }) {
+  if (data.length === 0) return null
+
+  const bucketMs = data.length > 1 ? data[1]!.timestamp - data[0]!.timestamp : 15 * 60_000
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+      <div className="mb-3 flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+          Flow Rate
+        </h3>
+        <span className="text-xs text-gray-400">Today</span>
+      </div>
+      <div className="h-[200px] w-full min-w-0 overflow-hidden sm:h-[240px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{ top: 4, right: 8, left: -8, bottom: 0 }}
+          >
+            <CartesianGrid
+              vertical={false}
+              strokeDasharray="3 3"
+              stroke="currentColor"
+              className="text-gray-100 dark:text-gray-700/50"
+            />
+            <XAxis
+              dataKey="timestamp"
+              type="number"
+              domain={[
+                data[0]!.timestamp - bucketMs / 2,
+                data[data.length - 1]!.timestamp + bucketMs / 2,
+              ]}
+              tickFormatter={formatTime}
+              tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              width={42}
+              tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(v: number) => (v <= 0 ? '' : String(Math.round(v)))}
+              domain={[0, (max: number) => Math.max(max * 1.1, 10)]}
+              label={{
+                value: 'L/h',
+                angle: -90,
+                position: 'insideLeft',
+                style: { fontSize: 10, fill: '#3b82f6' },
+              }}
+            />
+            <Tooltip
+              cursor={{ fill: 'rgba(59, 130, 246, 0.06)' }}
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null
+                const p = payload[0]?.payload as BucketedFlowPoint | undefined
+                if (!p) return null
+                return (
+                  <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <p className="font-medium text-gray-700 dark:text-gray-300">
+                      {formatTime(p.timestamp)}
+                    </p>
+                    <p className="mt-1 font-semibold tabular-nums text-blue-500">
+                      {p.flowRateLph.toFixed(1)} L/h
+                    </p>
+                    <p className="mt-0.5 tabular-nums text-gray-400">
+                      {p.bucketVolumeL.toFixed(2)} L{p.partial ? ' (so far)' : ''}
+                    </p>
+                  </div>
+                )
+              }}
+            />
+            <Bar
+              dataKey="flowRateBarVisual"
+              name="Flow Rate (L/h)"
+              radius={[3, 3, 0, 0]}
+              isAnimationActive={false}
+            >
+              {data.map((entry, i) => (
+                <Cell
+                  key={i}
+                  fill="#3b82f6"
+                  fillOpacity={entry.partial ? 0.4 : 1}
+                  stroke={entry.partial ? '#3b82f6' : 'none'}
+                  strokeWidth={entry.partial ? 1.5 : 0}
+                  strokeDasharray={entry.partial ? '4 2' : 'none'}
+                />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  )
+}
+
+function FlowRateChartSkeleton() {
+  const bars = Array.from({ length: 16 }, (_, i) => 15 + Math.sin(i * 0.8) * 25 + Math.random() * 20)
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+      <div className="mb-3 flex items-baseline justify-between">
+        <Bone className="h-4 w-20" />
+        <Bone className="h-3 w-10" />
+      </div>
+      <div className="flex h-[200px] items-end gap-[3px] pl-10 sm:h-[240px]">
+        {bars.map((h, i) => (
+          <div
+            key={i}
+            className={`flex-1 rounded-t-sm bg-blue-200/60 dark:bg-blue-900/30 ${shimmer}`}
+            style={{ height: `${h}%` }}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Magnetometer signal charts (collapsed)
+// ---------------------------------------------------------------------------
+
+function MagSignalChart({ data, label, dataKey, color }: {
+  data: MagChartPoint[]
+  label: string
+  dataKey: keyof MagChartPoint
+  color: string
+}) {
+  if (data.length === 0) return null
+  return (
+    <div>
+      <p className="mb-1 text-[11px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
+        {label}
+      </p>
+      <div className="h-[120px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 2, right: 4, left: -12, bottom: 0 }}>
+            <CartesianGrid
+              vertical={false}
+              strokeDasharray="3 3"
+              stroke="currentColor"
+              className="text-gray-100 dark:text-gray-700/50"
+            />
+            <XAxis
+              dataKey="timestamp"
+              type="number"
+              domain={['dataMin', 'dataMax']}
+              tickFormatter={formatTime}
+              tick={{ fontSize: 9, fill: '#9ca3af' }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              width={40}
+              tick={{ fontSize: 9, fill: '#9ca3af' }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip
+              cursor={{ stroke: '#d1d5db', strokeDasharray: '3 3' }}
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null
+                const p = payload[0]?.payload as MagChartPoint | undefined
+                if (!p) return null
+                const val = p[dataKey]
+                return (
+                  <div className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs shadow-sm dark:border-gray-700 dark:bg-gray-800">
+                    <p className="text-gray-500">{formatTime(p.timestamp)}</p>
+                    <p className="font-semibold tabular-nums" style={{ color }}>
+                      {val != null ? Number(val).toFixed(2) : '—'}
+                    </p>
+                  </div>
+                )
+              }}
+            />
+            <Line
+              type="monotone"
+              dataKey={dataKey}
+              stroke={color}
+              strokeWidth={1.5}
+              dot={false}
+              isAnimationActive={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  )
+}
+
+export function MagDataSection({ data }: { data: MagChartPoint[] }) {
+  if (data.length === 0) return null
+
+  const maxPoints = 500
+  const step = data.length > maxPoints ? Math.ceil(data.length / maxPoints) : 1
+  const sampled = step === 1 ? data : data.filter((_, i) => i % step === 0)
+
+  return (
+    <div className="space-y-4 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+      <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+        Magnetometer Signals
+        <span className="ml-2 text-xs font-normal text-gray-400">Last 24h</span>
+      </h3>
+      <MagSignalChart data={sampled} label="Total Magnitude" dataKey="total" color="#6366f1" />
+      <MagSignalChart data={sampled} label="X Axis" dataKey="x" color="#ef4444" />
+      <MagSignalChart data={sampled} label="Y Axis" dataKey="y" color="#22c55e" />
+      <MagSignalChart data={sampled} label="Z Axis" dataKey="z" color="#3b82f6" />
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
-export default function BuildingAnalytics({ buildingId, cachedBhi, cachedBhiLabel }: Props) {
-  const { data, health, loading, error } = useBuildingAnalytics(buildingId)
+export default function BuildingAnalytics({ buildingId, cachedBhi, cachedBhiLabel, onMagData }: Props) {
+  const { data, health, bucketedFlow, magChart, loading, error } = useBuildingAnalytics(buildingId)
+
+  useEffect(() => {
+    onMagData?.(magChart)
+  }, [magChart, onMagData])
 
   return (
     <div className="space-y-4">
@@ -998,14 +1230,20 @@ export default function BuildingAnalytics({ buildingId, cachedBhi, cachedBhiLabe
         ) : null}
       </div>
 
+      {/* Flow rate bar chart — always visible */}
+      {loading ? (
+        <FlowRateChartSkeleton />
+      ) : bucketedFlow.length > 0 ? (
+        <FlowRateChart data={bucketedFlow} />
+      ) : null}
+
       {error && (
         <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
           {error}
         </div>
       )}
 
-      {/* Collapsible detail sections — data loads in background,
-          so expanding a section after a moment reveals content instantly */}
+      {/* Collapsible detail sections */}
       {(loading || data) && (
         <>
           <CollapsibleSection
@@ -1048,6 +1286,7 @@ export default function BuildingAnalytics({ buildingId, cachedBhi, cachedBhiLabe
           </CollapsibleSection>
         </>
       )}
+
     </div>
   )
 }

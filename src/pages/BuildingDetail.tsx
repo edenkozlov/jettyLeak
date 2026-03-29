@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
-import BuildingAnalytics from '@/components/BuildingAnalytics'
+import BuildingAnalytics, { MagDataSection } from '@/components/BuildingAnalytics'
 import CollapsibleSection from '@/components/CollapsibleSection'
 import BuildingFootprint from '@/components/BuildingFootprint'
 import BuildingMap3D from '@/components/BuildingMap3D'
@@ -92,6 +92,8 @@ export default function BuildingDetail() {
   const displayName = localName !== undefined ? localName : building?.name ?? null
 
   const [footprintExpanded, setFootprintExpanded] = useState(false)
+  const [magData, setMagData] = useState<Parameters<typeof MagDataSection>[0]['data']>([])
+  const handleMagData = useCallback((d: typeof magData) => setMagData(d), [])
 
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState('')
@@ -446,6 +448,7 @@ export default function BuildingDetail() {
             buildingId={validBuildingId}
             cachedBhi={instantBhi}
             cachedBhiLabel={instantBhiLabel}
+            onMagData={handleMagData}
           />
         )}
       </div>
@@ -532,6 +535,18 @@ export default function BuildingDetail() {
           </div>
         ) : null}
       </CollapsibleSection>
+
+      {/* Magnetometer raw signals — collapsed, after 3D views */}
+      {magData.length > 0 && (
+        <div className="mt-4 sm:mt-6">
+          <CollapsibleSection
+            title="Magnetometer Data"
+            preview={`${magData.length} samples · Total, X, Y, Z`}
+          >
+            <MagDataSection data={magData} />
+          </CollapsibleSection>
+        </div>
+      )}
 
       {/* Expanded footprint overlay */}
       {footprintExpanded && building && (
