@@ -1,55 +1,36 @@
-export const CREATE_TAG = `
-  mutation CreateTag(
-    $sensor_id: bigint
-    $tagged_at: timestamptz!
-    $title: String!
-    $description: String
-  ) {
-    insert_tag_one(
-      object: {
-        sensor_id: $sensor_id
-        tagged_at: $tagged_at
-        title: $title
-        description: $description
-      }
-    ) {
-      id
-      created_at
-      sensor_id
-      tagged_at
-      title
-      description
-    }
-  }
-`
+import { supabase } from '@/lib/supabase'
 
-export const UPDATE_TAG = `
-  mutation UpdateTag(
-    $id: bigint!
-    $title: String!
-    $description: String
-  ) {
-    update_tag_by_pk(
-      pk_columns: { id: $id }
-      _set: {
-        title: $title
-        description: $description
-      }
-    ) {
-      id
-      created_at
-      sensor_id
-      tagged_at
-      title
-      description
-    }
-  }
-`
+export async function CREATE_TAG(variables?: Record<string, unknown>) {
+  const { sensor_id, tagged_at, title, description } = variables ?? {}
+  const { data, error } = await supabase
+    .from('tag')
+    .insert({ sensor_id, tagged_at, title, description })
+    .select('id, created_at, sensor_id, tagged_at, title, description')
+    .single()
+  if (error) throw error
+  return { insert_tag_one: data }
+}
 
-export const DELETE_TAG = `
-  mutation DeleteTag($id: bigint!) {
-    delete_tag_by_pk(id: $id) {
-      id
-    }
-  }
-`
+export async function UPDATE_TAG(variables?: Record<string, unknown>) {
+  const { id, title, description } = variables ?? {}
+  const { data, error } = await supabase
+    .from('tag')
+    .update({ title, description })
+    .eq('id', id)
+    .select('id, created_at, sensor_id, tagged_at, title, description')
+    .single()
+  if (error) throw error
+  return { update_tag_by_pk: data }
+}
+
+export async function DELETE_TAG(variables?: Record<string, unknown>) {
+  const { id } = variables ?? {}
+  const { data, error } = await supabase
+    .from('tag')
+    .delete()
+    .eq('id', id)
+    .select('id')
+    .single()
+  if (error) throw error
+  return { delete_tag_by_pk: data }
+}

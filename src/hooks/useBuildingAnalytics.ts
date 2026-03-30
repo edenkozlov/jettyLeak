@@ -18,7 +18,6 @@ import {
   computeBuildingHealth,
   type BuildingHealth,
 } from '@/utils/buildingHealth'
-import { graphqlFetch, cachedGraphqlFetch } from '@/utils/graphqlFetch'
 import { UPDATE_BUILDING_BHI } from '@/mutations/buildingMutations'
 import type { MagReport, Sensor } from '@/types'
 
@@ -170,19 +169,13 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
     ;(async () => {
       try {
         const [magResult, sensorResult] = await Promise.all([
-          cachedGraphqlFetch<{
-            mag_to_building: { mag_id: number }[]
-          }>(GET_MAG_SENSORS_BY_BUILDING_ID, { buildingId }, tokenRef.current),
-          cachedGraphqlFetch<{ sensor: Sensor[] }>(
-            GET_SENSORS_BY_BUILDING_ID,
-            { buildingId },
-            tokenRef.current,
-          ),
+          GET_MAG_SENSORS_BY_BUILDING_ID({ buildingId }),
+          GET_SENSORS_BY_BUILDING_ID({ buildingId }),
         ])
         if (cancelled) return
 
         const magIds =
-          magResult?.mag_to_building?.map((m) => m.mag_id) ?? []
+          (magResult?.mag_to_building as { mag_id: number }[])?.map((m) => m.mag_id) ?? []
         if (magIds.length === 0) {
           setData(null)
           setHealth(null)
@@ -190,7 +183,7 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           return
         }
 
-        const sensors = sensorResult?.sensor ?? []
+        const sensors = (sensorResult?.sensor as Sensor[]) ?? []
         let multiplier: number | null = null
         for (const magId of magIds) {
           const match = sensors.find((s) => s.id === magId)
@@ -237,20 +230,14 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           ),
         )
 
-        const magReports = await graphqlFetch<{
-          mag_report: MagReport[]
-        }>(
-          GET_MAG_REPORTS,
-          {
-            sensorIds: magIds,
-            since: fetchSince.toISOString(),
-            until: now.toISOString(),
-          },
-          tokenRef.current,
-        )
+        const magReports = await GET_MAG_REPORTS({
+          sensorIds: magIds,
+          since: fetchSince.toISOString(),
+          until: now.toISOString(),
+        })
         if (cancelled) return
 
-        const reports = magReports?.mag_report ?? []
+        const reports = (magReports?.mag_report as MagReport[]) ?? []
         const sorted = reports.sort(
           (a, b) =>
             new Date(a.created_at).getTime() -
@@ -271,10 +258,6 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           z: r.z_axis_reading,
         }))
 
-        // Detect peaks per-window (same approach as useVolumeSummary in
-        // Reports): filter mag data to the window, detect peaks on just that
-        // slice, then count cycles.  This keeps peak-detection context
-        // consistent with Reports so the numbers match.
         const todayLitres = computeVolumeForRange(allMagData, todayStart.getTime(), nowMs, multiplier)
         const yesterdayLitres = computeVolumeForRange(allMagData, yesterdayStart.getTime(), todayStart.getTime(), multiplier)
         const thisWeekLitres = computeVolumeForRange(allMagData, thisWeekStart.getTime(), nowMs, multiplier)
@@ -283,7 +266,6 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
 
         if (cancelled) return
 
-        // Active flow today — needs flow points for session detection
         const todayFlowPoints = computeFlowPointsForRange(
           allMagData,
           todayStart.getTime(),
@@ -298,7 +280,6 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
         const activePercent =
           elapsedTodayMs > 0 ? (activeFlowMs / elapsedTodayMs) * 100 : 0
 
-        // Trends
         const dayChangePercent =
           yesterdayLitres > 0
             ? Math.round(
@@ -316,7 +297,6 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
               )
             : null
 
-        // Projected usage (require at least 30 min elapsed to avoid wild extrapolations)
         const hoursElapsedToday =
           (nowMs - todayStart.getTime()) / 3_600_000
         const todayProjected =
@@ -351,7 +331,6 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
               ) / 10
             : 0
 
-        // Peak hours — needs flow points for hourly distribution
         const sevenDayFlowPoints = computeFlowPointsForRange(
           allMagData,
           sevenDaysAgo.getTime(),
@@ -367,7 +346,6 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           multiplier,
         )
 
-        // Bucketed flow for the bar chart (today's window, 15-min buckets)
         const todayMagData = allMagData.filter(
           (d) => d.timestamp >= todayStart.getTime() && d.timestamp <= nowMs,
         )
@@ -388,7 +366,6 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           numBuckets,
         )
 
-        // Last 24h of mag chart data for the raw signal viewer
         const last24h = nowMs - 24 * 3_600_000
         const recentMagChart = allMagChart.filter(
           (d) => d.timestamp >= last24h,
@@ -430,17 +407,13 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
         setBucketedFlow(todayBucketed)
         setMagChart(recentMagChart)
 
-        // Persist BHI to DB so the buildings list can show it without re-computing
-        graphqlFetch(
-          UPDATE_BUILDING_BHI,
-          {
-            id: buildingId,
-            bhi: healthPayload.bhi,
-            bhi_label: healthPayload.label,
-            bhi_updated_at: new Date().toISOString(),
-          },
-          tokenRef.current,
-        ).catch(() => {})
+        // Persist BHI to DB
+        UPDATE_BUILDING_BHI({
+          id: buildingId,
+          bhi: healthPayload.bhi,
+          bhi_label: healthPayload.label,
+          bhi_updated_at: new Date().toISOString(),
+        }).catch(() => {})
       } catch (err) {
         if (!cancelled) {
           setHealth(null)

@@ -1,131 +1,96 @@
-export const CREATE_BUILDING = `
-  mutation CreateBuilding(
-    $name: String
-    $full_address: String
-    $latitude: float8
-    $longitude: float8
-    $client_id: uuid
-  ) {
-    insert_building_one(
-      object: {
-        name: $name
-        full_address: $full_address
-        latitude: $latitude
-        longitude: $longitude
-        client_id: $client_id
-      }
-    ) {
-      id
-      created_at
-      name
-      full_address
-      latitude
-      longitude
-      client_id
-    }
-  }
-`
+import { supabase } from '@/lib/supabase'
 
-export const UPDATE_BUILDING = `
-  mutation UpdateBuilding(
-    $id: bigint!
-    $name: String
-    $full_address: String
-    $latitude: float8
-    $longitude: float8
-    $client_id: uuid
-    $number_of_floors: bigint
-  ) {
-    update_building_by_pk(
-      pk_columns: { id: $id }
-      _set: {
-        name: $name
-        full_address: $full_address
-        latitude: $latitude
-        longitude: $longitude
-        client_id: $client_id
-        number_of_floors: $number_of_floors
-      }
-    ) {
-      id
-      created_at
-      name
-      full_address
-      latitude
-      longitude
-      client_id
-      number_of_floors
-    }
-  }
-`
+export async function CREATE_BUILDING(variables?: Record<string, unknown>) {
+  const { name, full_address, latitude, longitude, client_id } = variables ?? {}
+  const { data, error } = await supabase
+    .from('building')
+    .insert({ name, full_address, latitude, longitude, client_id })
+    .select('id, created_at, name, full_address, latitude, longitude, client_id')
+    .single()
+  if (error) throw error
+  return { insert_building_one: data }
+}
 
-export const UPDATE_BUILDING_COORDINATES = `
-  mutation UpdateBuildingCoordinates($id: bigint!, $latitude: float8, $longitude: float8) {
-    update_building_by_pk(
-      pk_columns: { id: $id }
-      _set: { latitude: $latitude, longitude: $longitude }
-    ) {
-      id
-      latitude
-      longitude
-    }
-  }
-`
+export async function UPDATE_BUILDING(variables?: Record<string, unknown>) {
+  const { id, ...updates } = variables ?? {}
+  const { data, error } = await supabase
+    .from('building')
+    .update({ name: updates.name, full_address: updates.full_address, latitude: updates.latitude, longitude: updates.longitude, client_id: updates.client_id, number_of_floors: updates.number_of_floors })
+    .eq('id', id)
+    .select('id, created_at, name, full_address, latitude, longitude, client_id, number_of_floors')
+    .single()
+  if (error) throw error
+  return { update_building_by_pk: data }
+}
 
-export const UPDATE_BUILDING_FOOTPRINT = `
-  mutation UpdateBuildingFootprint($id: bigint!, $footprint: jsonb) {
-    update_building_by_pk(
-      pk_columns: { id: $id }
-      _set: { footprint: $footprint }
-    ) {
-      id
-      footprint
-    }
-  }
-`
+export async function UPDATE_BUILDING_COORDINATES(variables?: Record<string, unknown>) {
+  const { id, latitude, longitude } = variables ?? {}
+  const { data, error } = await supabase
+    .from('building')
+    .update({ latitude, longitude })
+    .eq('id', id)
+    .select('id, latitude, longitude')
+    .single()
+  if (error) throw error
+  return { update_building_by_pk: data }
+}
 
-export const UPDATE_BUILDING_FLOORS = `
-  mutation UpdateBuildingFloors($id: bigint!, $number_of_floors: bigint) {
-    update_building_by_pk(
-      pk_columns: { id: $id }
-      _set: { number_of_floors: $number_of_floors }
-    ) {
-      id
-      number_of_floors
-    }
-  }
-`
+export async function UPDATE_BUILDING_FOOTPRINT(variables?: Record<string, unknown>) {
+  const { id, footprint } = variables ?? {}
+  const { data, error } = await supabase
+    .from('building')
+    .update({ footprint })
+    .eq('id', id)
+    .select('id, footprint')
+    .single()
+  if (error) throw error
+  return { update_building_by_pk: data }
+}
 
-export const UPDATE_BUILDING_NAME = `
-  mutation UpdateBuildingName($id: bigint!, $name: String) {
-    update_building_by_pk(
-      pk_columns: { id: $id }
-      _set: { name: $name }
-    ) {
-      id
-      name
-    }
-  }
-`
+export async function UPDATE_BUILDING_FLOORS(variables?: Record<string, unknown>) {
+  const { id, number_of_floors } = variables ?? {}
+  const { data, error } = await supabase
+    .from('building')
+    .update({ number_of_floors })
+    .eq('id', id)
+    .select('id, number_of_floors')
+    .single()
+  if (error) throw error
+  return { update_building_by_pk: data }
+}
 
-export const UPDATE_BUILDING_BHI = `
-  mutation UpdateBuildingBhi($id: bigint!, $bhi: smallint, $bhi_label: String, $bhi_updated_at: timestamptz) {
-    update_building_by_pk(
-      pk_columns: { id: $id }
-      _set: { bhi: $bhi, bhi_label: $bhi_label, bhi_updated_at: $bhi_updated_at }
-    ) {
-      id
-      bhi
-      bhi_label
-      bhi_updated_at
-    }
-  }
-`
+export async function UPDATE_BUILDING_NAME(variables?: Record<string, unknown>) {
+  const { id, name } = variables ?? {}
+  const { data, error } = await supabase
+    .from('building')
+    .update({ name })
+    .eq('id', id)
+    .select('id, name')
+    .single()
+  if (error) throw error
+  return { update_building_by_pk: data }
+}
 
-export const DELETE_BUILDING = `
-  mutation DeleteBuilding($id: bigint!) {
-    delete_building_by_pk(id: $id) {
-      id
-    }
-  }
-`
+export async function UPDATE_BUILDING_BHI(variables?: Record<string, unknown>) {
+  const { id, bhi, bhi_label, bhi_updated_at } = variables ?? {}
+  const { data, error } = await supabase
+    .from('building')
+    .update({ bhi, bhi_label, bhi_updated_at })
+    .eq('id', id)
+    .select('id, bhi, bhi_label, bhi_updated_at')
+    .single()
+  if (error) throw error
+  return { update_building_by_pk: data }
+}
+
+export async function DELETE_BUILDING(variables?: Record<string, unknown>) {
+  const { id } = variables ?? {}
+  const { data, error } = await supabase
+    .from('building')
+    .delete()
+    .eq('id', id)
+    .select('id')
+    .single()
+  if (error) throw error
+  return { delete_building_by_pk: data }
+}

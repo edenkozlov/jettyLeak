@@ -1,47 +1,36 @@
-export const INSERT_SIGNAL = `
-  mutation InsertSignal(
-    $sensor_id: bigint!
-    $start_time: timestamptz!
-    $end_time: timestamptz!
-    $value: String!
-    $time: timestamptz!
-  ) {
-    insert_signal_one(
-      object: {
-        sensor_id: $sensor_id
-        start_time: $start_time
-        end_time: $end_time
-        value: $value
-        time: $time
-      }
-    ) {
-      id
-      value
-      start_time
-      end_time
-      sensor_id
-      created_at
-      sensor { name }
-    }
-  }
-`
+import { supabase } from '@/lib/supabase'
 
-export const DELETE_SIGNAL = `
-  mutation DeleteSignal($id: bigint!) {
-    delete_signal_by_pk(id: $id) {
-      id
-    }
-  }
-`
+export async function INSERT_SIGNAL(variables?: Record<string, unknown>) {
+  const { sensor_id, start_time, end_time, value, time } = variables ?? {}
+  const { data, error } = await supabase
+    .from('signal')
+    .insert({ sensor_id, start_time, end_time, value, time })
+    .select('id, value, start_time, end_time, sensor_id, created_at, sensor(name)')
+    .single()
+  if (error) throw error
+  return { insert_signal_one: data }
+}
 
-export const UPDATE_PREDICTED_SIGNAL = `
-  mutation UpdatePredictedSignal($id: bigint!, $prediction: String!) {
-    update_predicted_signal_by_pk(
-      pk_columns: { id: $id }
-      _set: { prediction: $prediction }
-    ) {
-      id
-      prediction
-    }
-  }
-`
+export async function DELETE_SIGNAL(variables?: Record<string, unknown>) {
+  const { id } = variables ?? {}
+  const { data, error } = await supabase
+    .from('signal')
+    .delete()
+    .eq('id', id)
+    .select('id')
+    .single()
+  if (error) throw error
+  return { delete_signal_by_pk: data }
+}
+
+export async function UPDATE_PREDICTED_SIGNAL(variables?: Record<string, unknown>) {
+  const { id, prediction } = variables ?? {}
+  const { data, error } = await supabase
+    .from('predicted_signal')
+    .update({ prediction })
+    .eq('id', id)
+    .select('id, prediction')
+    .single()
+  if (error) throw error
+  return { update_predicted_signal_by_pk: data }
+}

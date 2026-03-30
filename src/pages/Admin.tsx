@@ -747,7 +747,7 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState<Tab>('predictions')
   const [segmentDetail, setSegmentDetail] = useState<SegmentDetail | null>(null)
 
-  // GraphQL hooks
+  // Data hooks
   const { data: sensorsData, executeQuery: fetchSensors } =
     useGraphQL<{ sensor: Sensor[] }>(GET_SENSORS)
   const { data: predictionsData, loading: predictionsLoading, error: predictionsError, executeQuery: fetchPredictions } =

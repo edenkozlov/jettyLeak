@@ -304,6 +304,9 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     LATEST_REPORT_SUBSCRIPTION,
     subscriptionVars,
     isLive && selectedSensorId !== null && timeRange !== 'all' && timeRange !== 'custom' && periodOffset === 0,
+    'report',
+    'sensor_id',
+    selectedSensorId ?? undefined,
   )
 
   useEffect(() => {

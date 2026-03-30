@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { GET_BUILDING_BY_ID } from '@/queries/getBuildingById'
-import { cachedGraphqlFetch } from '@/utils/graphqlFetch'
 
 import type { Building } from '@/types'
 
@@ -12,8 +11,6 @@ interface BuildingByIdResponse {
 
 export function useBuildingDetail(buildingId: string | undefined) {
   const token = useAppSelector((state) => state.login.token)
-  const tokenRef = useRef(token)
-  tokenRef.current = token
 
   const [data, setData] = useState<BuildingByIdResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -29,14 +26,10 @@ export function useBuildingDetail(buildingId: string | undefined) {
     setLoading(true)
     setError(null)
 
-    cachedGraphqlFetch<BuildingByIdResponse>(
-      GET_BUILDING_BY_ID,
-      { id: buildingId },
-      tokenRef.current,
-    )
+    GET_BUILDING_BY_ID({ id: buildingId })
       .then((result) => {
         if (cancelled) return
-        setData(result)
+        setData(result as BuildingByIdResponse)
       })
       .catch((err) => {
         if (cancelled) return

@@ -265,6 +265,9 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
     LATEST_MAG_REPORT_SUBSCRIPTION,
     magSubVars,
     isLive && selectedSensorId != null && timeRange !== 'all' && timeRange !== 'custom' && periodOffset === 0,
+    'mag_report',
+    'sensor_id',
+    selectedSensorId ?? undefined,
   )
 
   useEffect(() => {

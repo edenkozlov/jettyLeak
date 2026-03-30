@@ -1,53 +1,36 @@
-export const CREATE_CLIENT = `
-  mutation CreateClient(
-    $email: String
-    $first_name: String
-    $last_name: String
-  ) {
-    insert_client_one(
-      object: {
-        email: $email
-        first_name: $first_name
-        last_name: $last_name
-      }
-    ) {
-      id
-      created_at
-      email
-      first_name
-      last_name
-    }
-  }
-`
+import { supabase } from '@/lib/supabase'
 
-export const UPDATE_CLIENT = `
-  mutation UpdateClient(
-    $id: uuid!
-    $email: String
-    $first_name: String
-    $last_name: String
-  ) {
-    update_client_by_pk(
-      pk_columns: { id: $id }
-      _set: {
-        email: $email
-        first_name: $first_name
-        last_name: $last_name
-      }
-    ) {
-      id
-      created_at
-      email
-      first_name
-      last_name
-    }
-  }
-`
+export async function CREATE_CLIENT(variables?: Record<string, unknown>) {
+  const { email, first_name, last_name } = variables ?? {}
+  const { data, error } = await supabase
+    .from('client')
+    .insert({ email, first_name, last_name })
+    .select('id, created_at, email, first_name, last_name')
+    .single()
+  if (error) throw error
+  return { insert_client_one: data }
+}
 
-export const DELETE_CLIENT = `
-  mutation DeleteClient($id: uuid!) {
-    delete_client_by_pk(id: $id) {
-      id
-    }
-  }
-`
+export async function UPDATE_CLIENT(variables?: Record<string, unknown>) {
+  const { id, email, first_name, last_name } = variables ?? {}
+  const { data, error } = await supabase
+    .from('client')
+    .update({ email, first_name, last_name })
+    .eq('id', id)
+    .select('id, created_at, email, first_name, last_name')
+    .single()
+  if (error) throw error
+  return { update_client_by_pk: data }
+}
+
+export async function DELETE_CLIENT(variables?: Record<string, unknown>) {
+  const { id } = variables ?? {}
+  const { data, error } = await supabase
+    .from('client')
+    .delete()
+    .eq('id', id)
+    .select('id')
+    .single()
+  if (error) throw error
+  return { delete_client_by_pk: data }
+}

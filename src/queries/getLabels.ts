@@ -1,21 +1,14 @@
-export const GET_LABELS = `
-  query GetLabels {
-    signal(
-      where: {
-        value: { _is_null: false }
-        start_time: { _is_null: false }
-        end_time: { _is_null: false }
-      }
-      order_by: { created_at: desc }
-      limit: 100
-    ) {
-      id
-      value
-      start_time
-      end_time
-      sensor_id
-      created_at
-      sensor { name }
-    }
-  }
-`
+import { supabase } from '@/lib/supabase'
+
+export async function GET_LABELS() {
+  const { data, error } = await supabase
+    .from('signal')
+    .select('id, value, start_time, end_time, sensor_id, created_at, sensor(name)')
+    .not('value', 'is', null)
+    .not('start_time', 'is', null)
+    .not('end_time', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(100)
+  if (error) throw error
+  return { signal: data ?? [] }
+}

@@ -1,7 +1,8 @@
 import * as Sentry from '@sentry/react'
 
 type LogSource =
-  | 'GRAPHQL'
+  | 'SUPABASE'
+  | 'REALTIME'
   | 'AUTH'
   | 'NAVIGATION'
   | 'APP'

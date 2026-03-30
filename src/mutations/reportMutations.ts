@@ -1,29 +1,24 @@
-export const CREATE_REPORT = `
-  mutation CreateReport(
-    $sensor_id: bigint
-    $flow_value: float8
-    $temp_value: float8
-  ) {
-    insert_report_one(
-      object: {
-        sensor_id: $sensor_id
-        flow_value: $flow_value
-        temp_value: $temp_value
-      }
-    ) {
-      id
-      created_at
-      sensor_id
-      flow_value
-      temp_value
-    }
-  }
-`
+import { supabase } from '@/lib/supabase'
 
-export const DELETE_REPORT = `
-  mutation DeleteReport($id: bigint!) {
-    delete_report_by_pk(id: $id) {
-      id
-    }
-  }
-`
+export async function CREATE_REPORT(variables?: Record<string, unknown>) {
+  const { sensor_id, flow_value, temp_value } = variables ?? {}
+  const { data, error } = await supabase
+    .from('report')
+    .insert({ sensor_id, flow_value, temp_value })
+    .select('id, created_at, sensor_id, flow_value, temp_value')
+    .single()
+  if (error) throw error
+  return { insert_report_one: data }
+}
+
+export async function DELETE_REPORT(variables?: Record<string, unknown>) {
+  const { id } = variables ?? {}
+  const { data, error } = await supabase
+    .from('report')
+    .delete()
+    .eq('id', id)
+    .select('id')
+    .single()
+  if (error) throw error
+  return { delete_report_by_pk: data }
+}

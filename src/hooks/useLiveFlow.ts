@@ -5,7 +5,6 @@ import { GET_MAG_SENSORS_BY_BUILDING_ID } from '@/queries/getMagDataByBuildingId
 import { GET_MAG_REPORTS } from '@/queries/getMagReports'
 import { GET_SENSORS_BY_BUILDING_ID } from '@/queries/getSensorsByBuildingId'
 import { computeFlowFromPeaks, type MagDataPoint } from '@/utils/flowComputation'
-import { graphqlFetch, cachedGraphqlFetch, GraphqlError } from '@/utils/graphqlFetch'
 import { logger } from '@/utils/logger/logger'
 import type { MagReport, Sensor } from '@/types'
 
@@ -42,8 +41,6 @@ export function useLiveFlow(
   const [status, setStatus] = useState<FlowStatus>('loading')
   const [lastUpdated, setLastUpdated] = useState<number | null>(null)
 
-  const tokenRef = useRef(token)
-  tokenRef.current = token
   const fallbackRef = useRef(options?.fallbackMagSensorId ?? null)
   fallbackRef.current = options?.fallbackMagSensorId ?? null
 
@@ -63,15 +60,11 @@ export function useLiveFlow(
       magIds: info.magIds,
       lookbackMs: LOOKBACK_MS,
     })
-    const result = await graphqlFetch<{ mag_report: MagReport[] }>(
-      GET_MAG_REPORTS,
-      {
-        sensorIds: info.magIds,
-        since: new Date(now - LOOKBACK_MS).toISOString(),
-        until: new Date(now).toISOString(),
-      },
-      tokenRef.current,
-    )
+    const result = await GET_MAG_REPORTS({
+      sensorIds: info.magIds,
+      since: new Date(now - LOOKBACK_MS).toISOString(),
+      until: new Date(now).toISOString(),
+    })
 
     const reports = result?.mag_report ?? []
     logger.info('LIVE_FLOW', 'pollFlow rows', { count: reports.length })
@@ -86,10 +79,10 @@ export function useLiveFlow(
 
     const magData: MagDataPoint[] = reports
       .sort(
-        (a, b) =>
+        (a: MagReport, b: MagReport) =>
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
       )
-      .map((r) => ({
+      .map((r: MagReport) => ({
         timestamp: new Date(r.created_at).getTime(),
         x: r.x_axis_reading,
         total: r.total_magnitude,
@@ -119,18 +112,12 @@ export function useLiveFlow(
   const initSensors = useCallback(
     async (bid: number): Promise<SensorInfo | 'no-sensor' | 'needs-cal'> => {
       const [magResult, sensorResult] = await Promise.all([
-        cachedGraphqlFetch<{
-          mag_to_building: { mag_id: number }[]
-        }>(GET_MAG_SENSORS_BY_BUILDING_ID, { buildingId: bid }, tokenRef.current),
-        cachedGraphqlFetch<{ sensor: Sensor[] }>(
-          GET_SENSORS_BY_BUILDING_ID,
-          { buildingId: bid },
-          tokenRef.current,
-        ),
+        GET_MAG_SENSORS_BY_BUILDING_ID({ buildingId: bid }),
+        GET_SENSORS_BY_BUILDING_ID({ buildingId: bid }),
       ])
 
       const fromBuilding =
-        magResult?.mag_to_building?.map((m) => m.mag_id) ?? []
+        (magResult?.mag_to_building as { mag_id: number }[])?.map((m) => m.mag_id) ?? []
       const fb = fallbackRef.current
       const magIds =
         fb != null
@@ -138,7 +125,7 @@ export function useLiveFlow(
           : fromBuilding
       if (magIds.length === 0) return 'no-sensor'
 
-      const sensors = sensorResult?.sensor ?? []
+      const sensors = (sensorResult?.sensor as Sensor[]) ?? []
       let multiplier: number | null = null
       for (const magId of magIds) {
         const match = sensors.find((s) => s.id === magId)
@@ -230,19 +217,11 @@ export function useLiveFlow(
           } catch (err) {
             retries++
             const msg = err instanceof Error ? err.message : String(err)
-            const isTransient =
-              err instanceof GraphqlError ? err.transient : true
             logger.warn('LIVE_FLOW', 'initSensors error', {
               retries,
               msg,
-              isTransient,
             })
             if (retries >= MAX_INIT_RETRIES) {
-              if (!cancelled) setStatus('error')
-              scheduleNext()
-              return
-            }
-            if (!isTransient) {
               if (!cancelled) setStatus('error')
               scheduleNext()
               return
@@ -271,24 +250,14 @@ export function useLiveFlow(
       } catch (err) {
         if (cancelled) return
         consecutiveErrorsRef.current++
-        const isTransient =
-          err instanceof GraphqlError ? err.transient : true
         const msg = err instanceof Error ? err.message : String(err)
         logger.warn('LIVE_FLOW', 'pollFlow failed', {
           consecutive: consecutiveErrorsRef.current,
           msg,
-          isTransient,
         })
-        // Non-transient: surface error quickly. Transient: still must leave
-        // "loading" after a few failures or the UI spins forever (521, etc.).
         if (consecutiveErrorsRef.current >= 3) {
-          if (!isTransient) {
-            setStatus('error')
-            logger.info('LIVE_FLOW', 'status → error (poll failures)', {})
-          } else {
-            setStatus('stale')
-            logger.info('LIVE_FLOW', 'status → stale (transient poll failures)', {})
-          }
+          setStatus('stale')
+          logger.info('LIVE_FLOW', 'status → stale (poll failures)', {})
         } else if (
           lastUpdatedRef.current != null &&
           Date.now() - lastUpdatedRef.current > STALE_THRESHOLD_MS

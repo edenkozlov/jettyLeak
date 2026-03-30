@@ -146,18 +146,6 @@ function formatTick(ts: number, rangeMs: number): string {
   })
 }
 
-function computeTickInterval(rangeMs: number): number {
-  if (rangeMs <= 10_000) return 1_000
-  if (rangeMs <= 30_000) return 5_000
-  if (rangeMs <= 60_000) return 10_000
-  if (rangeMs <= 5 * 60_000) return 60_000
-  if (rangeMs <= 15 * 60_000) return 3 * 60_000
-  if (rangeMs <= 60 * 60_000) return 10 * 60_000
-  if (rangeMs <= 6 * 60 * 60_000) return 60 * 60_000
-  if (rangeMs <= 24 * 60 * 60_000) return 3 * 60 * 60_000
-  return 6 * 60 * 60_000
-}
-
 function formatTooltipTime(ts: number): string {
   return new Date(ts).toLocaleString('en-US', {
     month: 'short',
@@ -732,14 +720,9 @@ export default function Reports() {
     if (visibleData.length < 2) return []
     const realLeft = visibleData[0]!.timestamp
     const realRight = visibleData[visibleData.length - 1]!.timestamp
-    const step = computeTickInterval(realVisibleRange)
-    const start = Math.ceil(realLeft / step) * step
-    const ticks: number[] = []
-    for (let t = start; t <= realRight; t += step) {
-      ticks.push(timeline.toCompressed(t))
-    }
-    return ticks
-  }, [visibleData, realVisibleRange, timeline])
+    const realTicks = buildReadableTimeAxisTicks(realLeft, realRight, 8)
+    return realTicks.map((t) => timeline.toCompressed(t))
+  }, [visibleData, timeline])
 
   const visibleTags = useMemo(() => {
     if (!tags.length || timeline.points.length === 0) return []
@@ -765,8 +748,6 @@ export default function Reports() {
       .map((p) => ({ ...p, cx: timeline.toCompressed(p.timestamp) }))
       .filter((p) => p.cx >= left && p.cx <= right)
   }, [magChartData, timeline, domain, chartWindowStart, chartWindowEnd])
-
-  const magRangeMs = chartWindowEnd - chartWindowStart
 
   const magXBaseMin = useMemo(() => {
     if (magLayerBaseData.length === 0) return 0
@@ -824,24 +805,33 @@ export default function Reports() {
   }, [magLayerBaseData, magRawDomain])
 
   const magRawRealRangeMs = useMemo(() => {
+    if (!magRawIsZoomed) return effectiveRangeMs
     const [left, right] = magRawDomain
     if (timeline.points.length > 0) {
       return Math.max(0, timeline.toReal(right) - timeline.toReal(left))
     }
     return Math.max(0, right - left)
-  }, [magRawDomain, timeline])
+  }, [magRawIsZoomed, effectiveRangeMs, magRawDomain, timeline])
 
   const magRawTicks = useMemo(() => {
-    const [left, right] = magRawDomain
     if (magLayerBaseData.length === 0) return []
-    const realLeft = timeline.points.length > 0 ? timeline.toReal(left) : left
-    const realRight = timeline.points.length > 0 ? timeline.toReal(right) : right
-    if (realRight <= realLeft) return []
-    const realTicks = buildReadableTimeAxisTicks(realLeft, realRight, 8)
+    // Use the same canonical window ticks so grids align with the charts above
+    const realTicks = buildReadableTimeAxisTicks(chartWindowStart, chartWindowEnd, 8)
+    // If the raw mag charts are zoomed independently, recompute for the zoomed range
+    if (magRawIsZoomed) {
+      const [left, right] = magRawDomain
+      const realLeft = timeline.points.length > 0 ? timeline.toReal(left) : left
+      const realRight = timeline.points.length > 0 ? timeline.toReal(right) : right
+      if (realRight <= realLeft) return []
+      const zoomedTicks = buildReadableTimeAxisTicks(realLeft, realRight, 8)
+      return zoomedTicks.map((t) =>
+        timeline.points.length > 0 ? timeline.toCompressed(t) : t,
+      )
+    }
     return realTicks.map((t) =>
       timeline.points.length > 0 ? timeline.toCompressed(t) : t,
     )
-  }, [magRawDomain, magLayerBaseData, timeline])
+  }, [magLayerBaseData, chartWindowStart, chartWindowEnd, magRawIsZoomed, magRawDomain, timeline])
 
   const magZoomTimeBounds = useMemo(() => {
     const [left, right] = magRawDomain
@@ -913,26 +903,10 @@ export default function Reports() {
     ],
   )
 
-  const flowBarAxisRangeMs = useMemo(() => {
-    const preset = RANGE_MS[timeRange]
-    if (preset > 0) return preset
-    if (bucketedFlowData.length >= 2) {
-      return (
-        bucketedFlowData[bucketedFlowData.length - 1]!.timestamp -
-        bucketedFlowData[0]!.timestamp
-      )
-    }
-    return 60_000
-  }, [timeRange, bucketedFlowData])
+  const flowBarAxisRangeMs = effectiveRangeMs
 
-  const flowBarAxisTicks = useMemo(() => {
-    if (bucketedFlowData.length === 0) return [] as number[]
-    const min = bucketedFlowData[0]!.timestamp
-    const max = bucketedFlowData[bucketedFlowData.length - 1]!.timestamp
-    return buildReadableTimeAxisTicks(min, max, 8)
-  }, [bucketedFlowData])
-
-  const peakFlowAxisTicks = useMemo(
+  /** Single canonical tick set for all charts sharing the same time window. */
+  const sharedAxisTicks = useMemo(
     () => buildReadableTimeAxisTicks(chartWindowStart, chartWindowEnd, 8),
     [chartWindowStart, chartWindowEnd],
   )
@@ -1697,7 +1671,7 @@ export default function Reports() {
                       bucketedFlowData[bucketedFlowData.length - 1]!.timestamp +
                         bucketMs / 2,
                     ]}
-                    ticks={flowBarAxisTicks}
+                    ticks={sharedAxisTicks}
                     tickFormatter={(ts: number) => formatTick(ts, flowBarAxisRangeMs)}
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
@@ -1795,8 +1769,8 @@ export default function Reports() {
                     dataKey="timestamp"
                     type="number"
                     domain={[chartWindowStart, chartWindowEnd]}
-                    ticks={peakFlowAxisTicks}
-                    tickFormatter={(ts: number) => formatTick(ts, magRangeMs)}
+                    ticks={sharedAxisTicks}
+                    tickFormatter={(ts: number) => formatTick(ts, effectiveRangeMs)}
                     tick={{ fontSize: 11, fill: colors.axis }}
                     tickLine={{ stroke: colors.grid }}
                     axisLine={{ stroke: colors.grid }}

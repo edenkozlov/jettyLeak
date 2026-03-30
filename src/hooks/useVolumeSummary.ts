@@ -34,8 +34,6 @@ export interface VolumeBucket {
   cycles: number
 }
 
-const REFRESH_INTERVAL_MS = 60_000
-
 const WINDOWS: { label: string; ms: number | 'today' }[] = [
   { label: '15 min', ms: 15 * 60_000 },
   { label: '1 hr', ms: 60 * 60_000 },
@@ -95,10 +93,8 @@ export function useVolumeSummary(
   useEffect(() => {
     mountedRef.current = true
     fetchData()
-    const interval = setInterval(fetchData, REFRESH_INTERVAL_MS)
     return () => {
       mountedRef.current = false
-      clearInterval(interval)
     }
   }, [fetchData])
 
