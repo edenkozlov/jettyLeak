@@ -12,9 +12,11 @@ export const GET_SENSORS = `
       last_wifi
       last_lora
       firmware_version
+      floor_number
       building {
         id
         name
+        full_address
       }
     }
   }

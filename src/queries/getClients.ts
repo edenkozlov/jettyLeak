@@ -6,6 +6,21 @@ export const GET_CLIENTS = `
       email
       first_name
       last_name
+      buildings_aggregate {
+        aggregate {
+          count
+        }
+      }
+      buildings {
+        id
+        bhi
+        bhi_label
+        sensors_aggregate {
+          aggregate {
+            count
+          }
+        }
+      }
     }
   }
 `

@@ -11,6 +11,10 @@ export interface Sensor {
   location: string | null
   mappings: SensorMappings | null
   multiplier: number | null
+  type: string | null
+  last_wifi: string | null
+  last_lora: string | null
+  firmware_version: string | null
   floor_number: number | null
   location_on_floor: { x: number; y: number } | null
   area_covered: Array<{ x: number; y: number }> | null
