@@ -5,9 +5,18 @@ export async function INSERT_SIGNAL(variables?: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('signal')
     .insert({ sensor_id, start_time, end_time, value, time })
-    .select('id, value, start_time, end_time, sensor_id, created_at, sensor(name)')
+    .select('id, value, start_time, end_time, sensor_id, created_at, sensor:sensor!sensor_id(name)')
     .single()
-  if (error) throw error
+  if (error) {
+    // Fallback without relation
+    const fallback = await supabase
+      .from('signal')
+      .insert({ sensor_id, start_time, end_time, value, time })
+      .select('id, value, start_time, end_time, sensor_id, created_at')
+      .single()
+    if (fallback.error) throw fallback.error
+    return { insert_signal_one: { ...fallback.data, sensor: null } }
+  }
   return { insert_signal_one: data }
 }
 

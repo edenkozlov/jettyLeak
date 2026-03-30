@@ -5,10 +5,10 @@ export async function CREATE_SENSOR(variables?: Record<string, unknown>) {
   const { data, error } = await supabase
     .from('sensor')
     .insert({ name, location, building_id })
-    .select('id, created_at, name, location, building_id')
+    .select('*')
     .single()
   if (error) throw error
-  return { insert_sensor_one: data }
+  return { insert_sensor_one: data } as any
 }
 
 export async function UPDATE_SENSOR(variables?: Record<string, unknown>) {
@@ -17,10 +17,10 @@ export async function UPDATE_SENSOR(variables?: Record<string, unknown>) {
     .from('sensor')
     .update({ name, location, building_id })
     .eq('id', id)
-    .select('id, created_at, name, location, building_id')
+    .select('*')
     .single()
   if (error) throw error
-  return { update_sensor_by_pk: data }
+  return { update_sensor_by_pk: data } as any
 }
 
 export async function DELETE_SENSOR(variables?: Record<string, unknown>) {
@@ -32,7 +32,7 @@ export async function DELETE_SENSOR(variables?: Record<string, unknown>) {
     .select('id')
     .single()
   if (error) throw error
-  return { delete_sensor_by_pk: data }
+  return { delete_sensor_by_pk: data } as any
 }
 
 export async function UPDATE_SENSOR_POSITION(variables?: Record<string, unknown>) {
@@ -41,10 +41,10 @@ export async function UPDATE_SENSOR_POSITION(variables?: Record<string, unknown>
     .from('sensor')
     .update({ floor_number, location_on_floor })
     .eq('id', id)
-    .select('id, floor_number, location_on_floor')
+    .select('*')
     .single()
   if (error) throw error
-  return { update_sensor_by_pk: data }
+  return { update_sensor_by_pk: data } as any
 }
 
 export async function UPDATE_SENSOR_AREA(variables?: Record<string, unknown>) {
@@ -53,10 +53,10 @@ export async function UPDATE_SENSOR_AREA(variables?: Record<string, unknown>) {
     .from('sensor')
     .update({ area_covered })
     .eq('id', id)
-    .select('id, area_covered')
+    .select('*')
     .single()
   if (error) throw error
-  return { update_sensor_by_pk: data }
+  return { update_sensor_by_pk: data } as any
 }
 
 export async function UPDATE_SENSOR_MAPPINGS(variables?: Record<string, unknown>) {
@@ -65,8 +65,8 @@ export async function UPDATE_SENSOR_MAPPINGS(variables?: Record<string, unknown>
     .from('sensor')
     .update({ mappings })
     .eq('id', id)
-    .select('id, mappings')
+    .select('*')
     .single()
   if (error) throw error
-  return { update_sensor_by_pk: data }
+  return { update_sensor_by_pk: data } as any
 }
