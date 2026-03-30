@@ -3,6 +3,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  --font-sans: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+}
+
+@theme {
   --color-indigo-50: #f0f9ff;
   --color-indigo-100: #e0f2fe;
   --color-indigo-200: #bae6fd;
