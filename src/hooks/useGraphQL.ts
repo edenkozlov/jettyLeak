@@ -17,6 +17,8 @@ export function useGraphQL<T = Record<string, unknown>>(
   const [error, setError] = useState<string | null>(null)
   const requestIdRef = useRef(0)
   const inFlightRef = useRef(0)
+  const queryFnRef = useRef(queryFn)
+  queryFnRef.current = queryFn
 
   const executeQuery = useCallback(
     async (variables?: Record<string, unknown>): Promise<T | null> => {
@@ -30,21 +32,12 @@ export function useGraphQL<T = Record<string, unknown>>(
       setError(null)
 
       try {
-        const result = await queryFn(variables)
+        const result = await queryFnRef.current(variables)
 
-        // Ignore stale responses — only accept the most recent request
         if (thisRequestId !== requestIdRef.current) {
-          logger.info('SUPABASE', 'stale response ignored', {
-            id: thisRequestId,
-            latestId: requestIdRef.current,
-          })
           return result ?? null
         }
 
-        logger.info('SUPABASE', 'request ok', {
-          id: thisRequestId,
-          keys: result && typeof result === 'object' ? Object.keys(result as object) : null,
-        })
         setData(result ?? null)
         return result ?? null
       } catch (err) {
@@ -55,17 +48,12 @@ export function useGraphQL<T = Record<string, unknown>>(
         return null
       } finally {
         inFlightRef.current = Math.max(0, inFlightRef.current - 1)
-        logger.info('SUPABASE', 'request finally', {
-          id: thisRequestId,
-          inFlight: inFlightRef.current,
-          clearsLoading: inFlightRef.current === 0,
-        })
         if (inFlightRef.current === 0) {
           setLoading(false)
         }
       }
     },
-    [queryFn],
+    [], // stable — queryFn accessed via ref
   )
 
   return { data, loading, error, executeQuery }
