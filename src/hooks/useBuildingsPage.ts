@@ -28,7 +28,13 @@ export function useBuildingsPage() {
     }
   }, [executeQuery, isClient, client_id])
 
-  const buildings = useMemo(() => data?.building ?? [], [data])
+  const buildings = useMemo(() => {
+    const all = data?.building ?? []
+    if (isClient) {
+      return all.filter((b) => b.client_id === client_id)
+    }
+    return all
+  }, [data, isClient, client_id])
 
   return {
     buildings,

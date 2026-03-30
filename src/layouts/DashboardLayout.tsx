@@ -65,6 +65,17 @@ const NAV_GROUPS: NavGroup[] = [
         ),
       },
       {
+        label: 'Map',
+        path: '/dashboard/buildings/map',
+        adminOnly: false,
+        icon: (
+          <svg className={ICON_CLS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+          </svg>
+        ),
+      },
+      {
         label: 'Clients',
         path: '/dashboard/clients',
         adminOnly: true,
@@ -385,7 +396,7 @@ function ProfileMenu() {
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-64 rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800">
+        <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-700 dark:bg-gray-800">
           <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-700">
             <p className="text-sm font-medium text-gray-900 dark:text-white">{name}</p>
             {email && email !== name && (

@@ -34,7 +34,7 @@ export const UPDATE_BUILDING = `
     $latitude: float8
     $longitude: float8
     $client_id: uuid
-    $footprint: jsonb
+    $number_of_floors: bigint
   ) {
     update_building_by_pk(
       pk_columns: { id: $id }
@@ -44,7 +44,7 @@ export const UPDATE_BUILDING = `
         latitude: $latitude
         longitude: $longitude
         client_id: $client_id
-        footprint: $footprint
+        number_of_floors: $number_of_floors
       }
     ) {
       id
@@ -54,7 +54,7 @@ export const UPDATE_BUILDING = `
       latitude
       longitude
       client_id
-      footprint
+      number_of_floors
     }
   }
 `

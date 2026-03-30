@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import useAuth from '@/hooks/auth/useAuth'
 import { useGraphQL } from '@/hooks/useGraphQL'
 import { useSubscription } from '@/hooks/useSubscription'
-import { GET_SENSORS } from '@/queries/getSensors'
+import { GET_SENSORS, GET_SENSORS_BY_CLIENT_ID } from '@/queries/getSensors'
 import { GET_SENSOR_DATA } from '@/queries/getSensorData'
 import {
   GET_MAG_SENSORS_BY_BUILDING_ID,
@@ -225,11 +226,16 @@ function generateTicks(
 }
 
 export function useReportsPage(initialSensorId?: number | null, initialTimeRange?: TimeRange) {
+  const { role, client_id } = useAuth()
+  const isClient = role === 'client' && !!client_id
+
+  const sensorsQuery = isClient ? GET_SENSORS_BY_CLIENT_ID : GET_SENSORS
+
   const {
     data: sensorsData,
     loading: sensorsLoading,
     executeQuery: fetchSensors,
-  } = useGraphQL<SensorsResponse>(GET_SENSORS)
+  } = useGraphQL<SensorsResponse>(sensorsQuery)
 
   const {
     data: sensorData,
@@ -338,8 +344,12 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
   // --- Sensors ---
 
   useEffect(() => {
-    fetchSensors()
-  }, [fetchSensors])
+    if (isClient) {
+      fetchSensors({ clientId: client_id })
+    } else {
+      fetchSensors()
+    }
+  }, [fetchSensors, isClient, client_id])
 
   useEffect(() => {
     if (sensorsData?.sensor?.length && selectedSensorId === null) {
@@ -469,7 +479,13 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
 
   // --- Computed ---
 
-  const sensors = useMemo(() => sensorsData?.sensor ?? [], [sensorsData])
+  const sensors = useMemo(() => {
+    const all = sensorsData?.sensor ?? []
+    if (isClient) {
+      return all.filter((s) => s.building?.client_id === client_id)
+    }
+    return all
+  }, [sensorsData, isClient, client_id])
 
   const selectedSensor = useMemo(
     () => sensors.find((s) => s.id === selectedSensorId) ?? null,
@@ -604,9 +620,9 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
       if (selectedSensorId === null) return
       const updated = { ...sensorMappings, [String(signalType)]: label }
       await executeMappingsUpdate({ id: selectedSensorId, mappings: updated })
-      await fetchSensors()
+      await (isClient ? fetchSensors({ clientId: client_id }) : fetchSensors())
     },
-    [selectedSensorId, sensorMappings, executeMappingsUpdate, fetchSensors],
+    [selectedSensorId, sensorMappings, executeMappingsUpdate, fetchSensors, isClient, client_id],
   )
 
   return {

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
 import BuildingAnalytics, { MagDataSection } from '@/components/BuildingAnalytics'
+import BuildingEditPanel from '@/components/BuildingEditPanel'
 import CollapsibleSection from '@/components/CollapsibleSection'
 import BuildingFootprint from '@/components/BuildingFootprint'
 import BuildingMap3D from '@/components/BuildingMap3D'
@@ -28,7 +29,7 @@ import {
   UPDATE_SENSOR_AREA,
   UPDATE_SENSOR_POSITION,
 } from '@/mutations/sensorMutations'
-import type { Fixture, FixtureType, Sensor } from '@/types'
+import type { Building, Fixture, FixtureType, Sensor } from '@/types'
 
 // Ray-casting point-in-polygon test
 function pointInPolygon(
@@ -91,10 +92,31 @@ export default function BuildingDetail() {
   const [localName, setLocalName] = useState<string | null | undefined>(undefined)
   const displayName = localName !== undefined ? localName : building?.name ?? null
 
+  const [localAddress, setLocalAddress] = useState<string | null | undefined>(undefined)
+  const displayAddress = localAddress !== undefined ? localAddress : building?.full_address ?? null
+
+  const [localClient, setLocalClient] = useState<Building['client'] | undefined>(undefined)
+  const displayClient = localClient !== undefined ? localClient : building?.client
+
   const [footprintExpanded, setFootprintExpanded] = useState(false)
   const [magData, setMagData] = useState<Parameters<typeof MagDataSection>[0]['data']>([])
   const handleMagData = useCallback((d: typeof magData) => setMagData(d), [])
 
+  const handleEditSaved = useCallback((updates: Partial<Building>) => {
+    if (updates.name !== undefined) setLocalName(updates.name ?? null)
+    if (updates.full_address !== undefined) setLocalAddress(updates.full_address ?? null)
+    if (updates.number_of_floors != null) setLocalFloors(updates.number_of_floors)
+    if (updates.latitude !== undefined || updates.longitude !== undefined) {
+      setGeocodedCoords(
+        updates.latitude != null && updates.longitude != null
+          ? { latitude: updates.latitude, longitude: updates.longitude }
+          : null,
+      )
+    }
+    if (updates.client !== undefined) setLocalClient(updates.client)
+  }, [])
+
+  const [editingPanel, setEditingPanel] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [nameValue, setNameValue] = useState('')
   const nameInputRef = useRef<HTMLInputElement>(null)
@@ -362,10 +384,8 @@ export default function BuildingDetail() {
     )
   }
 
-  const clientName = building?.client
-    ? [building.client.first_name, building.client.last_name]
-        .filter(Boolean)
-        .join(' ')
+  const clientName = displayClient
+    ? [displayClient.first_name, displayClient.last_name].filter(Boolean).join(' ')
     : null
 
   const shimmer =
@@ -391,55 +411,88 @@ export default function BuildingDetail() {
             <div className={`hidden h-4 w-48 rounded-md bg-gray-200/70 dark:bg-gray-700/50 sm:block ${shimmer}`} />
           </div>
         ) : building ? (
-          <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5">
-            {editingName ? (
-              <input
-                ref={nameInputRef}
-                value={nameValue}
-                onChange={(e) => setNameValue(e.target.value)}
-                onBlur={() => {
-                  const trimmed = nameValue.trim() || null
-                  setEditingName(false)
-                  setLocalName(trimmed)
-                  updateBuildingName({ id: building.id, name: trimmed })
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') e.currentTarget.blur()
-                  if (e.key === 'Escape') {
-                    setNameValue(displayName ?? '')
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5">
+              {editingName ? (
+                <input
+                  ref={nameInputRef}
+                  value={nameValue}
+                  onChange={(e) => setNameValue(e.target.value)}
+                  onBlur={() => {
+                    const trimmed = nameValue.trim() || null
                     setEditingName(false)
-                  }
-                }}
-                className="border-b-2 border-indigo-500 bg-transparent text-lg font-bold outline-none"
-                autoFocus
-              />
-            ) : (
-              <h1
-                className="cursor-pointer truncate text-lg font-bold"
-                onClick={() => {
-                  setNameValue(displayName ?? '')
-                  setEditingName(true)
-                }}
-                title="Click to rename"
-              >
-                {displayName ?? (
-                  <span className="text-gray-400">Unnamed Building</span>
-                )}
-              </h1>
-            )}
-            {building.full_address && (
-              <span className="truncate text-sm text-gray-400 dark:text-gray-500">
-                {building.full_address}
-              </span>
-            )}
-            {clientName && (
-              <span className="text-xs text-gray-400 dark:text-gray-500">
-                · {clientName}
-              </span>
-            )}
+                    setLocalName(trimmed)
+                    updateBuildingName({ id: building.id, name: trimmed })
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.currentTarget.blur()
+                    if (e.key === 'Escape') {
+                      setNameValue(displayName ?? '')
+                      setEditingName(false)
+                    }
+                  }}
+                  className="border-b-2 border-indigo-500 bg-transparent text-lg font-bold outline-none"
+                  autoFocus
+                />
+              ) : (
+                <h1
+                  className="cursor-pointer truncate text-lg font-bold"
+                  onClick={() => {
+                    setNameValue(displayName ?? '')
+                    setEditingName(true)
+                  }}
+                  title="Click to rename"
+                >
+                  {displayName ?? (
+                    <span className="text-gray-400">Unnamed Building</span>
+                  )}
+                </h1>
+              )}
+              {displayAddress && (
+                <span className="truncate text-sm text-gray-400 dark:text-gray-500">
+                  {displayAddress}
+                </span>
+              )}
+              {clientName && (
+                <span className="text-xs text-gray-400 dark:text-gray-500">
+                  · {clientName}
+                </span>
+              )}
+            </div>
+
+            {/* Edit toggle */}
+            <button
+              onClick={() => setEditingPanel((v) => !v)}
+              className={`ml-auto shrink-0 rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300 ${editingPanel ? 'bg-gray-100 text-indigo-500 dark:bg-gray-700 dark:text-indigo-400' : ''}`}
+              title="Edit building details"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z" />
+              </svg>
+            </button>
           </div>
         ) : null}
       </div>
+
+      {/* Edit panel */}
+      {editingPanel && building && (
+        <div className="mb-4 sm:mb-5">
+          <BuildingEditPanel
+            building={{
+              ...building,
+              name: displayName ?? building.name,
+              full_address: displayAddress ?? building.full_address,
+              number_of_floors: numberOfFloors,
+              client: displayClient,
+              latitude: geocodedCoords?.latitude ?? building.latitude,
+              longitude: geocodedCoords?.longitude ?? building.longitude,
+            }}
+            onSaved={handleEditSaved}
+            onClose={() => setEditingPanel(false)}
+            onDeleted={() => navigate('/dashboard/buildings')}
+          />
+        </div>
+      )}
 
       {/* Analytics — starts immediately using URL param, no waiting for building data */}
       <div className="mb-4 sm:mb-6">

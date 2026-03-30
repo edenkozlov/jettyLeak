@@ -26,6 +26,7 @@ const Privacy = lazy(() => import('@/pages/Privacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
 const MagReports = lazy(() => import('@/pages/MagReports'))
 const Reports = lazy(() => import('@/pages/Reports'))
+const BuildingsMap = lazy(() => import('@/pages/BuildingsMap'))
 const Sensors = lazy(() => import('@/pages/Sensors'))
 const Admin = lazy(() => import('@/pages/Admin'))
 const Settings = lazy(() => import('@/pages/Settings'))
@@ -69,6 +70,7 @@ function AppRoutes() {
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Reports />} />
             <Route path="buildings" element={<Buildings />} />
+            <Route path="buildings/map" element={<BuildingsMap />} />
             <Route path="buildings/:id" element={<BuildingDetail />} />
             <Route path="reports/:sensorId?" element={<Reports />} />
             <Route path="reports/:sensorId/:timeWindow/raw" element={<Reports />} />

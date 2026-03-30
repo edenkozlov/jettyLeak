@@ -16,7 +16,7 @@
     "graphql": "^16.12.0",
     "graphql-ws": "^6.0.7",
     "i18next": "^24.2.0",
-    "mapbox-gl": "^3.19.0",
+    "mapbox-gl": "^3.20.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-i18next": "^15.4.0",
