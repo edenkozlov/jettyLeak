@@ -68,7 +68,7 @@ function AppRoutes() {
             <Route path="/login" element={<Login />} />
           </Route>
           <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<Reports />} />
+            <Route index element={<Home />} />
             <Route path="buildings" element={<Buildings />} />
             <Route path="buildings/map" element={<BuildingsMap />} />
             <Route path="buildings/:id" element={<BuildingDetail />} />
@@ -79,7 +79,6 @@ function AppRoutes() {
             <Route path="mag-reports/:buildingId?" element={<MagReports />} />
             <Route path="settings" element={<Settings />} />
             <Route element={<AdminRoute />}>
-              <Route path="home" element={<Home />} />
               <Route path="clients" element={<Clients />} />
               <Route path="sensors" element={<Sensors />} />
               <Route path="admin" element={<Admin />} />

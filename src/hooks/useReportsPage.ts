@@ -185,6 +185,36 @@ function magToPoint(r: MagReport): MagChartPoint {
   }
 }
 
+const MAG_ANOMALY_THRESHOLD = 500
+
+/** Remove isolated spike points where the value jumps far from both neighbours. */
+function filterMagAnomalies(points: MagChartPoint[]): MagChartPoint[] {
+  if (points.length < 3) return points
+  const result: MagChartPoint[] = [points[0]!]
+  for (let i = 1; i < points.length - 1; i++) {
+    const prev = points[i - 1]!
+    const curr = points[i]!
+    const next = points[i + 1]!
+    let isAnomaly = false
+    for (const key of ['x', 'y', 'z', 'total'] as const) {
+      const pv = prev[key]
+      const cv = curr[key]
+      const nv = next[key]
+      if (pv == null || cv == null || nv == null) continue
+      if (
+        Math.abs(cv - pv) > MAG_ANOMALY_THRESHOLD &&
+        Math.abs(cv - nv) > MAG_ANOMALY_THRESHOLD
+      ) {
+        isAnomaly = true
+        break
+      }
+    }
+    if (!isAnomaly) result.push(curr)
+  }
+  result.push(points[points.length - 1]!)
+  return result
+}
+
 function filterPointsToWindow<T extends { timestamp: number }>(
   points: T[],
   range: TimeRange,
@@ -474,9 +504,10 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     const expectedIds = new Set(magSensorIdsForQuery)
     const matching = magReports.filter((r) => expectedIds.has(Number(r.sensor_id)))
     if (matching.length === 0) return []
-    const base = [...matching]
+    const sorted = [...matching]
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
       .map(magToPoint)
+    const base = filterMagAnomalies(sorted)
     if (timeRange === 'all') return base
     if (magFetchWindow) {
       const sinceMs = new Date(magFetchWindow.since).getTime()

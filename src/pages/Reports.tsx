@@ -577,6 +577,11 @@ export default function Reports() {
   const lastRefetchMsRef = useRef(Date.now())
   const MIN_REFETCH_INTERVAL_MS = 15_000
 
+  // Tick counter drives the timer loop without moving the chart window.
+  // slotAnchor only advances after a successful data refetch so the charts
+  // never show empty future time that hasn't been populated yet.
+  const [tick, setTick] = useState(0)
+
   useEffect(() => {
     const now = Date.now()
     const nextBoundary = (Math.floor(now / bucketMs) + 1) * bucketMs
@@ -586,14 +591,16 @@ export default function Reports() {
       const elapsed = Date.now() - lastRefetchMsRef.current
       if (elapsed >= MIN_REFETCH_INTERVAL_MS) {
         lastRefetchMsRef.current = Date.now()
-        // Wait for data to arrive before advancing the window
         await refetchMagRef.current()
+        // Advance the chart window only after fresh data has arrived
+        setSlotAnchor(Math.floor(Date.now() / bucketMs) * bucketMs)
       }
-      setSlotAnchor(Math.floor(Date.now() / bucketMs) * bucketMs)
+      // Always bump the tick so the next timeout is scheduled
+      setTick((t) => t + 1)
     }, delay)
 
     return () => clearTimeout(timeout)
-  }, [slotAnchor, bucketMs])
+  }, [tick, bucketMs])
 
   // Canonical time window shared by all charts
   const effectiveRangeMs = useMemo(() => {
@@ -605,7 +612,19 @@ export default function Reports() {
     return 60_000
   }, [timeRange, magChartDataFull])
   const numFlowBuckets = Math.max(1, Math.round(effectiveRangeMs / bucketMs))
-  const chartWindowEnd = slotAnchor + bucketMs
+  // End the chart one bucket past the latest data point so lines aren't clipped
+  // at the edge, but never show a large empty gap.  Falls back to slotAnchor
+  // when no data has loaded yet.
+  const latestFlowTs = rawChartData.length > 0
+    ? rawChartData[rawChartData.length - 1]!.timestamp
+    : 0
+  const latestMagTs = magChartDataFull.length > 0
+    ? magChartDataFull[magChartDataFull.length - 1]!.timestamp
+    : 0
+  const latestDataTs = Math.max(latestFlowTs, latestMagTs)
+  const chartWindowEnd = latestDataTs > 0
+    ? (Math.floor(latestDataTs / bucketMs) + 1) * bucketMs
+    : slotAnchor
   const chartWindowStart = chartWindowEnd - numFlowBuckets * bucketMs
 
   const [tagFormTimestamp, setTagFormTimestamp] = useState<number | null>(null)
@@ -773,8 +792,7 @@ export default function Reports() {
       .filter((p) => p.cx >= left && p.cx <= right)
   }, [magChartData, timeline, domain, chartWindowStart, chartWindowEnd])
 
-  // Use the chart window (same as Flow Rate) as the base range for raw mag charts
-  // so they always show the full selected time range, not just the data extent.
+  // Use the same chart window as the flow chart so timestamps stay aligned.
   const magXBaseMin = chartWindowStart
   const magXBaseMax = chartWindowEnd
 
