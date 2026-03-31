@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 
-import { BrandLogoMark } from '@/components/BrandLogoMark'
+import { DashboardBrandLogoMark } from '@/components/BrandLogoMark'
 import { useDashboardLayout } from '@/hooks/useDashboardLayout'
 import useAuth from '@/hooks/auth/useAuth'
 
@@ -184,11 +184,8 @@ export default function DashboardLayout() {
         <div className={`flex h-16 shrink-0 items-center border-b border-gray-200 dark:border-gray-700 ${sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''} px-4`}>
           {/* Mobile: logo + close */}
           <div className="flex flex-1 items-center justify-between lg:hidden">
-            <Link
-              to="/"
-              className="flex items-center gap-2 rounded-lg dark:bg-white dark:px-2 dark:py-1 dark:shadow-sm"
-            >
-              <BrandLogoMark />
+            <Link to="/" className="flex items-center gap-2">
+              <DashboardBrandLogoMark />
             </Link>
             <button
               onClick={handleToggleSidebar}
@@ -243,11 +240,8 @@ export default function DashboardLayout() {
               {HAMBURGER_ICON}
             </button>
             {/* Logo in header */}
-            <Link
-              to="/"
-              className="flex items-center gap-2 rounded-lg dark:bg-white dark:px-2 dark:py-1 dark:shadow-sm"
-            >
-              <BrandLogoMark />
+            <Link to="/" className="flex items-center gap-2">
+              <DashboardBrandLogoMark />
             </Link>
           </div>
 

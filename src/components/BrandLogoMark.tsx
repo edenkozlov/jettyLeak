@@ -19,3 +19,23 @@ export function BrandLogoMark({ className }: { className?: string }) {
     />
   )
 }
+
+/**
+ * Dashboard chrome only. Renders the lockup as a light mark on transparent background
+ * in dark theme (CSS filter). `alwaysDark` = always invert (sidebar that stays dark in “light” theme).
+ */
+export function DashboardBrandLogoMark({
+  variant = 'theme',
+}: {
+  variant?: 'theme' | 'alwaysDark'
+}) {
+  const filter =
+    variant === 'alwaysDark'
+      ? '[&_img]:brightness-0 [&_img]:invert [&_img]:opacity-95'
+      : 'dark:[&_img]:brightness-0 dark:[&_img]:invert dark:[&_img]:opacity-95'
+  return (
+    <span className={`inline-flex items-center ${filter}`}>
+      <BrandLogoMark />
+    </span>
+  )
+}
