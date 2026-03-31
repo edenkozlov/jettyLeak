@@ -184,9 +184,11 @@ export default function DashboardLayout() {
         <div className={`flex h-16 shrink-0 items-center border-b border-gray-200 dark:border-gray-700 ${sidebarCollapsed ? 'lg:justify-center lg:px-0' : ''} px-4`}>
           {/* Mobile: logo + close */}
           <div className="flex flex-1 items-center justify-between lg:hidden">
-            <Link to="/" className="flex items-center gap-2">
+            <Link
+              to="/"
+              className="flex items-center gap-2 rounded-lg dark:bg-white dark:px-2 dark:py-1 dark:shadow-sm"
+            >
               <BrandLogoMark />
-              <span className="text-lg font-bold text-gray-900 dark:text-white">Beluga</span>
             </Link>
             <button
               onClick={handleToggleSidebar}
@@ -241,9 +243,11 @@ export default function DashboardLayout() {
               {HAMBURGER_ICON}
             </button>
             {/* Logo in header */}
-            <Link to="/" className="flex items-center gap-2">
-              <BrandLogoMark className="h-7 w-auto max-w-[min(100%,11rem)] shrink-0 object-contain object-left sm:h-8 sm:max-w-[12rem]" />
-              <span className="text-lg font-bold text-gray-900 dark:text-white">Beluga</span>
+            <Link
+              to="/"
+              className="flex items-center gap-2 rounded-lg dark:bg-white dark:px-2 dark:py-1 dark:shadow-sm"
+            >
+              <BrandLogoMark />
             </Link>
           </div>
 

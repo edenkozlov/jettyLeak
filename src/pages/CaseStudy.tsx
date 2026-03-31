@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 
-import { BrandLogoMark } from '@/components/BrandLogoMark'
+import { BrandLogoMark, BRAND_LOGO_FOOTER_CLASS } from '@/components/BrandLogoMark'
 import cs1 from '@/assets/CS1.jpg'
 import cs2 from '@/assets/CS2.jpg'
 import cs3 from '@/assets/CS3.jpg'
@@ -16,7 +16,6 @@ export default function CaseStudy() {
         <div className="flex h-14 items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-10">
           <Link to="/" className="flex items-center gap-2">
             <BrandLogoMark />
-            <span className="text-lg font-bold text-gray-900 sm:text-xl">Beluga</span>
           </Link>
           <div className="flex items-center gap-4 sm:gap-8">
             <Link to="/" className="text-[13px] text-gray-400 transition hover:text-gray-700">Home</Link>
@@ -200,8 +199,7 @@ export default function CaseStudy() {
       <footer className="border-t border-gray-100 bg-white py-8 sm:py-10">
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 sm:gap-6 sm:px-6 md:flex-row">
           <Link to="/" className="flex items-center gap-2">
-            <BrandLogoMark className="h-7 w-auto max-w-[min(100%,10rem)] shrink-0 object-contain object-left" />
-            <span className="text-sm font-bold text-gray-900">Beluga</span>
+            <BrandLogoMark className={BRAND_LOGO_FOOTER_CLASS} />
           </Link>
           <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
             <Link to="/" className="text-[12px] text-gray-400 transition hover:text-gray-600">Home</Link>

@@ -13,7 +13,6 @@ export function LandingNav() {
       <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-10">
         <Link to="/" className="flex items-center gap-2">
           <BrandLogoMark />
-          <span className="text-lg font-bold text-gray-900 sm:text-xl">Beluga</span>
         </Link>
         <div className="flex items-center gap-4 sm:gap-8">
           <div className="hidden gap-7 md:flex">
