@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 
-import logo from '@/assets/belugaLogo.png'
+import { BrandLogoMark } from '@/components/BrandLogoMark'
 
 import { LANDING_ANCHOR_LINKS } from './constants'
 
@@ -12,7 +12,7 @@ export function LandingNav() {
     <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white">
       <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-10">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Beluga" className="h-8 sm:h-9" />
+          <BrandLogoMark />
           <span className="text-lg font-bold text-gray-900 sm:text-xl">Beluga</span>
         </Link>
         <div className="flex items-center gap-4 sm:gap-8">

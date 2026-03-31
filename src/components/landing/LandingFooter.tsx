@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
 
-import logo from '@/assets/belugaLogo.png'
+import { BrandLogoMark } from '@/components/BrandLogoMark'
 
 import { LANDING_ANCHOR_LINKS } from './constants'
 
@@ -9,7 +9,7 @@ export function LandingFooter() {
     <footer className="border-t border-gray-100 bg-white py-8 sm:py-10">
       <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 sm:gap-6 sm:px-6 md:flex-row">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Beluga" className="h-7" />
+          <BrandLogoMark className="h-7 w-auto max-w-[min(100%,10rem)] shrink-0 object-contain object-left" />
           <span className="text-sm font-bold text-gray-900">Beluga</span>
         </Link>
         <div className="flex flex-wrap justify-center gap-5 sm:gap-8">

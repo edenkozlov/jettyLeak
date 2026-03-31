@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 
-import logo from '@/assets/belugaLogo.png'
+import { BrandLogoMark } from '@/components/BrandLogoMark'
 import { useDashboardLayout } from '@/hooks/useDashboardLayout'
 import useAuth from '@/hooks/auth/useAuth'
 
@@ -185,7 +185,7 @@ export default function DashboardLayout() {
           {/* Mobile: logo + close */}
           <div className="flex flex-1 items-center justify-between lg:hidden">
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="Beluga" className="h-8" />
+              <BrandLogoMark />
               <span className="text-lg font-bold text-gray-900 dark:text-white">Beluga</span>
             </Link>
             <button
@@ -242,7 +242,7 @@ export default function DashboardLayout() {
             </button>
             {/* Logo in header */}
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="Beluga" className="h-7" />
+              <BrandLogoMark className="h-7 w-auto max-w-[min(100%,11rem)] shrink-0 object-contain object-left sm:h-8 sm:max-w-[12rem]" />
               <span className="text-lg font-bold text-gray-900 dark:text-white">Beluga</span>
             </Link>
           </div>

@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import logo from '@/assets/belugaLogo.png'
+import { BrandLogoMark } from '@/components/BrandLogoMark'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
 
 export default function Privacy() {
@@ -7,7 +7,10 @@ export default function Privacy() {
     <div className="min-h-screen bg-white antialiased">
       <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white">
         <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-10">
-          <Link to="/" className="flex items-center gap-2"><img src={logo} alt="Beluga" className="h-7" /><span className="text-sm font-bold text-gray-900">Beluga</span></Link>
+          <Link to="/" className="flex items-center gap-2">
+            <BrandLogoMark className="h-7 w-auto max-w-[min(100%,10rem)] shrink-0 object-contain object-left" />
+            <span className="text-sm font-bold text-gray-900">Beluga</span>
+          </Link>
           <Link to="/" className="text-[13px] text-gray-400 transition hover:text-gray-600">Back to Home</Link>
         </div>
       </nav>
