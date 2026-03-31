@@ -18,7 +18,7 @@ function StatusDot({ status }: { status: FlowStatus }) {
     return (
       <span className="relative inline-block h-2.5 w-2.5">
         <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-75" />
-        <span className="relative inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" />
+        <span className="relative block h-2.5 w-2.5 rounded-full bg-emerald-500" />
       </span>
     )
   }
