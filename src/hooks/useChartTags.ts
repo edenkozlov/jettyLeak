@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useGraphQL } from '@/hooks/useGraphQL'
 import { GET_TAGS_BY_SENSOR_ID } from '@/queries/getTagsBySensorId'
@@ -36,33 +36,42 @@ export function useChartTags(sensorId: number | null) {
   const { executeQuery: executeDeleteTag } =
     useGraphQL<DeleteTagResponse>(DELETE_TAG)
 
+  const fetchTagsRef = useRef(fetchTags)
+  fetchTagsRef.current = fetchTags
+  const executeCreateTagRef = useRef(executeCreateTag)
+  executeCreateTagRef.current = executeCreateTag
+  const executeUpdateTagRef = useRef(executeUpdateTag)
+  executeUpdateTagRef.current = executeUpdateTag
+  const executeDeleteTagRef = useRef(executeDeleteTag)
+  executeDeleteTagRef.current = executeDeleteTag
+
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null)
 
   useEffect(() => {
     if (sensorId !== null) {
-      fetchTags({ sensorId })
+      fetchTagsRef.current({ sensorId })
     }
-  }, [sensorId, fetchTags])
+  }, [sensorId])
 
   const tags = useMemo(() => tagsData?.tag ?? [], [tagsData])
 
   const createTag = useCallback(
     async (timestamp: number, title: string, description: string) => {
       if (sensorId === null) return
-      await executeCreateTag({
+      await executeCreateTagRef.current({
         sensor_id: sensorId,
         tagged_at: new Date(timestamp).toISOString(),
         title,
         description: description || null,
       })
-      fetchTags({ sensorId })
+      fetchTagsRef.current({ sensorId })
     },
-    [sensorId, executeCreateTag, fetchTags],
+    [sensorId],
   )
 
   const updateTag = useCallback(
     async (id: number, title: string, description: string) => {
-      const result = await executeUpdateTag({
+      const result = await executeUpdateTagRef.current({
         id,
         title,
         description: description || null,
@@ -71,21 +80,21 @@ export function useChartTags(sensorId: number | null) {
         setSelectedTag(result.update_tag_by_pk)
       }
       if (sensorId !== null) {
-        fetchTags({ sensorId })
+        fetchTagsRef.current({ sensorId })
       }
     },
-    [sensorId, executeUpdateTag, fetchTags],
+    [sensorId],
   )
 
   const deleteTag = useCallback(
     async (id: number) => {
-      await executeDeleteTag({ id })
+      await executeDeleteTagRef.current({ id })
       setSelectedTag(null)
       if (sensorId !== null) {
-        fetchTags({ sensorId })
+        fetchTagsRef.current({ sensorId })
       }
     },
-    [sensorId, executeDeleteTag, fetchTags],
+    [sensorId],
   )
 
   return {

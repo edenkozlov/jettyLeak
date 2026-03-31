@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { logger } from '@/utils/logger/logger'
 
@@ -75,10 +75,12 @@ export function useBuildingFootprint(
       setLoading(false)
     }
   }, [latitude, longitude])
+  const fetchFootprintRef = useRef(fetchFootprint)
+  fetchFootprintRef.current = fetchFootprint
 
   useEffect(() => {
-    fetchFootprint()
-  }, [fetchFootprint])
+    fetchFootprintRef.current()
+  }, [latitude, longitude])
 
   return {
     footprints,

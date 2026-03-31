@@ -122,27 +122,26 @@ export default function BuildingDetail() {
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   const { executeQuery: updateBuildingName } = useGraphQL(UPDATE_BUILDING_NAME)
-  const { executeQuery: updateBuildingCoordinates } = useGraphQL(
-    UPDATE_BUILDING_COORDINATES,
-  )
-  const { executeQuery: updateBuildingFootprint } = useGraphQL(
-    UPDATE_BUILDING_FOOTPRINT,
-  )
-  const { executeQuery: updateBuildingFloors } = useGraphQL(
-    UPDATE_BUILDING_FLOORS,
-  )
-  const { executeQuery: updateSensorPosition } = useGraphQL(
-    UPDATE_SENSOR_POSITION,
-  )
-  const { executeQuery: createSensor } = useGraphQL<{
-    insert_sensor_one: Sensor
-  }>(CREATE_SENSOR)
+  const { executeQuery: updateBuildingCoordinates } = useGraphQL(UPDATE_BUILDING_COORDINATES)
+  const { executeQuery: updateBuildingFootprint } = useGraphQL(UPDATE_BUILDING_FOOTPRINT)
+  const { executeQuery: updateBuildingFloors } = useGraphQL(UPDATE_BUILDING_FLOORS)
+  const { executeQuery: updateSensorPosition } = useGraphQL(UPDATE_SENSOR_POSITION)
+  const { executeQuery: createSensor } = useGraphQL<{ insert_sensor_one: Sensor }>(CREATE_SENSOR)
   const { executeQuery: updateSensorArea } = useGraphQL(UPDATE_SENSOR_AREA)
-  const { executeQuery: createFixture } = useGraphQL<{
-    insert_fixtures_one: Fixture
-  }>(CREATE_FIXTURE)
+  const { executeQuery: createFixture } = useGraphQL<{ insert_fixtures_one: Fixture }>(CREATE_FIXTURE)
   const { executeQuery: updateFixturePosition } = useGraphQL(UPDATE_FIXTURE_POSITION)
   const { executeQuery: deleteFixture } = useGraphQL(DELETE_FIXTURE)
+
+  const updateBuildingNameRef = useRef(updateBuildingName); updateBuildingNameRef.current = updateBuildingName
+  const updateBuildingCoordinatesRef = useRef(updateBuildingCoordinates); updateBuildingCoordinatesRef.current = updateBuildingCoordinates
+  const updateBuildingFootprintRef = useRef(updateBuildingFootprint); updateBuildingFootprintRef.current = updateBuildingFootprint
+  const updateBuildingFloorsRef = useRef(updateBuildingFloors); updateBuildingFloorsRef.current = updateBuildingFloors
+  const updateSensorPositionRef = useRef(updateSensorPosition); updateSensorPositionRef.current = updateSensorPosition
+  const createSensorRef = useRef(createSensor); createSensorRef.current = createSensor
+  const updateSensorAreaRef = useRef(updateSensorArea); updateSensorAreaRef.current = updateSensorArea
+  const createFixtureRef = useRef(createFixture); createFixtureRef.current = createFixture
+  const updateFixturePositionRef = useRef(updateFixturePosition); updateFixturePositionRef.current = updateFixturePosition
+  const deleteFixtureRef = useRef(deleteFixture); deleteFixtureRef.current = deleteFixture
 
   // Geocode address if building has no coordinates
   useEffect(() => {
@@ -166,7 +165,7 @@ export default function BuildingDetail() {
         if (coords && !cancelled) {
           const [lon, lat] = coords as [number, number]
           setGeocodedCoords({ latitude: lat, longitude: lon })
-          updateBuildingCoordinates({
+          updateBuildingCoordinatesRef.current({
             id: building.id,
             latitude: lat,
             longitude: lon,
@@ -179,7 +178,7 @@ export default function BuildingDetail() {
     return () => {
       cancelled = true
     }
-  }, [building, updateBuildingCoordinates])
+  }, [building, ])
 
   // Escape key closes expanded footprint
   useEffect(() => {
@@ -195,13 +194,13 @@ export default function BuildingDetail() {
     (footprint: FootprintData) => {
       setSelectedFootprint(footprint)
       if (building) {
-        updateBuildingFootprint({
+        updateBuildingFootprintRef.current({
           id: building.id,
           footprint: footprint.coordinates,
         })
       }
     },
-    [building, updateBuildingFootprint],
+    [building, ],
   )
 
   const handleSensorPlaced = useCallback(
@@ -216,29 +215,29 @@ export default function BuildingDetail() {
         )
       })
       // Persist
-      updateSensorPosition({
+      updateSensorPositionRef.current({
         id: sensorId,
         floor_number: floor,
         location_on_floor: position,
       })
     },
-    [building?.sensors, updateSensorPosition],
+    [building?.sensors, ],
   )
 
   const handleFloorsChange = useCallback(
     (floors: number) => {
       setLocalFloors(floors)
       if (building) {
-        updateBuildingFloors({ id: building.id, number_of_floors: floors })
+        updateBuildingFloorsRef.current({ id: building.id, number_of_floors: floors })
       }
     },
-    [building, updateBuildingFloors],
+    [building, ],
   )
 
   const handleSensorCreate = useCallback(
     async (name: string) => {
       if (!building) return
-      const result = await createSensor({
+      const result = await createSensorRef.current({
         name,
         building_id: building.id,
       })
@@ -255,7 +254,7 @@ export default function BuildingDetail() {
         ])
       }
     },
-    [building, createSensor],
+    [building, ],
   )
 
   const handleAreaDrawn = useCallback(
@@ -268,9 +267,9 @@ export default function BuildingDetail() {
         )
       })
       // Persist
-      updateSensorArea({ id: sensorId, area_covered: area })
+      updateSensorAreaRef.current({ id: sensorId, area_covered: area })
     },
-    [building?.sensors, updateSensorArea],
+    [building?.sensors, ],
   )
 
   const handleSensorRemoved = useCallback(
@@ -283,20 +282,20 @@ export default function BuildingDetail() {
             : s,
         )
       })
-      updateSensorPosition({
+      updateSensorPositionRef.current({
         id: sensorId,
         floor_number: null,
         location_on_floor: null,
       })
-      updateSensorArea({ id: sensorId, area_covered: null })
+      updateSensorAreaRef.current({ id: sensorId, area_covered: null })
     },
-    [building?.sensors, updateSensorPosition, updateSensorArea],
+    [building?.sensors, updateSensorPosition, ],
   )
 
   const handleFixtureCreate = useCallback(
     async (type: FixtureType, floor: number) => {
       if (!building) return
-      const result = await createFixture({
+      const result = await createFixtureRef.current({
         building_id: building.id,
         floor_number: floor,
         type,
@@ -308,7 +307,7 @@ export default function BuildingDetail() {
         ])
       }
     },
-    [building, createFixture],
+    [building, ],
   )
 
   const handleFixturePlaced = useCallback(
@@ -336,13 +335,13 @@ export default function BuildingDetail() {
             : f,
         )
       })
-      updateFixturePosition({
+      updateFixturePositionRef.current({
         id: fixtureId,
         location_on_floor: position,
         sensor_id: sensorId,
       })
     },
-    [building?.fixtures, localFixtures, sensors, updateFixturePosition],
+    [building?.fixtures, localFixtures, sensors, ],
   )
 
   const handleFixtureRemoved = useCallback(
@@ -351,9 +350,9 @@ export default function BuildingDetail() {
         const list = prev ?? building?.fixtures ?? []
         return list.filter((f) => f.id !== fixtureId)
       })
-      deleteFixture({ id: fixtureId })
+      deleteFixtureRef.current({ id: fixtureId })
     },
-    [building?.fixtures, deleteFixture],
+    [building?.fixtures, ],
   )
 
   // Parse building ID from URL param so analytics can start immediately
@@ -422,7 +421,7 @@ export default function BuildingDetail() {
                     const trimmed = nameValue.trim() || null
                     setEditingName(false)
                     setLocalName(trimmed)
-                    updateBuildingName({ id: building.id, name: trimmed })
+                    updateBuildingNameRef.current({ id: building.id, name: trimmed })
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') e.currentTarget.blur()

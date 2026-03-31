@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
-import { useGraphQL } from '@/hooks/useGraphQL'
 import { GET_MAG_REPORTS } from '@/queries/getMagReports'
 import {
   getFlowPeakTimestamps,
@@ -22,10 +21,6 @@ interface MagReportRow {
   band_energy_5m: number | null
   dominant_freq_hz: number | null
   vibration_rpm: number | null
-}
-
-interface MagReportsResponse {
-  mag_report: MagReportRow[]
 }
 
 export interface VolumeBucket {
@@ -62,41 +57,46 @@ export function useVolumeSummary(
   magSensorIds: number[],
   sensorMultiplier: number | null,
 ) {
-  const { executeQuery } = useGraphQL<MagReportsResponse>(GET_MAG_REPORTS)
   const [magData, setMagData] = useState<MagDataPoint[]>([])
   const mountedRef = useRef(true)
-
-  const fetchData = useCallback(async () => {
-    if (magSensorIds.length === 0) return
-    const now = new Date()
-    const since = new Date(now.getTime() - 24 * 60 * 60_000)
-    const result = await executeQuery({
-      sensorIds: magSensorIds,
-      since: since.toISOString(),
-      until: now.toISOString(),
-    })
-    if (!mountedRef.current) return
-    if (!result?.mag_report) {
-      setMagData([])
-      return
-    }
-    const expectedIds = new Set(magSensorIds)
-    const filtered = result.mag_report.filter((r) =>
-      expectedIds.has(Number(r.sensor_id)),
-    )
-    const points = filtered
-      .map(toMagDataPoint)
-      .sort((a, b) => a.timestamp - b.timestamp)
-    setMagData(points)
-  }, [magSensorIds, executeQuery])
+  const magSensorIdsKey = magSensorIds.join(',')
 
   useEffect(() => {
     mountedRef.current = true
-    fetchData()
+    if (magSensorIds.length === 0) return
+
+    const now = new Date()
+    const since = new Date(now.getTime() - 24 * 60 * 60_000)
+    // Use larger chunks for the 24h volume fetch to keep request count reasonable.
+    // 15-min chunks → 96 requests for 24h instead of 960 with the default 90s chunks.
+    GET_MAG_REPORTS({
+      sensorIds: magSensorIds,
+      since: since.toISOString(),
+      until: now.toISOString(),
+      chunkMs: 15 * 60_000,
+    }).then((result: any) => {
+      if (!mountedRef.current) return
+      if (!result?.mag_report) {
+        setMagData([])
+        return
+      }
+      const expectedIds = new Set(magSensorIds)
+      const filtered = result.mag_report.filter((r: MagReportRow) =>
+        expectedIds.has(Number(r.sensor_id)),
+      )
+      const points = filtered
+        .map(toMagDataPoint)
+        .sort((a: MagDataPoint, b: MagDataPoint) => a.timestamp - b.timestamp)
+      setMagData(points)
+    }).catch(() => {
+      if (mountedRef.current) setMagData([])
+    })
+
     return () => {
       mountedRef.current = false
     }
-  }, [fetchData])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [magSensorIdsKey])
 
   const buckets = useMemo<VolumeBucket[]>(() => {
     const m = sensorMultiplier ?? 0

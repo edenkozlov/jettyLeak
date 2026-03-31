@@ -427,6 +427,7 @@ export default function Reports() {
     connected,
     sensorsLoading,
     reportsLoading,
+    magLoading,
     reportsError,
     magChartData,
     magChartDataFull,
@@ -444,6 +445,9 @@ export default function Reports() {
     handlePreviousPeriod,
     handleNextPeriod,
   } = useReportsPage(paramSensorId, paramTimeRange)
+
+  const refetchMagRef = useRef(refetchMag)
+  refetchMagRef.current = refetchMag
 
   const buildPath = useCallback((sensorId: number | string, range?: string, raw?: boolean) => {
     let path = `/dashboard/reports/${sensorId}`
@@ -578,17 +582,18 @@ export default function Reports() {
     const nextBoundary = (Math.floor(now / bucketMs) + 1) * bucketMs
     const delay = nextBoundary - now
 
-    const timeout = setTimeout(() => {
-      setSlotAnchor(Math.floor(Date.now() / bucketMs) * bucketMs)
+    const timeout = setTimeout(async () => {
       const elapsed = Date.now() - lastRefetchMsRef.current
       if (elapsed >= MIN_REFETCH_INTERVAL_MS) {
         lastRefetchMsRef.current = Date.now()
-        refetchMag()
+        // Wait for data to arrive before advancing the window
+        await refetchMagRef.current()
       }
+      setSlotAnchor(Math.floor(Date.now() / bucketMs) * bucketMs)
     }, delay)
 
     return () => clearTimeout(timeout)
-  }, [slotAnchor, bucketMs, refetchMag])
+  }, [slotAnchor, bucketMs])
 
   // Canonical time window shared by all charts
   const effectiveRangeMs = useMemo(() => {
@@ -768,29 +773,13 @@ export default function Reports() {
       .filter((p) => p.cx >= left && p.cx <= right)
   }, [magChartData, timeline, domain, chartWindowStart, chartWindowEnd])
 
-  const magXBaseMin = useMemo(() => {
-    if (magLayerBaseData.length === 0) return 0
-    let min = magLayerBaseData[0]!.cx
-    for (const p of magLayerBaseData) {
-      if (p.cx < min) min = p.cx
-    }
-    return min
-  }, [magLayerBaseData])
-
-  const magXBaseMax = useMemo(() => {
-    if (magLayerBaseData.length === 0) return 1
-    let max = magLayerBaseData[0]!.cx
-    for (const p of magLayerBaseData) {
-      if (p.cx > max) max = p.cx
-    }
-    return max
-  }, [magLayerBaseData])
+  // Use the chart window (same as Flow Rate) as the base range for raw mag charts
+  // so they always show the full selected time range, not just the data extent.
+  const magXBaseMin = chartWindowStart
+  const magXBaseMax = chartWindowEnd
 
   const magXDataMin = magXBaseMin
-  const magXDataMax = useMemo(
-    () => (magXBaseMax <= magXBaseMin ? magXBaseMin + 1e-9 : magXBaseMax),
-    [magXBaseMin, magXBaseMax],
-  )
+  const magXDataMax = magXBaseMax <= magXBaseMin ? magXBaseMin + 1 : magXBaseMax
 
   const magDeferZoomOpts = useMemo(() => ({ deferZoom: true }), [])
   const {
@@ -833,7 +822,6 @@ export default function Reports() {
 
   const magRawTicks = useMemo(() => {
     const [left, right] = magRawDomain
-    if (magLayerBaseData.length === 0) return []
     const realLeft = timeline.points.length > 0 ? timeline.toReal(left) : left
     const realRight = timeline.points.length > 0 ? timeline.toReal(right) : right
     if (realRight <= realLeft) return []
@@ -841,7 +829,7 @@ export default function Reports() {
     return realTicks.map((t) =>
       timeline.points.length > 0 ? timeline.toCompressed(t) : t,
     )
-  }, [magRawDomain, magLayerBaseData, timeline])
+  }, [magRawDomain, timeline])
 
   const magZoomTimeBounds = useMemo(() => {
     const [left, right] = magRawDomain
@@ -1662,11 +1650,11 @@ export default function Reports() {
           </div>
         )}
 
-        {/* Flow Rate from Mag Cycles */}
+        {/* Water Usage per bucket */}
         {bucketedFlowData.length > 0 && (
           <div className="mb-6">
             <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Flow Rate
+              Water Usage
             </h3>
             {showRawData && magVolumeFromCycles && (
               <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
@@ -1706,13 +1694,13 @@ export default function Reports() {
                   <YAxis
                     yAxisId="left"
                     width={50}
-                    domain={[-1, (dataMax: number) => Math.max(dataMax * 1.1, 100)]}
+                    domain={[0, (dataMax: number) => Math.max(dataMax * 1.1, 0.01)]}
                     allowDataOverflow
-                    tickFormatter={(v: number) => v < 0 ? '' : String(v)}
+                    tickFormatter={(v: number) => v < 0.01 ? v.toFixed(3) : v < 1 ? v.toFixed(2) : v.toFixed(1)}
                     tick={{ fontSize: 11, fill: '#3b82f6' }}
                     tickLine={{ stroke: colors.grid }}
                     axisLine={{ stroke: colors.grid }}
-                    label={{ value: 'L/h', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#3b82f6' } }}
+                    label={{ value: 'Litres', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#3b82f6' } }}
                   />
                   <Tooltip
                     cursor={{ fill: 'rgba(59, 130, 246, 0.06)' }}
@@ -1747,17 +1735,17 @@ export default function Reports() {
                             className="font-medium tabular-nums"
                             style={{ fontSize: 13, color: '#3b82f6' }}
                           >
-                            {p.flowRateLph.toFixed(2)} L/h
-                          </p>
-                          <p className="mt-1.5 text-[11px] leading-snug tabular-nums text-gray-500 dark:text-gray-400">
-                            {p.bucketVolumeL.toFixed(3)} L in this bucket
+                            {p.bucketVolumeL < 0.01 ? p.bucketVolumeL.toFixed(4) : p.bucketVolumeL.toFixed(3)} L
                             {p.partial ? ' (so far)' : ''}
+                          </p>
+                          <p className="mt-1 text-[11px] leading-snug tabular-nums text-gray-500 dark:text-gray-400">
+                            {p.flowRateLph.toFixed(1)} L/h avg
                           </p>
                         </div>
                       )
                     }}
                   />
-                  <Bar yAxisId="left" dataKey="flowRateBarVisual" name="Flow Rate (L/h)" radius={[3, 3, 0, 0]} isAnimationActive={false}>
+                  <Bar yAxisId="left" dataKey="bucketVolumeL" name="Volume (L)" radius={[3, 3, 0, 0]} isAnimationActive={false}>
                     {bucketedFlowData.map((entry, index) => (
                       <Cell
                         key={index}
@@ -1847,9 +1835,15 @@ export default function Reports() {
           </div>
         )}
 
-        {reportsLoading && chartData.length === 0 && bucketedFlowData.length === 0 ? (
+        {(reportsLoading || magLoading) && chartData.length === 0 && bucketedFlowData.length === 0 ? (
           <div className="flex h-80 items-center justify-center text-gray-500 dark:text-gray-400">
-            Loading chart…
+            <div className="flex flex-col items-center gap-2">
+              <svg className="h-6 w-6 animate-spin text-indigo-500" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+              Loading data…
+            </div>
           </div>
         ) : chartData.length === 0 && bucketedFlowData.length === 0 && magChartData.length === 0 ? (
           <div className="flex h-80 items-center justify-center text-gray-400">

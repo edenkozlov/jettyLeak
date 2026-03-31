@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
 import useAuth from '@/hooks/auth/useAuth'
 import { useGraphQL } from '@/hooks/useGraphQL'
@@ -18,14 +18,16 @@ export function useSensorsPage() {
 
   const { data, loading, error, executeQuery } =
     useGraphQL<SensorsResponse>(query)
+  const executeQueryRef = useRef(executeQuery)
+  executeQueryRef.current = executeQuery
 
   useEffect(() => {
     if (isClient) {
-      executeQuery({ clientId: client_id })
+      executeQueryRef.current({ clientId: client_id })
     } else {
-      executeQuery()
+      executeQueryRef.current()
     }
-  }, [executeQuery, isClient, client_id])
+  }, [isClient, client_id])
 
   const sensors = useMemo(() => {
     const all = data?.sensor ?? []

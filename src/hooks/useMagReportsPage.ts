@@ -153,18 +153,38 @@ function downsample<T>(points: T[], maxPoints: number): T[] {
 export function useMagReportsPage(initialBuildingId?: number | null) {
   const { data: buildingsData, loading: buildingsLoading, executeQuery: fetchBuildings } =
     useGraphQL<BuildingsResponse>(GET_BUILDINGS)
+  const fetchBuildingsRef = useRef(fetchBuildings)
+  fetchBuildingsRef.current = fetchBuildings
+
   const { executeQuery: fetchMagSensors } =
     useGraphQL<MagSensorsResponse>(GET_MAG_SENSORS_BY_BUILDING_ID)
+  const fetchMagSensorsRef = useRef(fetchMagSensors)
+  fetchMagSensorsRef.current = fetchMagSensors
+
   const { data: magData, loading: magLoading, error: magError, executeQuery: fetchMagReports } =
     useGraphQL<MagReportsResponse>(GET_MAG_REPORTS)
+  const fetchMagReportsRef = useRef(fetchMagReports)
+  fetchMagReportsRef.current = fetchMagReports
+
   const { data: rangeLabelsData, executeQuery: fetchRangeLabels } =
     useGraphQL<RangeLabelsResponse>(GET_RANGE_LABELS_BY_SENSOR_ID)
+  const fetchRangeLabelsRef = useRef(fetchRangeLabels)
+  fetchRangeLabelsRef.current = fetchRangeLabels
+
   const { executeQuery: insertRangeLabel } =
     useGraphQL<InsertRangeLabelResponse>(INSERT_RANGE_LABEL)
+  const insertRangeLabelRef = useRef(insertRangeLabel)
+  insertRangeLabelRef.current = insertRangeLabel
+
   const { executeQuery: deleteRangeLabelMutation } =
     useGraphQL<DeleteRangeLabelResponse>(DELETE_RANGE_LABEL)
+  const deleteRangeLabelMutationRef = useRef(deleteRangeLabelMutation)
+  deleteRangeLabelMutationRef.current = deleteRangeLabelMutation
+
   const { data: sensorsData, executeQuery: fetchSensors } =
     useGraphQL<SensorsResponse>(GET_SENSORS_BY_BUILDING_ID)
+  const fetchSensorsRef = useRef(fetchSensors)
+  fetchSensorsRef.current = fetchSensors
 
   const [selectedBuildingId, setSelectedBuildingId] = useState<number | null>(
     initialBuildingId ?? null,
@@ -183,8 +203,8 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
   timeRangeRef.current = timeRange
 
   useEffect(() => {
-    fetchBuildings()
-  }, [fetchBuildings])
+    fetchBuildingsRef.current()
+  }, [])
 
   useEffect(() => {
     if (buildingsData?.building?.length && selectedBuildingId === null) {
@@ -198,7 +218,7 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
       setSelectedSensorId(null)
       return
     }
-    fetchMagSensors({ buildingId: selectedBuildingId }).then((result) => {
+    fetchMagSensorsRef.current({ buildingId: selectedBuildingId }).then((result) => {
       if (!result?.mag_to_building?.length) {
         setMagSensorIds([])
         setSelectedSensorId(null)
@@ -208,13 +228,13 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
         setSelectedSensorId(ids[0] ?? null)
       }
     })
-  }, [selectedBuildingId, fetchMagSensors])
+  }, [selectedBuildingId])
 
   // Fetch sensors (for multiplier) when building changes
   useEffect(() => {
     if (selectedBuildingId === null) return
-    fetchSensors({ buildingId: selectedBuildingId })
-  }, [selectedBuildingId, fetchSensors])
+    fetchSensorsRef.current({ buildingId: selectedBuildingId })
+  }, [selectedBuildingId])
 
   // Derive the sensor multiplier for the selected mag sensor
   const sensorMultiplier = useMemo<number | null>(() => {
@@ -242,13 +262,13 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
     lastMagIdRef.current = null
 
     const { since, until } = computeTimeWindow(timeRange, periodOffset, customWindow ?? undefined)
-    fetchMagReports({ sensorIds: [selectedSensorId], since, until })
-  }, [selectedSensorId, timeRange, periodOffset, customWindow, fetchMagReports])
+    fetchMagReportsRef.current({ sensorIds: [selectedSensorId], since, until })
+  }, [selectedSensorId, timeRange, periodOffset, customWindow])
 
   useEffect(() => {
     if (selectedSensorId === null) return
-    fetchRangeLabels({ sensorId: selectedSensorId })
-  }, [selectedSensorId, fetchRangeLabels])
+    fetchRangeLabelsRef.current({ sensorId: selectedSensorId })
+  }, [selectedSensorId])
 
   const rangeLabels = useMemo<RangeLabel[]>(
     () => rangeLabelsData?.range_label ?? [],
@@ -348,27 +368,27 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
   const handleAddRangeLabel = useCallback(
     async (startDate: string, endDate: string, label: string) => {
       if (selectedSensorId === null) return
-      const result = await insertRangeLabel({
+      const result = await insertRangeLabelRef.current({
         sensor: selectedSensorId,
         start_date: startDate,
         end_date: endDate,
         label,
       })
       if (result) {
-        fetchRangeLabels({ sensorId: selectedSensorId })
+        fetchRangeLabelsRef.current({ sensorId: selectedSensorId })
       }
     },
-    [selectedSensorId, insertRangeLabel, fetchRangeLabels],
+    [selectedSensorId],
   )
 
   const handleDeleteRangeLabel = useCallback(
     async (id: number) => {
-      const result = await deleteRangeLabelMutation({ id })
+      const result = await deleteRangeLabelMutationRef.current({ id })
       if (result && selectedSensorId !== null) {
-        fetchRangeLabels({ sensorId: selectedSensorId })
+        fetchRangeLabelsRef.current({ sensorId: selectedSensorId })
       }
     },
-    [selectedSensorId, deleteRangeLabelMutation, fetchRangeLabels],
+    [selectedSensorId],
   )
 
   const handleTimeRangeChange = useCallback((range: TimeRange) => {

@@ -41,23 +41,30 @@ export default function BuildingEditPanel({ building, onSaved, onClose, onDelete
   const addressWrapRef = useRef<HTMLDivElement>(null)
 
   const { executeQuery: updateBuilding } = useGraphQL(UPDATE_BUILDING)
+  const updateBuildingRef = useRef(updateBuilding)
+  updateBuildingRef.current = updateBuilding
+
   const { executeQuery: deleteBuilding } = useGraphQL(DELETE_BUILDING)
+  const deleteBuildingRef = useRef(deleteBuilding)
+  deleteBuildingRef.current = deleteBuilding
 
   const handleDelete = useCallback(async () => {
     if (!confirmDelete) { setConfirmDelete(true); return }
     setDeleting(true)
-    await deleteBuilding({ id: building.id })
+    await deleteBuildingRef.current({ id: building.id })
     setDeleting(false)
     onDeleted?.()
-  }, [confirmDelete, building.id, deleteBuilding, onDeleted])
+  }, [confirmDelete, building.id, onDeleted])
   const {
     data: clientsData,
     executeQuery: fetchClients,
   } = useGraphQL<ClientsResponse>(GET_CLIENTS)
+  const fetchClientsRef = useRef(fetchClients)
+  fetchClientsRef.current = fetchClients
 
   useEffect(() => {
-    fetchClients()
-  }, [fetchClients])
+    fetchClientsRef.current()
+  }, [])
 
   const searchAddress = useCallback((query: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -135,7 +142,7 @@ export default function BuildingEditPanel({ building, onSaved, onClose, onDelete
       longitude: parsedLng,
     }
 
-    await updateBuilding(vars)
+    await updateBuildingRef.current(vars)
     setSaving(false)
     setSaved(true)
 
@@ -153,7 +160,7 @@ export default function BuildingEditPanel({ building, onSaved, onClose, onDelete
     })
 
     setTimeout(() => setSaved(false), 2000)
-  }, [building.id, name, address, clientId, floors, lat, lng, updateBuilding, clients, onSaved])
+  }, [building.id, name, address, clientId, floors, lat, lng, clients, onSaved])
 
   const inputCls =
     'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-400/20 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-indigo-500'

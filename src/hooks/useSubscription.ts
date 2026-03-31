@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { supabase } from '@/lib/supabase'
 import { logger } from '@/utils/logger/logger'
@@ -9,17 +9,6 @@ interface UseSubscriptionReturn<T> {
   connected: boolean
 }
 
-/**
- * Supabase Realtime subscription hook.
- * Listens for new inserts on a table and polls the queryFn for latest data.
- *
- * @param queryFn - A function that fetches the latest data (e.g., latest report)
- * @param variables - Variables to pass to queryFn
- * @param enabled - Whether the subscription is active
- * @param table - The database table to listen on (e.g., 'report')
- * @param filterColumn - Optional column to filter events on (e.g., 'sensor_id')
- * @param filterValue - Optional value for the filter column
- */
 export function useSubscription<T = Record<string, unknown>>(
   queryFn: (variables?: Record<string, unknown>) => Promise<T>,
   variables?: Record<string, unknown>,
@@ -31,6 +20,9 @@ export function useSubscription<T = Record<string, unknown>>(
   const [data, setData] = useState<T | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [connected, setConnected] = useState(false)
+
+  const queryFnRef = useRef(queryFn)
+  queryFnRef.current = queryFn
 
   const varsKey = useMemo(
     () => JSON.stringify(variables ?? {}),
@@ -51,8 +43,7 @@ export function useSubscription<T = Record<string, unknown>>(
 
     const parsedVars = JSON.parse(varsKey) as Record<string, unknown>
 
-    // Do an initial fetch
-    queryFn(parsedVars)
+    queryFnRef.current(parsedVars)
       .then((result) => {
         setData(result)
         setConnected(true)
@@ -63,7 +54,6 @@ export function useSubscription<T = Record<string, unknown>>(
         setError(message)
       })
 
-    // Subscribe to realtime changes
     let filter: string | undefined
     if (filterColumn && filterValue != null) {
       filter = `${filterColumn}=eq.${filterValue}`
@@ -80,34 +70,25 @@ export function useSubscription<T = Record<string, unknown>>(
           table,
           ...(filter ? { filter } : {}),
         },
-        () => {
-          // On new insert, refetch latest data
-          queryFn(parsedVars)
-            .then((result) => {
-              setConnected(true)
-              setData(result)
-            })
-            .catch((err) => {
-              const message = err instanceof Error ? err.message : 'Subscription error'
-              logger.error('REALTIME', message, err)
-              setError(message)
-            })
+        (payload: { new: Record<string, unknown> }) => {
+          // Use the realtime payload directly instead of re-querying.
+          // This avoids an HTTP request on every single INSERT event.
+          setData({ [table]: [payload.new] } as unknown as T)
+          setConnected(true)
         },
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           setConnected(true)
-          logger.info('REALTIME', `Subscribed to ${table}`, {})
         } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
           setConnected(false)
-          logger.info('REALTIME', `Channel ${status}: ${table}`, {})
         }
       })
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [queryFn, varsKey, enabled, table, filterColumn, filterValue])
+  }, [varsKey, enabled, table, filterColumn, filterValue])
 
   return { data, error, connected }
 }

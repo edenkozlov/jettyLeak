@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
 import { useGraphQL } from '@/hooks/useGraphQL'
 import { GET_DASHBOARD_STATS } from '@/queries/getDashboardStats'
@@ -17,10 +17,12 @@ interface DashboardStatsResponse {
 export function useHomePage() {
   const { data, loading, error, executeQuery } =
     useGraphQL<DashboardStatsResponse>(GET_DASHBOARD_STATS)
+  const executeQueryRef = useRef(executeQuery)
+  executeQueryRef.current = executeQuery
 
   useEffect(() => {
-    executeQuery()
-  }, [executeQuery])
+    executeQueryRef.current()
+  }, [])
 
   const clientCount = useMemo(
     () => data?.client_aggregate?.aggregate?.count ?? 0,

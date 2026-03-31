@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { fetchAllRows } from '@/lib/supabaseFetch'
+import { fetchTimeSeriesRows } from '@/lib/supabaseFetch'
 
 export async function GET_MAG_SENSORS_BY_BUILDING_ID(variables?: Record<string, unknown>) {
   const buildingId = variables?.buildingId
@@ -17,11 +17,12 @@ export async function GET_MAG_REPORTS_BY_SENSOR_IDS(variables?: Record<string, u
   const until = variables?.until as string
   if (!sensorIds || sensorIds.length === 0) return { mag_report: [] }
 
-  const data = await fetchAllRows(
+  const data = await fetchTimeSeriesRows(
     'mag_report',
     'id, created_at, x_axis_reading, y_axis_reading, z_axis_reading, total_magnitude, sensor_id',
-    (q: any) => q.in('sensor_id', sensorIds).gte('created_at', since).lte('created_at', until),
+    'created_at', since, until,
+    (q: any) => q.in('sensor_id', sensorIds),
   )
 
-  return { mag_report: data }
+  return { mag_report: data } as any
 }

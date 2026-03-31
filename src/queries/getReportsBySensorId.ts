@@ -1,15 +1,16 @@
-import { fetchAllRows } from '@/lib/supabaseFetch'
+import { fetchTimeSeriesRows } from '@/lib/supabaseFetch'
 
 export async function GET_REPORTS_BY_SENSOR_ID(variables?: Record<string, unknown>) {
   const sensorId = variables?.sensorId
   const since = variables?.since as string
   const until = variables?.until as string
 
-  const data = await fetchAllRows(
+  const data = await fetchTimeSeriesRows(
     'report',
     'id, created_at, sensor_id, flow_value, temp_value',
-    (q: any) => q.eq('sensor_id', sensorId).gte('created_at', since).lte('created_at', until),
+    'created_at', since, until,
+    (q: any) => q.eq('sensor_id', sensorId),
   )
 
-  return { report: data }
+  return { report: data } as any
 }

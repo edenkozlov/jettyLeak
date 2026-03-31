@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
 import LiveFlowIndicator from '@/components/LiveFlowIndicator'
@@ -258,15 +258,19 @@ export default function Buildings() {
 
   const { data: clientsData, executeQuery: fetchClients } =
     useGraphQL<ClientsResponse>(GET_CLIENTS)
+  const fetchClientsRef = useRef(fetchClients)
+  fetchClientsRef.current = fetchClients
   const clients = useMemo(() => clientsData?.client ?? [], [clientsData])
 
   const { executeQuery: createBuilding } = useGraphQL<{
     insert_building_one: { id: number }
   }>(CREATE_BUILDING)
+  const createBuildingRef = useRef(createBuilding)
+  createBuildingRef.current = createBuilding
 
   useEffect(() => {
-    if (showForm) fetchClients()
-  }, [showForm, fetchClients])
+    if (showForm) fetchClientsRef.current()
+  }, [showForm])
 
   const goToBuilding = useCallback(
     (building: Building) =>
@@ -301,7 +305,7 @@ export default function Buildings() {
         }
       }
 
-      const result = await createBuilding({
+      const result = await createBuildingRef.current({
         full_address: trimmed,
         client_id: clientId || null,
         latitude,
@@ -311,7 +315,7 @@ export default function Buildings() {
         navigate(`/dashboard/buildings/${result.insert_building_one.id}`)
       }
     },
-    [address, clientId, createBuilding, navigate],
+    [address, clientId, navigate],
   )
 
   if (error) {

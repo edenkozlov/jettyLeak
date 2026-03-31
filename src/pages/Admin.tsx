@@ -165,18 +165,20 @@ function SegmentPanel({
 
   const { data: magData, loading: magLoading, executeQuery: fetchMag } =
     useGraphQL<{ mag_report: MagReport[] }>(GET_MAG_REPORTS)
+  const fetchMagRef = useRef(fetchMag)
+  fetchMagRef.current = fetchMag
 
   const [relabelValue, setRelabelValue] = useState(detail.prediction || detail.label || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    fetchMag({
+    fetchMagRef.current({
       sensorIds: [detail.sensorId],
       since: detail.startTime,
       until: detail.endTime,
     })
-  }, [fetchMag, detail.sensorId, detail.startTime, detail.endTime])
+  }, [detail.sensorId, detail.startTime, detail.endTime])
 
   const chartData = useMemo<ChartPoint[]>(() => {
     if (!magData?.mag_report) return []
@@ -481,6 +483,8 @@ function LabelCreator({
   // Mag data for preview
   const { data: magData, loading: magLoading, executeQuery: fetchMag } =
     useGraphQL<{ mag_report: MagReport[] }>(GET_MAG_REPORTS)
+  const fetchMagRef = useRef(fetchMag)
+  fetchMagRef.current = fetchMag
 
   // Drag selection state
   const [selLeft, setSelLeft] = useState<number | null>(null)
@@ -494,14 +498,14 @@ function LabelCreator({
     if (!sensorId) return
     const now = new Date()
     const since = new Date(now.getTime() - timeRangeMs)
-    fetchMag({
+    fetchMagRef.current({
       sensorIds: [parseInt(sensorId)],
       since: since.toISOString(),
       until: now.toISOString(),
     })
     setSelectedRange(null)
     setSaved(false)
-  }, [sensorId, timeRangeMs, fetchMag])
+  }, [sensorId, timeRangeMs])
 
   const chartData = useMemo<ChartPoint[]>(() => {
     if (!magData?.mag_report) return []
@@ -750,16 +754,33 @@ export default function Admin() {
   // Data hooks
   const { data: sensorsData, executeQuery: fetchSensors } =
     useGraphQL<{ sensor: Sensor[] }>(GET_SENSORS)
+  const fetchSensorsRef = useRef(fetchSensors)
+  fetchSensorsRef.current = fetchSensors
+
   const { data: predictionsData, loading: predictionsLoading, error: predictionsError, executeQuery: fetchPredictions } =
     useGraphQL<{ predicted_signal: PredictedSignal[] }>(GET_PREDICTED_SIGNALS)
+  const fetchPredictionsRef = useRef(fetchPredictions)
+  fetchPredictionsRef.current = fetchPredictions
+
   const { data: labelsData, loading: labelsLoading, error: labelsError, executeQuery: fetchLabels } =
     useGraphQL<{ signal: Label[] }>(GET_LABELS)
+  const fetchLabelsRef = useRef(fetchLabels)
+  fetchLabelsRef.current = fetchLabels
+
   const { executeQuery: executeInsertSignal } =
     useGraphQL<{ insert_signal_one: { id: number } }>(INSERT_SIGNAL)
+  const executeInsertSignalRef = useRef(executeInsertSignal)
+  executeInsertSignalRef.current = executeInsertSignal
+
   const { executeQuery: executeDeleteSignal } =
     useGraphQL<{ delete_signal_by_pk: { id: number } | null }>(DELETE_SIGNAL)
+  const executeDeleteSignalRef = useRef(executeDeleteSignal)
+  executeDeleteSignalRef.current = executeDeleteSignal
+
   const { executeQuery: executeUpdatePrediction } =
     useGraphQL<{ update_predicted_signal_by_pk: { id: number; prediction: string } }>(UPDATE_PREDICTED_SIGNAL)
+  const executeUpdatePredictionRef = useRef(executeUpdatePrediction)
+  executeUpdatePredictionRef.current = executeUpdatePrediction
 
   const [sensorFilter, setSensorFilter] = useState('')
   const [addLabelLoading, setAddLabelLoading] = useState(false)
@@ -813,41 +834,41 @@ export default function Admin() {
   const predictions = predictionsData?.predicted_signal ?? []
   const labels = labelsData?.signal ?? []
 
-  useEffect(() => { fetchSensors() }, [fetchSensors])
+  useEffect(() => { fetchSensorsRef.current() }, [])
 
   // Poll sensors + firmware history every 30s on firmware tab for live status
   const [now, setNow] = useState(Date.now())
   useEffect(() => {
     if (activeTab !== 'firmware') return
-    fetchSensors()
+    fetchSensorsRef.current()
     fetchFirmwareHistory()
-    const pollInterval = setInterval(() => { fetchSensors(); fetchFirmwareHistory() }, 30000)
+    const pollInterval = setInterval(() => { fetchSensorsRef.current(); fetchFirmwareHistory() }, 30000)
     const tickInterval = setInterval(() => setNow(Date.now()), 10000)
     return () => { clearInterval(pollInterval); clearInterval(tickInterval) }
-  }, [activeTab, fetchSensors])
+  }, [activeTab])
 
   useEffect(() => {
     if (activeTab !== 'predictions') return
     const where = sensorFilter ? { sensor_id: { _eq: parseInt(sensorFilter) } } : {}
-    fetchPredictions({ limit: 100, where })
-  }, [activeTab, sensorFilter, fetchPredictions])
+    fetchPredictionsRef.current({ limit: 100, where })
+  }, [activeTab, sensorFilter])
 
   useEffect(() => {
     if (activeTab !== 'labels') return
-    fetchLabels()
-  }, [activeTab, fetchLabels])
+    fetchLabelsRef.current()
+  }, [activeTab])
 
   // Close detail panel on tab switch
   useEffect(() => { setSegmentDetail(null) }, [activeTab])
 
   const handleDeleteLabel = useCallback(async (id: number) => {
-    await executeDeleteSignal({ id })
-    fetchLabels()
-  }, [executeDeleteSignal, fetchLabels])
+    await executeDeleteSignalRef.current({ id })
+    fetchLabelsRef.current()
+  }, [])
 
   const handleSaveAsTraining = useCallback(async (sensorId: number, startTime: string, endTime: string, value: string, predictedSignalId?: number) => {
     // Insert training label
-    await executeInsertSignal({
+    await executeInsertSignalRef.current({
       sensor_id: sensorId,
       value,
       start_time: startTime,
@@ -856,12 +877,12 @@ export default function Admin() {
     })
     // Also update the predicted_signal prediction to match the new label
     if (predictedSignalId != null) {
-      await executeUpdatePrediction({ id: predictedSignalId, prediction: value })
+      await executeUpdatePredictionRef.current({ id: predictedSignalId, prediction: value })
       // Refresh predictions list
       const where = sensorFilter ? { sensor_id: { _eq: parseInt(sensorFilter) } } : {}
-      fetchPredictions({ limit: 100, where })
+      fetchPredictionsRef.current({ limit: 100, where })
     }
-  }, [executeInsertSignal, executeUpdatePrediction, sensorFilter, fetchPredictions])
+  }, [sensorFilter])
 
   async function handleRetrain() {
     setRetrainLoading(true)

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 
 import { useGraphQL } from '@/hooks/useGraphQL'
 import { GET_CLIENTS } from '@/queries/getClients'
@@ -12,10 +12,12 @@ interface ClientsResponse {
 export function useClientsPage() {
   const { data, loading, error, executeQuery } =
     useGraphQL<ClientsResponse>(GET_CLIENTS)
+  const executeQueryRef = useRef(executeQuery)
+  executeQueryRef.current = executeQuery
 
   useEffect(() => {
-    executeQuery()
-  }, [executeQuery])
+    executeQueryRef.current()
+  }, [])
 
   const clients = useMemo(() => data?.client ?? [], [data])
 

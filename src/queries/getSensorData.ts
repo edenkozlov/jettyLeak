@@ -1,4 +1,4 @@
-import { fetchAllRows } from '@/lib/supabaseFetch'
+import { fetchTimeSeriesRows } from '@/lib/supabaseFetch'
 
 export async function GET_SENSOR_DATA(variables?: Record<string, unknown>) {
   const sensorId = variables?.sensorId
@@ -8,18 +8,21 @@ export async function GET_SENSOR_DATA(variables?: Record<string, unknown>) {
   const hasMagIds = magSensorIds && magSensorIds.length > 0
 
   const [reports, signals, magReports] = await Promise.all([
-    fetchAllRows('report', 'id, created_at, sensor_id, flow_value, temp_value', (q: any) =>
-      q.eq('sensor_id', sensorId).gte('created_at', since).lte('created_at', until),
+    fetchTimeSeriesRows('report', 'id, created_at, sensor_id, flow_value, temp_value',
+      'created_at', since, until,
+      (q: any) => q.eq('sensor_id', sensorId),
     ),
-    fetchAllRows('signal', 'id, created_at, value, time, sensor_id, start_time, end_time', (q: any) =>
-      q.eq('sensor_id', sensorId).gte('end_time', since).lte('start_time', until),
-      'start_time',
+    fetchTimeSeriesRows('signal', 'id, created_at, value, time, sensor_id, start_time, end_time',
+      'start_time', since, until,
+      (q: any) => q.eq('sensor_id', sensorId),
     ),
     hasMagIds
-      ? fetchAllRows('mag_report', 'id, created_at, x_axis_reading, y_axis_reading, z_axis_reading, total_magnitude, sensor_id, band_energy_10s, band_energy_60s, band_energy_5m, dominant_freq_hz, vibration_rpm', (q: any) =>
-          q.in('sensor_id', magSensorIds!).gte('created_at', since).lte('created_at', until),
+      ? fetchTimeSeriesRows('mag_report',
+          'id, created_at, x_axis_reading, y_axis_reading, z_axis_reading, total_magnitude, sensor_id, band_energy_10s, band_energy_60s, band_energy_5m, dominant_freq_hz, vibration_rpm',
+          'created_at', since, until,
+          (q: any) => q.in('sensor_id', magSensorIds!),
         )
-      : ([] as any[]),
+      : [],
   ])
 
   return {

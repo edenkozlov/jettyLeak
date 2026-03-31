@@ -5,6 +5,7 @@ import { useGraphQL } from '@/hooks/useGraphQL'
 import { useSubscription } from '@/hooks/useSubscription'
 import { GET_SENSORS, GET_SENSORS_BY_CLIENT_ID } from '@/queries/getSensors'
 import { GET_SENSOR_DATA } from '@/queries/getSensorData'
+import { GET_MAG_REPORTS } from '@/queries/getMagReports'
 import {
   GET_MAG_SENSORS_BY_BUILDING_ID,
 } from '@/queries/getMagDataByBuildingId'
@@ -244,10 +245,10 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     executeQuery: fetchSensorData,
   } = useGraphQL<SensorDataResponse>(GET_SENSOR_DATA)
 
-  // Separate hook for mag-data supplement so its requestIdRef
-  // can never discard the primary report/signal fetch.
-  const { data: magSupplementData, executeQuery: fetchMagSupplement } =
-    useGraphQL<SensorDataResponse>(GET_SENSOR_DATA)
+  // Separate hook for mag data — uses GET_MAG_REPORTS directly (not GET_SENSOR_DATA)
+  // to avoid redundant report/signal fetches.
+  const { data: magSupplementData, loading: magSupplementLoading, executeQuery: fetchMagSupplement } =
+    useGraphQL<{ mag_report: MagReport[] }>(GET_MAG_REPORTS)
 
   const { executeQuery: fetchMagSensors } =
     useGraphQL<MagSensorsResponse>(GET_MAG_SENSORS_BY_BUILDING_ID)
@@ -255,6 +256,18 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
   const { executeQuery: executeMappingsUpdate } = useGraphQL<{
     update_sensor_by_pk: { id: number; mappings: SensorMappings }
   }>(UPDATE_SENSOR_MAPPINGS)
+
+  // Stable refs for all fetch functions — NEVER put these in dependency arrays
+  const fetchSensorsRef = useRef(fetchSensors)
+  fetchSensorsRef.current = fetchSensors
+  const fetchSensorDataRef = useRef(fetchSensorData)
+  fetchSensorDataRef.current = fetchSensorData
+  const fetchMagSupplementRef = useRef(fetchMagSupplement)
+  fetchMagSupplementRef.current = fetchMagSupplement
+  const fetchMagSensorsRef = useRef(fetchMagSensors)
+  fetchMagSensorsRef.current = fetchMagSensors
+  const executeMappingsUpdateRef = useRef(executeMappingsUpdate)
+  executeMappingsUpdateRef.current = executeMappingsUpdate
 
   const [selectedSensorId, setSelectedSensorId] = useState<number | null>(
     initialSensorId ?? null,
@@ -279,6 +292,7 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
       bufferRef.current = []
       lastSeenIdRef.current = null
       setMagSensorIds([])
+      setMagSensorIdsResolved(false)
       setMagFetchWindow(null)
     }
   }, [initialSensorId]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -348,11 +362,12 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
 
   useEffect(() => {
     if (isClient) {
-      fetchSensors({ clientId: client_id })
+      fetchSensorsRef.current({ clientId: client_id })
     } else {
-      fetchSensors()
+      fetchSensorsRef.current()
     }
-  }, [fetchSensors, isClient, client_id])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isClient, client_id])
 
   useEffect(() => {
     if (sensorsData?.sensor?.length && selectedSensorId === null) {
@@ -363,14 +378,18 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
   // --- Mag sensor IDs (lightweight lookup, cached in state) ---
 
   const [magSensorIds, setMagSensorIds] = useState<number[]>([])
+  const [magSensorIdsResolved, setMagSensorIdsResolved] = useState(false)
   const [magFetchWindow, setMagFetchWindow] = useState<{ since: string; until: string } | null>(null)
 
   // mag_report rows use sensor_id → sensor(id). Data may be stored under the same id as the
   // selected flow sensor even when mag_to_building only lists other mag hardware for the building.
+  // Wait until the building lookup completes before populating — prevents a premature fetch
+  // with just [selectedSensorId] followed by a second fetch with the resolved IDs.
   const magSensorIdsForQuery = useMemo(() => {
     if (selectedSensorId === null) return []
+    if (!magSensorIdsResolved) return []
     return [...new Set([...magSensorIds, selectedSensorId])]
-  }, [magSensorIds, selectedSensorId])
+  }, [magSensorIds, selectedSensorId, magSensorIdsResolved])
 
   const sensorsLoaded = !!sensorsData?.sensor?.length
 
@@ -383,30 +402,31 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
   useEffect(() => {
     if (!sensorsLoaded) return
     setMagSensorIds([])
+    setMagSensorIdsResolved(false)
     setMagFetchWindow(null)
-    if (selectedBuildingId === null) return
-    fetchMagSensors({ buildingId: selectedBuildingId }).then((result) => {
+    if (selectedBuildingId === null) {
+      setMagSensorIdsResolved(true)
+      return
+    }
+    fetchMagSensorsRef.current({ buildingId: selectedBuildingId }).then((result) => {
       const ids = result?.mag_to_building?.length
         ? result.mag_to_building.map((m) => m.mag_id)
         : []
       setMagSensorIds(ids)
+      setMagSensorIdsResolved(true)
     })
-  }, [selectedBuildingId, sensorsLoaded, fetchMagSensors])
+  }, [selectedBuildingId, sensorsLoaded])
 
   // --- Historical fetch (reports + signals) ---
 
   const prevFetchKeyRef = useRef('')
-  const prevFetchFnRef = useRef(fetchSensorData)
 
   useEffect(() => {
     if (selectedSensorId === null) return
     if (timeRange === 'custom' && !customWindow) return
 
-    const fnChanged = fetchSensorData !== prevFetchFnRef.current
-    prevFetchFnRef.current = fetchSensorData
-
     const fetchKey = `${selectedSensorId}-${timeRange}-${periodOffset}-${customWindow?.since}-${customWindow?.until}`
-    if (!fnChanged && fetchKey === prevFetchKeyRef.current) return
+    if (fetchKey === prevFetchKeyRef.current) return
     prevFetchKeyRef.current = fetchKey
 
     setLiveBuffer([])
@@ -414,30 +434,35 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     lastSeenIdRef.current = null
 
     const { since, until } = computeTimeWindow(timeRange, periodOffset, customWindow ?? undefined)
-    fetchSensorData({
+    fetchSensorDataRef.current({
       sensorId: selectedSensorId,
       since,
       until,
       magSensorIds: [],
     })
-  }, [selectedSensorId, timeRange, periodOffset, customWindow, fetchSensorData])
+  }, [selectedSensorId, timeRange, periodOffset, customWindow])
 
-  // --- Mag historical fetch (separate hook, can never discard the report fetch) ---
+  // --- Mag historical fetch (separate hook) ---
+
+  const prevMagFetchKeyRef = useRef('')
 
   useEffect(() => {
     if (selectedSensorId === null) return
     if (magSensorIdsForQuery.length === 0) return
     if (timeRange === 'custom' && !customWindow) return
 
+    const magKey = `${magSensorIdsForQuery.join(',')}-${timeRange}-${periodOffset}-${customWindow?.since}-${customWindow?.until}`
+    if (magKey === prevMagFetchKeyRef.current) return
+    prevMagFetchKeyRef.current = magKey
+
     const window = computeTimeWindow(timeRange, periodOffset, customWindow ?? undefined)
     setMagFetchWindow(window)
-    fetchMagSupplement({
-      sensorId: selectedSensorId,
+    fetchMagSupplementRef.current({
+      sensorIds: magSensorIdsForQuery,
       since: window.since,
       until: window.until,
-      magSensorIds: magSensorIdsForQuery,
     })
-  }, [selectedSensorId, timeRange, periodOffset, magSensorIdsForQuery, customWindow, fetchMagSupplement])
+  }, [selectedSensorId, timeRange, periodOffset, magSensorIdsForQuery, customWindow])
 
   // Mag data — historical only, no live subscription.
   // Refetched periodically at slot boundaries by the Reports page via refetchMag().
@@ -466,19 +491,18 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     [magChartData],
   )
 
-  const refetchMag = useCallback(() => {
+  const refetchMag = useCallback(async () => {
     if (selectedSensorId === null) return
     if (magSensorIdsForQuery.length === 0) return
     if (timeRange === 'custom' && !customWindow) return
     const window = computeTimeWindow(timeRange, periodOffset, customWindow ?? undefined)
     setMagFetchWindow(window)
-    fetchMagSupplement({
-      sensorId: selectedSensorId,
+    await fetchMagSupplementRef.current({
+      sensorIds: magSensorIdsForQuery,
       since: window.since,
       until: window.until,
-      magSensorIds: magSensorIdsForQuery,
     })
-  }, [selectedSensorId, magSensorIdsForQuery, timeRange, periodOffset, customWindow, fetchMagSupplement])
+  }, [selectedSensorId, magSensorIdsForQuery, timeRange, periodOffset, customWindow])
 
   // --- Computed ---
 
@@ -579,6 +603,7 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
       bufferRef.current = []
       lastSeenIdRef.current = null
       setMagSensorIds([])
+      setMagSensorIdsResolved(false)
       setMagFetchWindow(null)
     },
     [],
@@ -622,10 +647,10 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     async (signalType: number, label: string) => {
       if (selectedSensorId === null) return
       const updated = { ...sensorMappings, [String(signalType)]: label }
-      await executeMappingsUpdate({ id: selectedSensorId, mappings: updated })
-      await (isClient ? fetchSensors({ clientId: client_id }) : fetchSensors())
+      await executeMappingsUpdateRef.current({ id: selectedSensorId, mappings: updated })
+      await (isClient ? fetchSensorsRef.current({ clientId: client_id }) : fetchSensorsRef.current())
     },
-    [selectedSensorId, sensorMappings, executeMappingsUpdate, fetchSensors, isClient, client_id],
+    [selectedSensorId, sensorMappings, isClient, client_id],
   )
 
   return {
@@ -642,6 +667,7 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     connected,
     sensorsLoading,
     reportsLoading: sensorDataLoading,
+    magLoading: magSupplementLoading,
     reportsError: sensorDataError,
     magChartData: downsampledMagChartData,
     magChartDataFull: magChartData,
