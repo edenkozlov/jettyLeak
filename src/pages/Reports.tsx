@@ -931,12 +931,10 @@ export default function Reports() {
     return 60_000
   }, [timeRange, bucketedFlowData])
 
-  const flowBarAxisTicks = useMemo(() => {
-    if (bucketedFlowData.length === 0) return [] as number[]
-    const min = bucketedFlowData[0]!.timestamp
-    const max = bucketedFlowData[bucketedFlowData.length - 1]!.timestamp
-    return buildReadableTimeAxisTicks(min, max, 8)
-  }, [bucketedFlowData])
+  const flowBarAxisTicks = useMemo(
+    () => buildReadableTimeAxisTicks(chartWindowStart, chartWindowEnd, 8),
+    [chartWindowStart, chartWindowEnd],
+  )
 
   const peakFlowAxisTicks = useMemo(
     () => buildReadableTimeAxisTicks(chartWindowStart, chartWindowEnd, 8),
@@ -1698,11 +1696,7 @@ export default function Reports() {
                   <XAxis
                     dataKey="timestamp"
                     type="number"
-                    domain={[
-                      bucketedFlowData[0]!.timestamp - bucketMs / 2,
-                      bucketedFlowData[bucketedFlowData.length - 1]!.timestamp +
-                        bucketMs / 2,
-                    ]}
+                    domain={[chartWindowStart, chartWindowEnd]}
                     ticks={flowBarAxisTicks}
                     tickFormatter={(ts: number) => formatTick(ts, flowBarAxisRangeMs)}
                     tick={{ fontSize: 11, fill: colors.axis }}
@@ -1726,17 +1720,18 @@ export default function Reports() {
                       if (!active || !payload?.length) return null
                       const p = payload[0]?.payload as BucketedFlowPoint | undefined
                       if (!p) return null
-                      const timeStr =
-                        typeof label === 'number'
-                          ? new Date(label).toLocaleString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              second: '2-digit',
-                              hour12: false,
-                            })
-                          : ''
+                      const bStart = typeof label === 'number' ? label - bucketMs / 2 : null
+                      const bEnd = typeof label === 'number' ? label + bucketMs / 2 : null
+                      const fmtBucket = (ms: number) =>
+                        new Date(ms).toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          ...(bucketMs < 60_000 ? { second: '2-digit' } : {}),
+                          hour12: false,
+                        })
+                      const timeStr = bStart != null && bEnd != null
+                        ? `${fmtBucket(bStart)} – ${fmtBucket(bEnd)}`
+                        : ''
                       return (
                         <div
                           className="rounded-lg border px-3 py-2 text-xs shadow-sm"
