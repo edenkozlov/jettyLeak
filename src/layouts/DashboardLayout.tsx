@@ -30,8 +30,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       {
         label: 'Home',
-        path: '/dashboard/home',
-        adminOnly: true,
+        path: '/dashboard',
+        adminOnly: false,
         icon: (
           <svg className={ICON_CLS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" />
@@ -40,9 +40,9 @@ const NAV_GROUPS: NavGroup[] = [
       },
       {
         label: 'Reports',
-        path: '/dashboard',
+        path: '/dashboard/reports',
         adminOnly: false,
-        alsoMatches: ['/dashboard/reports', '/dashboard/mag-reports'],
+        alsoMatches: ['/dashboard/mag-reports'],
         icon: (
           <svg className={ICON_CLS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
