@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, type ReactNode } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 
-import logo from '@/assets/belugaLogo.png'
+import { DashboardBrandLogoMark } from '@/components/BrandLogoMark'
 import { useDashboardLayout } from '@/hooks/useDashboardLayout'
 import useAuth from '@/hooks/auth/useAuth'
 
@@ -185,8 +185,7 @@ export default function DashboardLayout() {
           {/* Mobile: logo + close */}
           <div className="flex flex-1 items-center justify-between lg:hidden">
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="Beluga" className="h-8" />
-              <span className="text-lg font-bold text-gray-900 dark:text-white">Beluga</span>
+              <DashboardBrandLogoMark />
             </Link>
             <button
               onClick={handleToggleSidebar}
@@ -242,8 +241,7 @@ export default function DashboardLayout() {
             </button>
             {/* Logo in header */}
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="Beluga" className="h-7" />
-              <span className="text-lg font-bold text-gray-900 dark:text-white">Beluga</span>
+              <DashboardBrandLogoMark />
             </Link>
           </div>
 

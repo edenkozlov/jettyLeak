@@ -1,16 +1,15 @@
 import { Link } from 'react-router'
 
-import logo from '@/assets/belugaLogo.png'
+import { BrandLogoMark } from '@/components/BrandLogoMark'
 import { LANDING_SHOWCASE_BUILDINGS } from '@/data/landingShowcaseBuildings'
 
 export default function ClientsDirectoryPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:px-6">
+        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:h-16 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="Beluga" className="h-8" />
-            <span className="text-lg font-bold text-gray-900">Beluga</span>
+            <BrandLogoMark />
           </Link>
           <Link to="/" className="text-[13px] font-medium text-indigo-600 hover:text-indigo-800">
             Back to home

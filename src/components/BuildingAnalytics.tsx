@@ -1042,7 +1042,7 @@ function FlowRateChart({ data }: { data: BucketedFlowPoint[] }) {
                 return (
                   <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs shadow-sm dark:border-gray-700 dark:bg-gray-800">
                     <p className="font-medium text-gray-700 dark:text-gray-300">
-                      {formatTime(p.timestamp)}
+                      {formatTime(p.timestamp - bucketMs / 2)} – {formatTime(p.timestamp + bucketMs / 2)}
                     </p>
                     <p className="mt-1 font-semibold tabular-nums text-blue-500">
                       {p.flowRateLph.toFixed(1)} L/h
