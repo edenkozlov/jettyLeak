@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 
-import LiveFlowIndicator from '@/components/LiveFlowIndicator'
 import { MAPBOX_TOKEN } from '@/globals/constants'
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { useGraphQL } from '@/hooks/useGraphQL'
-import { useBuildingsPage } from '@/hooks/useBuildingsPage'
+import { useBuildingsPage, type FlowStatusMap } from '@/hooks/useBuildingsPage'
 import useAuth from '@/hooks/auth/useAuth'
 import { CREATE_BUILDING } from '@/mutations/buildingMutations'
 import { GET_CLIENTS } from '@/queries/getClients'
@@ -116,15 +115,58 @@ function sensorCount(building: Building): number {
 }
 
 // ---------------------------------------------------------------------------
+// Inline flow badge — uses pre-fetched bulk status, no per-building polling
+// ---------------------------------------------------------------------------
+
+function FlowBadge({ buildingId, flowStatus }: { buildingId: number; flowStatus: FlowStatusMap }) {
+  const fs = flowStatus[buildingId]
+  if (!fs) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+        <span className="inline-block h-2.5 w-2.5 animate-pulse rounded-full bg-gray-300 dark:bg-gray-600" />
+        Loading...
+      </span>
+    )
+  }
+  if (fs.mag_sensor_id == null) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-gray-400 dark:text-gray-500">
+        <span className="inline-block h-2.5 w-2.5 rounded-full bg-gray-300 dark:bg-gray-600" />
+        No sensor
+      </span>
+    )
+  }
+  if (fs.has_activity) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs">
+        <span className="relative inline-block h-2.5 w-2.5">
+          <span className="absolute inset-0 animate-ping rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-block h-2.5 w-2.5 rounded-full bg-emerald-500" />
+        </span>
+        <span className="font-medium text-emerald-600 dark:text-emerald-400">Active</span>
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+      <span className="inline-block h-2.5 w-2.5 rounded-full bg-gray-300 dark:bg-gray-600" />
+      0 L/h
+    </span>
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Building Card
 // ---------------------------------------------------------------------------
 
 function BuildingCard({
   building,
+  flowStatus,
   onMouseEnter,
   onClick,
 }: {
   building: Building
+  flowStatus: FlowStatusMap
   onMouseEnter: () => void
   onClick: () => void
 }) {
@@ -175,7 +217,7 @@ function BuildingCard({
       <div className="space-y-3 px-4 pb-4 pt-3">
         {/* Live Flow */}
         <div className="flex items-center justify-between">
-          <LiveFlowIndicator buildingId={building.id} compact />
+          <FlowBadge buildingId={building.id} flowStatus={flowStatus} />
         </div>
 
         {/* Meta row */}
@@ -241,7 +283,7 @@ function CardSkeleton() {
 
 export default function Buildings() {
   const navigate = useNavigate()
-  const { buildings, loading, error } = useBuildingsPage()
+  const { buildings, flowStatus, loading, error } = useBuildingsPage()
   const { role } = useAuth()
   const isAdmin = role === 'admin'
   const token = useAppSelector((state) => state.login.token)
@@ -447,6 +489,7 @@ export default function Buildings() {
                 <BuildingCard
                   key={building.id}
                   building={building}
+                  flowStatus={flowStatus}
                   onMouseEnter={() => handlePrefetch(building.id)}
                   onClick={() => goToBuilding(building)}
                 />
@@ -527,7 +570,7 @@ export default function Buildings() {
                         <BhiBadge bhi={building.bhi} label={building.bhi_label} />
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
-                        <LiveFlowIndicator buildingId={building.id} compact />
+                        <FlowBadge buildingId={building.id} flowStatus={flowStatus} />
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400 sm:px-6 sm:py-4">
                         {clientName(building) ?? '—'}

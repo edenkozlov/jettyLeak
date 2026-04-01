@@ -4,8 +4,11 @@ import useAuth from '@/hooks/auth/useAuth'
 import { useGraphQL } from '@/hooks/useGraphQL'
 import { useSubscription } from '@/hooks/useSubscription'
 import { GET_SENSORS, GET_SENSORS_BY_CLIENT_ID } from '@/queries/getSensors'
-import { GET_SENSOR_DATA } from '@/queries/getSensorData'
-import { GET_MAG_REPORTS } from '@/queries/getMagReports'
+import {
+  GET_MAG_DOWNSAMPLED,
+} from '@/queries/getFlowAnalytics'
+import { GET_REPORT_DOWNSAMPLED } from '@/queries/getReportDownsampled'
+import { GET_SIGNAL_DOWNSAMPLED } from '@/queries/getSignalSummary'
 import {
   GET_MAG_SENSORS_BY_BUILDING_ID,
 } from '@/queries/getMagDataByBuildingId'
@@ -14,6 +17,42 @@ import { LATEST_REPORT_SUBSCRIPTION } from '@/queries/reportSubscription'
 
 import type { MagReport, Report, Sensor, Signal, SensorMappings } from '@/types'
 import { parseSignalValue } from '@/types'
+
+/**
+ * Server-side downsampled fetch for report + signal data.
+ * Returns ~1500 report points + up to 500 signal intervals via RPCs,
+ * instead of fetching 100K+ raw rows and downsampling client-side.
+ */
+async function fetchSensorDataOptimized(variables?: Record<string, unknown>) {
+  const sensorId = variables?.sensorId as number
+  const since = variables?.since as string
+  const until = variables?.until as string
+
+  const [reportResult, signalResult] = await Promise.all([
+    GET_REPORT_DOWNSAMPLED({ sensorId, since, until, maxPoints: 1500 }),
+    GET_SIGNAL_DOWNSAMPLED({ sensorId, since, until, maxRows: 500 }),
+  ])
+
+  return {
+    report: reportResult.report as unknown as Report[],
+    signal: signalResult.signal as unknown as Signal[],
+    mag_report: [] as MagReport[],
+  }
+}
+
+/**
+ * Server-side downsampled fetch for mag data.
+ * Returns ~1500 evenly-spaced points via NTILE bucketing on the database,
+ * instead of fetching all raw mag_report rows.
+ */
+async function fetchMagOptimized(variables?: Record<string, unknown>) {
+  const sensorIds = variables?.sensorIds as number[]
+  const since = variables?.since as string
+  const until = variables?.until as string
+  if (!sensorIds || sensorIds.length === 0) return { mag_report: [] as MagReport[] }
+  const result = await GET_MAG_DOWNSAMPLED({ sensorIds, since, until, maxPoints: 1500 })
+  return { mag_report: result.mag_report as unknown as MagReport[] }
+}
 
 interface SensorsResponse {
   sensor: Sensor[]
@@ -273,12 +312,11 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     loading: sensorDataLoading,
     error: sensorDataError,
     executeQuery: fetchSensorData,
-  } = useGraphQL<SensorDataResponse>(GET_SENSOR_DATA)
+  } = useGraphQL<SensorDataResponse>(fetchSensorDataOptimized)
 
-  // Separate hook for mag data — uses GET_MAG_REPORTS directly (not GET_SENSOR_DATA)
-  // to avoid redundant report/signal fetches.
+  // Separate hook for mag data — server-side downsampled via get_mag_downsampled RPC
   const { data: magSupplementData, loading: magSupplementLoading, executeQuery: fetchMagSupplement } =
-    useGraphQL<{ mag_report: MagReport[] }>(GET_MAG_REPORTS)
+    useGraphQL<{ mag_report: MagReport[] }>(fetchMagOptimized)
 
   const { executeQuery: fetchMagSensors } =
     useGraphQL<MagSensorsResponse>(GET_MAG_SENSORS_BY_BUILDING_ID)
@@ -703,6 +741,7 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     magChartData: downsampledMagChartData,
     magChartDataFull: magChartData,
     magSensorIdsForQuery,
+    magFetchWindow,
     refetchMag,
     parsedSignals,
     signalTypeIds,
