@@ -6,6 +6,8 @@ import { useSubscription } from '@/hooks/useSubscription'
 import { GET_SENSORS, GET_SENSORS_BY_CLIENT_ID } from '@/queries/getSensors'
 import {
   GET_MAG_DOWNSAMPLED,
+  GET_FLOW_ANALYTICS,
+  type FlowHourlyRow,
 } from '@/queries/getFlowAnalytics'
 import { GET_REPORT_DOWNSAMPLED } from '@/queries/getReportDownsampled'
 import { GET_SIGNAL_DOWNSAMPLED } from '@/queries/getSignalSummary'
@@ -448,6 +450,7 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
   const [magSensorIds, setMagSensorIds] = useState<number[]>([])
   const [magSensorIdsResolved, setMagSensorIdsResolved] = useState(false)
   const [magFetchWindow, setMagFetchWindow] = useState<{ since: string; until: string } | null>(null)
+  const [flowHourlyRows, setFlowHourlyRows] = useState<FlowHourlyRow[]>([])
 
   // mag_report rows use sensor_id → sensor(id). Data may be stored under the same id as the
   // selected flow sensor even when mag_to_building only lists other mag hardware for the building.
@@ -530,6 +533,19 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
       since: window.since,
       until: window.until,
     })
+
+    // For 6h+ ranges, also fetch pre-computed flow_hourly data
+    const rangeMs = RANGE_MS[timeRange]
+    if (rangeMs >= 6 * 60 * 60_000 || timeRange === 'all') {
+      GET_FLOW_ANALYTICS({
+        sensorIds: magSensorIdsForQuery,
+        since: window.since,
+        until: window.until,
+      }).then((result) => setFlowHourlyRows(result.rows))
+        .catch(() => setFlowHourlyRows([]))
+    } else {
+      setFlowHourlyRows([])
+    }
   }, [selectedSensorId, timeRange, periodOffset, magSensorIdsForQuery, customWindow])
 
   // Mag data — historical only, no live subscription.
@@ -571,6 +587,15 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
       since: window.since,
       until: window.until,
     })
+    const rangeMs = RANGE_MS[timeRange]
+    if (rangeMs >= 6 * 60 * 60_000 || timeRange === 'all') {
+      GET_FLOW_ANALYTICS({
+        sensorIds: magSensorIdsForQuery,
+        since: window.since,
+        until: window.until,
+      }).then((result) => setFlowHourlyRows(result.rows))
+        .catch(() => setFlowHourlyRows([]))
+    }
   }, [selectedSensorId, magSensorIdsForQuery, timeRange, periodOffset, customWindow])
 
   // --- Computed ---
@@ -742,6 +767,7 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     magChartDataFull: magChartData,
     magSensorIdsForQuery,
     magFetchWindow,
+    flowHourlyRows,
     refetchMag,
     parsedSignals,
     signalTypeIds,

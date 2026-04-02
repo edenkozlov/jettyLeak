@@ -27,17 +27,23 @@ export function useVolumeSummary(
       return
     }
 
-    GET_VOLUME_BUCKETS(magSensorIds)
-      .then((result) => {
-        if (!mountedRef.current) return
-        setBuckets(result)
-      })
-      .catch(() => {
-        if (mountedRef.current) setBuckets(EMPTY_BUCKETS)
-      })
+    const fetchBuckets = () => {
+      GET_VOLUME_BUCKETS(magSensorIds)
+        .then((result) => {
+          if (!mountedRef.current) return
+          setBuckets(result)
+        })
+        .catch(() => {
+          if (mountedRef.current) setBuckets(EMPTY_BUCKETS)
+        })
+    }
+
+    fetchBuckets()
+    const interval = setInterval(fetchBuckets, 30_000) // refresh every 30s
 
     return () => {
       mountedRef.current = false
+      clearInterval(interval)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [magSensorIdsKey])

@@ -431,6 +431,7 @@ export default function Reports() {
     reportsError,
     magChartData,
     magChartDataFull,
+    flowHourlyRows,
     refetchMag,
     parsedSignals,
     signalTypeIds,
@@ -890,20 +891,56 @@ export default function Reports() {
     [sensorMultiplier],
   )
 
-  const bucketedFlowData = useMemo(
-    () =>
-      magChartDataFull.length === 0
-        ? []
-        : computeBucketedFlow(
-            magChartDataFull,
-            magFlowChartData,
-            flowPeakTimestamps,
-            currentLitresPerCycle,
-            bucketMs,
-            chartWindowStart,
-            numFlowBuckets,
-          ),
-    [
+  const bucketedFlowData = useMemo(() => {
+    // For 6h+ ranges, use pre-computed flow_hourly data instead of
+    // client-side peak detection (downsampled data is too sparse for peaks).
+    if (flowHourlyRows.length > 0) {
+      const now = Date.now()
+      const points: BucketedFlowPoint[] = []
+      for (const row of flowHourlyRows) {
+        const hourStart = new Date(row.hour_start).getTime()
+        const hourEnd = hourStart + 3_600_000
+
+        if (bucketMs >= 3_600_000) {
+          // 1 bucket = 1 hour — direct mapping
+          const bMid = hourStart + bucketMs / 2
+          const isPartial = hourStart <= now && now < hourEnd
+          const volumeL = row.volume_litres
+          const flowRateLph = volumeL > 0 ? volumeL / (bucketMs / 3_600_000) : 0
+          points.push({
+            timestamp: bMid,
+            flowRateLph: Math.round(flowRateLph * 100) / 100,
+            flowRateBarVisual: flowRateLph === 0 ? 0.001 : Math.round(flowRateLph * 100) / 100,
+            partial: isPartial,
+            bucketVolumeL: Math.round(volumeL * 10000) / 10000,
+          })
+        } else {
+          // Sub-hour buckets (e.g., 15min or 30min) — split hourly data evenly
+          const bucketsPerHour = Math.round(3_600_000 / bucketMs)
+          const volPerBucket = row.volume_litres / bucketsPerHour
+          const ratePerBucket = volPerBucket / (bucketMs / 3_600_000)
+          for (let b = 0; b < bucketsPerHour; b++) {
+            const bStart = hourStart + b * bucketMs
+            const bMid = bStart + bucketMs / 2
+            if (bMid < chartWindowStart || bMid > chartWindowEnd) continue
+            const isPartial = bStart <= now && now < bStart + bucketMs
+            points.push({
+              timestamp: bMid,
+              flowRateLph: Math.round(ratePerBucket * 100) / 100,
+              flowRateBarVisual: ratePerBucket === 0 ? 0.001 : Math.round(ratePerBucket * 100) / 100,
+              partial: isPartial,
+              bucketVolumeL: Math.round(volPerBucket * 10000) / 10000,
+            })
+          }
+        }
+      }
+      points.sort((a, b) => a.timestamp - b.timestamp)
+      return points
+    }
+
+    // For short ranges, compute from raw mag data (full resolution peak detection)
+    if (magChartDataFull.length === 0) return []
+    return computeBucketedFlow(
       magChartDataFull,
       magFlowChartData,
       flowPeakTimestamps,
@@ -911,9 +948,19 @@ export default function Reports() {
       bucketMs,
       chartWindowStart,
       numFlowBuckets,
-      slotAnchor,
-    ],
-  )
+    )
+  }, [
+    flowHourlyRows,
+    magChartDataFull,
+    magFlowChartData,
+    flowPeakTimestamps,
+    currentLitresPerCycle,
+    bucketMs,
+    chartWindowStart,
+    chartWindowEnd,
+    numFlowBuckets,
+    slotAnchor,
+  ])
 
   const peakFlowData = useMemo(
     () =>
