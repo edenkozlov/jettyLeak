@@ -655,20 +655,34 @@ export default function Reports() {
     return 60_000
   }, [timeRange, magChartDataFull])
   const numFlowBuckets = Math.max(1, Math.round(effectiveRangeMs / bucketMs))
-  // End the chart one bucket past the latest data point so lines aren't clipped
-  // at the edge, but never show a large empty gap.  Falls back to slotAnchor
-  // when no data has loaded yet.
+  // Derive chart window from actual data extent so there is no empty space
+  // on either side.  Falls back to slotAnchor when no data exists yet.
   const latestFlowTs = rawChartData.length > 0
     ? rawChartData[rawChartData.length - 1]!.timestamp
+    : 0
+  const earliestFlowTs = rawChartData.length > 0
+    ? rawChartData[0]!.timestamp
     : 0
   const latestMagTs = magChartDataFull.length > 0
     ? magChartDataFull[magChartDataFull.length - 1]!.timestamp
     : 0
+  const earliestMagTs = magChartDataFull.length > 0
+    ? magChartDataFull[0]!.timestamp
+    : 0
   const latestDataTs = Math.max(latestFlowTs, latestMagTs)
+  const earliestDataTs = Math.min(
+    earliestFlowTs || Infinity,
+    earliestMagTs || Infinity,
+  )
+
+  // Shared chart window — all charts (bar, line, mag) use this so their
+  // x-axes are perfectly aligned at every column/grid line.
   const chartWindowEnd = latestDataTs > 0
-    ? (Math.floor(latestDataTs / bucketMs) + 1) * bucketMs
+    ? latestDataTs
     : slotAnchor
-  const chartWindowStart = chartWindowEnd - numFlowBuckets * bucketMs
+  const chartWindowStart = earliestDataTs > 0 && earliestDataTs < Infinity
+    ? earliestDataTs
+    : chartWindowEnd - numFlowBuckets * bucketMs
 
   const [tagFormTimestamp, setTagFormTimestamp] = useState<number | null>(null)
   const [tagTitle, setTagTitle] = useState('')
@@ -1740,6 +1754,7 @@ export default function Reports() {
                     dataKey="timestamp"
                     type="number"
                     domain={[chartWindowStart, chartWindowEnd]}
+                    allowDataOverflow
                     ticks={flowBarAxisTicks}
                     tickFormatter={(ts: number) => formatTick(ts, flowBarAxisRangeMs)}
                     tick={{ fontSize: 11, fill: colors.axis }}

@@ -50,6 +50,9 @@ function pointInPolygon(
   return inside
 }
 
+const EMPTY_SENSORS: Sensor[] = []
+const EMPTY_FIXTURES: Fixture[] = []
+
 export default function BuildingDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -80,11 +83,11 @@ export default function BuildingDetail() {
 
   // Local sensor state for optimistic updates
   const [localSensors, setLocalSensors] = useState<Sensor[] | null>(null)
-  const sensors = localSensors ?? building?.sensors ?? []
+  const sensors = localSensors ?? building?.sensors ?? EMPTY_SENSORS
 
   // Local fixture state for optimistic updates
   const [localFixtures, setLocalFixtures] = useState<Fixture[] | null>(null)
-  const fixtures = localFixtures ?? building?.fixtures ?? []
+  const fixtures = localFixtures ?? building?.fixtures ?? EMPTY_FIXTURES
 
   const [localFloors, setLocalFloors] = useState<number | null>(null)
   const numberOfFloors = localFloors ?? building?.number_of_floors ?? 1
@@ -289,7 +292,7 @@ export default function BuildingDetail() {
       })
       updateSensorAreaRef.current({ id: sensorId, area_covered: null })
     },
-    [building?.sensors, updateSensorPosition, ],
+    [building?.sensors, ],
   )
 
   const handleFixtureCreate = useCallback(

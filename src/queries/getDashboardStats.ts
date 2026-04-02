@@ -1,59 +1,45 @@
 import { supabase } from '@/lib/supabase'
 
+// ---------------------------------------------------------------------------
+// Dashboard counts — single RPC instead of 4 separate count queries
+// ---------------------------------------------------------------------------
+
+interface DashboardCounts {
+  client_count: number
+  building_count: number
+  sensor_count: number
+  report_count: number
+}
+
 export async function GET_DASHBOARD_STATS() {
-  const [clientRes, buildingRes, sensorRes, reportRes] = await Promise.all([
-    supabase.from('client').select('*', { count: 'exact', head: true }),
-    supabase.from('building').select('*', { count: 'exact', head: true }),
-    supabase.from('sensor').select('*', { count: 'exact', head: true }),
-    supabase.from('report').select('*', { count: 'exact', head: true }),
-  ])
-  if (clientRes.error) throw clientRes.error
-  if (buildingRes.error) throw buildingRes.error
-  if (sensorRes.error) throw sensorRes.error
-  if (reportRes.error) throw reportRes.error
+  const { data, error } = await supabase.rpc('get_dashboard_counts')
+  if (error) throw error
+  const counts = data as DashboardCounts
   return {
-    client_aggregate: { aggregate: { count: clientRes.count ?? 0 } },
-    building_aggregate: { aggregate: { count: buildingRes.count ?? 0 } },
-    sensor_aggregate: { aggregate: { count: sensorRes.count ?? 0 } },
-    report_aggregate: { aggregate: { count: reportRes.count ?? 0 } },
+    client_aggregate: { aggregate: { count: counts.client_count } },
+    building_aggregate: { aggregate: { count: counts.building_count } },
+    sensor_aggregate: { aggregate: { count: counts.sensor_count } },
+    report_aggregate: { aggregate: { count: counts.report_count } },
   }
 }
 
 export async function GET_DASHBOARD_STATS_BY_CLIENT(variables?: Record<string, unknown>) {
   const clientId = variables?.clientId as string
-
-  const { data: buildings, error: bErr } = await supabase
-    .from('building')
-    .select('id')
-    .eq('client_id', clientId)
-  if (bErr) throw bErr
-
-  const buildingIds = (buildings ?? []).map((b) => b.id)
-  let sensorCount = 0
-  let reportCount = 0
-
-  if (buildingIds.length > 0) {
-    const [sensorRes, reportRes] = await Promise.all([
-      supabase
-        .from('sensor')
-        .select('*', { count: 'exact', head: true })
-        .in('building_id', buildingIds),
-      supabase
-        .from('report')
-        .select('*, sensor!inner(building_id)', { count: 'exact', head: true })
-        .in('sensor.building_id', buildingIds),
-    ])
-    if (sensorRes.error) throw sensorRes.error
-    sensorCount = sensorRes.count ?? 0
-    reportCount = reportRes.count ?? 0
-  }
-
+  const { data, error } = await supabase.rpc('get_dashboard_counts', {
+    p_client_id: clientId,
+  })
+  if (error) throw error
+  const counts = data as DashboardCounts
   return {
-    building_aggregate: { aggregate: { count: buildingIds.length } },
-    sensor_aggregate: { aggregate: { count: sensorCount } },
-    report_aggregate: { aggregate: { count: reportCount } },
+    building_aggregate: { aggregate: { count: counts.building_count } },
+    sensor_aggregate: { aggregate: { count: counts.sensor_count } },
+    report_aggregate: { aggregate: { count: counts.report_count } },
   }
 }
+
+// ---------------------------------------------------------------------------
+// Recent buildings — these are already efficient (single query, limit 5)
+// ---------------------------------------------------------------------------
 
 export async function GET_RECENT_BUILDINGS() {
   const { data, error } = await supabase

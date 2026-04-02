@@ -2,24 +2,19 @@ import { useEffect, useRef, useState } from 'react'
 
 import { useAppSelector } from '@/hooks/useAppSelector'
 import { GET_MAG_SENSORS_BY_BUILDING_ID } from '@/queries/getMagDataByBuildingId'
-import { GET_MAG_REPORTS } from '@/queries/getMagReports'
 import { GET_SENSORS_BY_BUILDING_ID } from '@/queries/getSensorsByBuildingId'
 import {
-  computeBucketedFlow,
-  computeFlowFromPeaks,
-  getFlowPeakTimestamps,
-  litresPerCycleFromMultiplier,
-  volumeFromFullCyclesInWindow,
-  type BucketedFlowPoint,
-  type FlowPoint,
-  type MagDataPoint,
-} from '@/utils/flowComputation'
+  GET_FLOW_ANALYTICS,
+  GET_MAG_DOWNSAMPLED,
+  type FlowHourlyRow,
+} from '@/queries/getFlowAnalytics'
 import {
   computeBuildingHealth,
   type BuildingHealth,
 } from '@/utils/buildingHealth'
 import { UPDATE_BUILDING_BHI } from '@/mutations/buildingMutations'
-import type { MagReport, Sensor } from '@/types'
+import type { Sensor } from '@/types'
+import type { BucketedFlowPoint, FlowPoint } from '@/utils/flowComputation'
 
 export type { BuildingHealth, BucketedFlowPoint }
 
@@ -52,8 +47,6 @@ export interface AnalyticsData {
   peakHours: number[]
 }
 
-const SESSION_GAP_MS = 120_000
-
 function getStartOfDay(date: Date = new Date()): Date {
   const d = new Date(date)
   d.setHours(0, 0, 0, 0)
@@ -76,70 +69,120 @@ function getStartOfMonth(date: Date = new Date()): Date {
   return d
 }
 
-function computeVolumeForRange(
-  allMagData: MagDataPoint[],
-  since: number,
-  until: number,
-  multiplier: number,
-): number {
-  const rangeData = allMagData.filter(
-    (d) => d.timestamp >= since && d.timestamp <= until,
-  )
-  if (rangeData.length < 5) return 0
-  const peaks = getFlowPeakTimestamps(rangeData)
-  const litresPerCycle = litresPerCycleFromMultiplier(multiplier)
-  return Math.round(
-    volumeFromFullCyclesInWindow(peaks, since, until, litresPerCycle).volumeL * 10,
-  ) / 10
-}
+// ---------------------------------------------------------------------------
+// Aggregate helpers — work on pre-computed hourly rows instead of raw data
+// ---------------------------------------------------------------------------
 
-function computeFlowPointsForRange(
-  allMagData: MagDataPoint[],
-  since: number,
-  until: number,
-  multiplier: number,
-): FlowPoint[] {
-  const rangeData = allMagData.filter(
-    (d) => d.timestamp >= since && d.timestamp <= until,
-  )
-  if (rangeData.length < 5) return []
-  return computeFlowFromPeaks(rangeData, multiplier)
-}
-
-function computeActiveFlow(flowPoints: FlowPoint[]): {
-  activeFlowMs: number
-  sessionCount: number
-} {
-  const active = flowPoints.filter((p) => p.flowRateLph > 0)
-  if (active.length === 0) return { activeFlowMs: 0, sessionCount: 0 }
-
-  let activeFlowMs = 0
-  let sessionCount = 1
-
-  for (let i = 1; i < active.length; i++) {
-    const gap = active[i]!.timestamp - active[i - 1]!.timestamp
-    if (gap > SESSION_GAP_MS) {
-      sessionCount++
-    } else {
-      activeFlowMs += gap
+function sumVolumeInRange(rows: FlowHourlyRow[], sinceMs: number, untilMs: number): number {
+  let total = 0
+  for (const r of rows) {
+    const hourMs = new Date(r.hour_start).getTime()
+    // Include hours that overlap with the range
+    if (hourMs >= sinceMs && hourMs < untilMs) {
+      total += r.volume_litres
     }
   }
-
-  return { activeFlowMs, sessionCount }
+  return Math.round(total * 10) / 10
 }
 
-function computeHourlyUsage(flowPoints: FlowPoint[]): number[] {
+function sumActiveSecondsInRange(rows: FlowHourlyRow[], sinceMs: number, untilMs: number): number {
+  let total = 0
+  for (const r of rows) {
+    const hourMs = new Date(r.hour_start).getTime()
+    if (hourMs >= sinceMs && hourMs < untilMs) {
+      total += r.active_seconds
+    }
+  }
+  return total
+}
+
+function sumSessionsInRange(rows: FlowHourlyRow[], sinceMs: number, untilMs: number): number {
+  let total = 0
+  for (const r of rows) {
+    const hourMs = new Date(r.hour_start).getTime()
+    if (hourMs >= sinceMs && hourMs < untilMs) {
+      total += r.session_count
+    }
+  }
+  return total
+}
+
+function computeHourlyUsageFromRows(rows: FlowHourlyRow[], sinceMs: number, untilMs: number): number[] {
   const hourly = new Array(24).fill(0) as number[]
-  for (let i = 1; i < flowPoints.length; i++) {
-    const curr = flowPoints[i]!
-    const prev = flowPoints[i - 1]!
-    const deltaL = curr.accumulatedL - prev.accumulatedL
-    if (deltaL <= 0) continue
-    const hour = new Date(curr.timestamp).getHours()
-    hourly[hour] = (hourly[hour] ?? 0) + deltaL
+  for (const r of rows) {
+    const hourMs = new Date(r.hour_start).getTime()
+    if (hourMs >= sinceMs && hourMs < untilMs) {
+      const hour = new Date(r.hour_start).getHours()
+      hourly[hour] = (hourly[hour] ?? 0) + r.volume_litres
+    }
   }
   return hourly.map((v) => Math.round(v * 10) / 10)
 }
+
+/** Build simplified flow points from hourly data for health computation. */
+function flowPointsFromHourly(rows: FlowHourlyRow[], sinceMs: number, untilMs: number): FlowPoint[] {
+  const points: FlowPoint[] = []
+  let accumulated = 0
+  for (const r of rows) {
+    const hourMs = new Date(r.hour_start).getTime()
+    if (hourMs < sinceMs || hourMs >= untilMs) continue
+    if (r.volume_litres > 0) {
+      accumulated += r.volume_litres
+      const rateLph = r.volume_litres // volume per hour = L/h
+      points.push({
+        timestamp: hourMs + 1800_000, // midpoint of hour
+        flowRateLph: rateLph,
+        accumulatedL: accumulated,
+      })
+    }
+  }
+  return points
+}
+
+/** Build bucketed flow from hourly data for the bar chart. */
+function bucketedFlowFromHourly(rows: FlowHourlyRow[], todayStartMs: number, nowMs: number): BucketedFlowPoint[] {
+  const BUCKET_MS = 15 * 60_000
+  const numBuckets = Math.max(1, Math.ceil((nowMs - todayStartMs) / BUCKET_MS))
+  const buckets: BucketedFlowPoint[] = []
+
+  for (let i = 0; i < numBuckets; i++) {
+    const bucketStart = todayStartMs + i * BUCKET_MS
+    const bucketEnd = bucketStart + BUCKET_MS
+    const mid = bucketStart + BUCKET_MS / 2
+    const isPartial = bucketEnd > nowMs
+
+    // Sum volume from hourly rows that overlap this bucket
+    let volumeL = 0
+    for (const r of rows) {
+      const hourMs = new Date(r.hour_start).getTime()
+      const hourEnd = hourMs + 3600_000
+      // Check overlap between [hourMs, hourEnd) and [bucketStart, bucketEnd)
+      const overlapStart = Math.max(hourMs, bucketStart)
+      const overlapEnd = Math.min(hourEnd, bucketEnd)
+      if (overlapEnd > overlapStart && r.volume_litres > 0) {
+        const fraction = (overlapEnd - overlapStart) / 3600_000
+        volumeL += r.volume_litres * fraction
+      }
+    }
+
+    const effectiveDurationH = (isPartial ? Math.min(nowMs - bucketStart, BUCKET_MS) : BUCKET_MS) / 3_600_000
+    const rateLph = effectiveDurationH > 0 ? volumeL / effectiveDurationH : 0
+
+    buckets.push({
+      timestamp: mid,
+      flowRateLph: Math.round(rateLph * 10) / 10,
+      flowRateBarVisual: rateLph > 0 ? Math.round(rateLph * 10) / 10 : 2,
+      partial: isPartial,
+      bucketVolumeL: Math.round(volumeL * 100) / 100,
+    })
+  }
+
+  return buckets
+}
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
 
 export function useBuildingAnalytics(buildingId: number | null | undefined) {
   const token = useAppSelector((state) => state.login.token)
@@ -168,6 +211,7 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
 
     ;(async () => {
       try {
+        // Step 1: Resolve mag sensor IDs and multiplier (2 small requests)
         const [magResult, sensorResult] = await Promise.all([
           GET_MAG_SENSORS_BY_BUILDING_ID({ buildingId }),
           GET_SENSORS_BY_BUILDING_ID({ buildingId }),
@@ -203,6 +247,8 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           return
         }
 
+        // Step 2: Fetch pre-aggregated hourly data + downsampled chart data
+        // This is 2 requests total instead of thousands.
         const now = new Date()
         const nowMs = now.getTime()
         const todayStart = getStartOfDay(now)
@@ -215,7 +261,6 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
         const sevenDaysAgo = new Date(now)
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
         sevenDaysAgo.setHours(0, 0, 0, 0)
-
         const twentyEightDaysAgo = new Date(now)
         twentyEightDaysAgo.setDate(twentyEightDaysAgo.getDate() - 28)
         twentyEightDaysAgo.setHours(0, 0, 0, 0)
@@ -230,27 +275,75 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           ),
         )
 
-        const magReports = await GET_MAG_REPORTS({
-          sensorIds: magIds,
-          since: fetchSince.toISOString(),
-          until: now.toISOString(),
-        })
+        const last24h = new Date(nowMs - 24 * 3_600_000)
+
+        const [analyticsResult, chartResult] = await Promise.all([
+          // 1 request — returns ~672 rows max for 28 days
+          GET_FLOW_ANALYTICS({
+            sensorIds: magIds,
+            since: fetchSince.toISOString(),
+            until: now.toISOString(),
+          }),
+          // 1 request — returns ~1500 downsampled points
+          GET_MAG_DOWNSAMPLED({
+            sensorIds: magIds,
+            since: last24h.toISOString(),
+            until: now.toISOString(),
+            maxPoints: 1500,
+          }),
+        ])
         if (cancelled) return
 
-        const reports = (magReports?.mag_report as MagReport[]) ?? []
-        const sorted = reports.sort(
-          (a, b) =>
-            new Date(a.created_at).getTime() -
-            new Date(b.created_at).getTime(),
+        const hourlyRows = analyticsResult.rows
+
+        // Step 3: Compute all analytics from the hourly aggregates
+        const todayLitres = sumVolumeInRange(hourlyRows, todayStart.getTime(), nowMs)
+        const yesterdayLitres = sumVolumeInRange(hourlyRows, yesterdayStart.getTime(), todayStart.getTime())
+        const thisWeekLitres = sumVolumeInRange(hourlyRows, thisWeekStart.getTime(), nowMs)
+        const lastWeekLitres = sumVolumeInRange(hourlyRows, lastWeekStart.getTime(), thisWeekStart.getTime())
+        const thisMonthLitres = sumVolumeInRange(hourlyRows, thisMonthStart.getTime(), nowMs)
+
+        const todayActiveSec = sumActiveSecondsInRange(hourlyRows, todayStart.getTime(), nowMs)
+        const activeFlowMs = todayActiveSec * 1000
+        const todaySessionCount = sumSessionsInRange(hourlyRows, todayStart.getTime(), nowMs)
+        const elapsedTodayMs = nowMs - todayStart.getTime()
+        const idleMs = Math.max(0, elapsedTodayMs - activeFlowMs)
+        const activePercent = elapsedTodayMs > 0 ? (activeFlowMs / elapsedTodayMs) * 100 : 0
+
+        const dayChangePercent = yesterdayLitres > 0
+          ? Math.round(((todayLitres - yesterdayLitres) / yesterdayLitres) * 100)
+          : null
+        const weekChangePercent = lastWeekLitres > 0
+          ? Math.round(((thisWeekLitres - lastWeekLitres) / lastWeekLitres) * 100)
+          : null
+
+        const hoursElapsedToday = (nowMs - todayStart.getTime()) / 3_600_000
+        const todayProjected = hoursElapsedToday > 0.5
+          ? Math.round((todayLitres / hoursElapsedToday) * 24 * 10) / 10
+          : 0
+
+        const daysElapsedThisWeek = (nowMs - thisWeekStart.getTime()) / 86_400_000
+        const weekProjected = daysElapsedThisWeek > 0.5
+          ? Math.round((thisWeekLitres / daysElapsedThisWeek) * 7 * 10) / 10
+          : 0
+
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+        const daysElapsedThisMonth = (nowMs - thisMonthStart.getTime()) / 86_400_000
+        const monthProjected = daysElapsedThisMonth > 0.5
+          ? Math.round((thisMonthLitres / daysElapsedThisMonth) * daysInMonth * 10) / 10
+          : 0
+
+        const peakHours = computeHourlyUsageFromRows(
+          hourlyRows,
+          sevenDaysAgo.getTime(),
+          nowMs,
         )
-        const allMagData: MagDataPoint[] = sorted.map((r) => ({
-          timestamp: new Date(r.created_at).getTime(),
-          x: r.x_axis_reading,
-          total: r.total_magnitude,
-          bandEnergy10s: r.band_energy_10s,
-          bandEnergy60s: r.band_energy_60s,
-        }))
-        const allMagChart: MagChartPoint[] = sorted.map((r) => ({
+
+        const todayBucketed = bucketedFlowFromHourly(hourlyRows, todayStart.getTime(), nowMs)
+
+        // Build chart data from downsampled result
+        const chartReports = chartResult.mag_report ?? []
+        const recentMagChart: MagChartPoint[] = chartReports.map((r) => ({
           timestamp: new Date(r.created_at).getTime(),
           total: r.total_magnitude,
           x: r.x_axis_reading,
@@ -258,120 +351,20 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           z: r.z_axis_reading,
         }))
 
-        const todayLitres = computeVolumeForRange(allMagData, todayStart.getTime(), nowMs, multiplier)
-        const yesterdayLitres = computeVolumeForRange(allMagData, yesterdayStart.getTime(), todayStart.getTime(), multiplier)
-        const thisWeekLitres = computeVolumeForRange(allMagData, thisWeekStart.getTime(), nowMs, multiplier)
-        const lastWeekLitres = computeVolumeForRange(allMagData, lastWeekStart.getTime(), thisWeekStart.getTime(), multiplier)
-        const thisMonthLitres = computeVolumeForRange(allMagData, thisMonthStart.getTime(), nowMs, multiplier)
+        // Build flow points from hourly data for health computation
+        const todayFlowPoints = flowPointsFromHourly(hourlyRows, todayStart.getTime(), nowMs)
+        const historyFlowPoints = flowPointsFromHourly(hourlyRows, fetchSince.getTime(), nowMs)
 
-        if (cancelled) return
+        // Construct MagDataPoint-like data from hourly stats for health
+        const allMagData = hourlyRows.map((r) => ({
+          timestamp: new Date(r.hour_start).getTime(),
+          x: r.avg_x,
+          total: r.avg_total,
+          bandEnergy10s: r.stddev_total, // stddev as activity proxy
+          bandEnergy60s: null,
+        }))
 
-        const todayFlowPoints = computeFlowPointsForRange(
-          allMagData,
-          todayStart.getTime(),
-          nowMs,
-          multiplier,
-        )
-        const { activeFlowMs, sessionCount } = computeActiveFlow(
-          todayFlowPoints,
-        )
-        const elapsedTodayMs = nowMs - todayStart.getTime()
-        const idleMs = Math.max(0, elapsedTodayMs - activeFlowMs)
-        const activePercent =
-          elapsedTodayMs > 0 ? (activeFlowMs / elapsedTodayMs) * 100 : 0
-
-        const dayChangePercent =
-          yesterdayLitres > 0
-            ? Math.round(
-                ((todayLitres - yesterdayLitres) /
-                  yesterdayLitres) *
-                  100,
-              )
-            : null
-        const weekChangePercent =
-          lastWeekLitres > 0
-            ? Math.round(
-                ((thisWeekLitres - lastWeekLitres) /
-                  lastWeekLitres) *
-                  100,
-              )
-            : null
-
-        const hoursElapsedToday =
-          (nowMs - todayStart.getTime()) / 3_600_000
-        const todayProjected =
-          hoursElapsedToday > 0.5
-            ? Math.round(
-                (todayLitres / hoursElapsedToday) * 24 * 10,
-              ) / 10
-            : 0
-
-        const daysElapsedThisWeek =
-          (nowMs - thisWeekStart.getTime()) / 86_400_000
-        const weekProjected =
-          daysElapsedThisWeek > 0.5
-            ? Math.round(
-                (thisWeekLitres / daysElapsedThisWeek) * 7 * 10,
-              ) / 10
-            : 0
-
-        const daysInMonth = new Date(
-          now.getFullYear(),
-          now.getMonth() + 1,
-          0,
-        ).getDate()
-        const daysElapsedThisMonth =
-          (nowMs - thisMonthStart.getTime()) / 86_400_000
-        const monthProjected =
-          daysElapsedThisMonth > 0.5
-            ? Math.round(
-                (thisMonthLitres / daysElapsedThisMonth) *
-                  daysInMonth *
-                  10,
-              ) / 10
-            : 0
-
-        const sevenDayFlowPoints = computeFlowPointsForRange(
-          allMagData,
-          sevenDaysAgo.getTime(),
-          nowMs,
-          multiplier,
-        )
-        const peakHours = computeHourlyUsage(sevenDayFlowPoints)
-
-        const historyFlowPoints = computeFlowPointsForRange(
-          allMagData,
-          fetchSince.getTime(),
-          nowMs,
-          multiplier,
-        )
-
-        const todayMagData = allMagData.filter(
-          (d) => d.timestamp >= todayStart.getTime() && d.timestamp <= nowMs,
-        )
-        const BUCKET_MS = 15 * 60_000
-        const numBuckets = Math.max(
-          1,
-          Math.ceil((nowMs - todayStart.getTime()) / BUCKET_MS),
-        )
-        const litresPerCycle = litresPerCycleFromMultiplier(multiplier)
-        const todayPeaks = getFlowPeakTimestamps(todayMagData)
-        const todayBucketed = computeBucketedFlow(
-          todayMagData,
-          todayFlowPoints,
-          todayPeaks,
-          litresPerCycle,
-          BUCKET_MS,
-          todayStart.getTime(),
-          numBuckets,
-        )
-
-        const last24h = nowMs - 24 * 3_600_000
-        const recentMagChart = allMagChart.filter(
-          (d) => d.timestamp >= last24h,
-        )
-
-        const analyticsPayload = {
+        const analyticsPayload: AnalyticsData = {
           today: todayLitres,
           thisWeek: thisWeekLitres,
           thisMonth: thisMonthLitres,
@@ -381,7 +374,7 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           weekChangePercent,
           activeFlowMs,
           idleMs,
-          sessionCount,
+          sessionCount: todaySessionCount,
           activePercent,
           todayProjected,
           weekProjected,

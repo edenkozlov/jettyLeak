@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useGraphQL } from '@/hooks/useGraphQL'
 import { GET_BUILDINGS } from '@/queries/getBuildings'
 import { GET_MAG_SENSORS_BY_BUILDING_ID } from '@/queries/getMagDataByBuildingId'
-import { GET_MAG_REPORTS } from '@/queries/getMagReports'
+import { GET_MAG_DOWNSAMPLED } from '@/queries/getFlowAnalytics'
 import { GET_RANGE_LABELS_BY_SENSOR_ID } from '@/queries/getRangeLabelsBySensorId'
 import { GET_SENSORS_BY_BUILDING_ID } from '@/queries/getSensorsByBuildingId'
 import { INSERT_RANGE_LABEL, DELETE_RANGE_LABEL } from '@/mutations/rangeLabelMutations'
@@ -63,6 +63,19 @@ interface MagReportsResponse {
   mag_report: MagReport[]
 }
 
+/** Server-side downsampled mag fetch — returns ~1500 points via RPC */
+async function fetchMagOptimized(variables?: Record<string, unknown>) {
+  const sensorIds = variables?.sensorIds as number[]
+  const since = variables?.since as string
+  const until = variables?.until as string
+  if (!sensorIds || sensorIds.length === 0) return { mag_report: [] as MagReport[] }
+  const result = await GET_MAG_DOWNSAMPLED({ sensorIds, since, until, maxPoints: 1500 })
+  return { mag_report: result.mag_report as unknown as MagReport[] }
+}
+
+interface MagSubscriptionResponse {
+  mag_report: MagReport[]
+}
 
 interface SensorsResponse {
   sensor: Sensor[]
@@ -162,7 +175,7 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
   fetchMagSensorsRef.current = fetchMagSensors
 
   const { data: magData, loading: magLoading, error: magError, executeQuery: fetchMagReports } =
-    useGraphQL<MagReportsResponse>(GET_MAG_REPORTS)
+    useGraphQL<MagReportsResponse>(fetchMagOptimized)
   const fetchMagReportsRef = useRef(fetchMagReports)
   fetchMagReportsRef.current = fetchMagReports
 
