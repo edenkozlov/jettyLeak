@@ -592,19 +592,21 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
 
   const parsedSignals = useMemo<ParsedSignal[]>(() => {
     const raw = sensorData?.signal ?? []
+    console.log(`[PARSED SIGNALS] raw count=${raw.length}`)
     const result: ParsedSignal[] = []
     for (const s of raw) {
       const parsed = parseSignalValue(s.value)
       if (parsed) {
         result.push({
           ...s,
-          signalType: parsed.signal_type,
-          confidence: parsed.confidence,
+          signalType: typeof parsed.signal_type === 'number' ? parsed.signal_type : 0,
+          confidence: parsed.confidence ?? 0,
           readings: parsed.readings,
-          status: parsed.status,
+          status: parsed.status ?? '',
         })
       }
     }
+    console.log(`[PARSED SIGNALS] parsed count=${result.length}`)
     return result
   }, [sensorData])
 
@@ -705,6 +707,7 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     magSensorIdsForQuery,
     refetchMag,
     parsedSignals,
+    rawSignals: sensorData?.signal ?? [],
     signalTypeIds,
     sensorMappings,
     updateMapping,

@@ -17,6 +17,7 @@ import type { MultiAxisSample } from '@/utils/fft'
 import { detectCycles, autoCycleCount, type CycleDetectionResult, type AutoCycleCountResult } from '@/utils/signalProcessing'
 import { computeFlowFromPeaks } from '@/utils/flowComputation'
 import { useTheme } from '@/contexts/ThemeContext'
+import { parseSignalValue } from '@/types/signal'
 import {
   RANGE_MS,
   TIME_RANGE_OPTIONS,
@@ -159,6 +160,7 @@ export default function MagReports() {
     magSensorIds,
     selectedSensorId,
     rangeLabels,
+    signals,
     chartData,
     sensorMultiplier,
     timeRange,
@@ -449,6 +451,41 @@ export default function MagReports() {
       })
       .filter((x): x is NonNullable<typeof x> => x !== null)
   }, [rangeLabels, chartData])
+
+  const SIGNAL_TYPE_COLORS: Record<string, string> = {
+    sink: '#f59e0b',
+    toilet: '#8b5cf6',
+    shower: '#3b82f6',
+    dishwasher: '#10b981',
+    unknown: '#6b7280',
+  }
+
+  const signalOverlays = useMemo(() => {
+    if (signals.length === 0 || chartData.length === 0) return []
+    const chartMin = chartData[0]!.timestamp
+    const chartMax = chartData[chartData.length - 1]!.timestamp
+    return signals
+      .map((sig) => {
+        const start = sig.start_time ? new Date(sig.start_time).getTime() : null
+        const end = sig.end_time ? new Date(sig.end_time).getTime() : null
+        if (start === null || end === null) return null
+        if (end < chartMin || start > chartMax) return null
+        const parsed = parseSignalValue(sig.value)
+        const signalType = parsed?.signal_type ?? 'unknown'
+        const fixtureName = parsed?.fixture_name ?? '?'
+        const distance = parsed?.cosine_distance ?? parsed?.mass_distance
+        return {
+          id: sig.id,
+          startMs: Math.max(start, chartMin),
+          endMs: Math.min(end, chartMax),
+          color: SIGNAL_TYPE_COLORS[signalType] ?? SIGNAL_TYPE_COLORS.unknown!,
+          label: `${signalType} (${fixtureName})${distance != null ? ` d=${distance.toFixed(2)}` : ''}`,
+          signalType,
+          fixtureName,
+        }
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+  }, [signals, chartData])
 
   const tooltipStyle = useMemo(
     () => ({
@@ -1212,6 +1249,18 @@ export default function MagReports() {
                     />
                     {chartRangeLabels.map((rl) => (
                       <ReferenceArea key={`rl-${rl.id}`} x1={rl.startMs} x2={rl.endMs} fill={rl.color} fillOpacity={0.12} stroke={rl.color} strokeDasharray="4 3" />
+                    ))}
+                    {signalOverlays.map((sig) => (
+                      <ReferenceArea
+                        key={`sig-${sig.id}`}
+                        x1={sig.startMs}
+                        x2={sig.endMs}
+                        fill={sig.color}
+                        fillOpacity={0.18}
+                        stroke={sig.color}
+                        strokeWidth={1.5}
+                        label={{ value: sig.label, position: 'insideTop', fill: sig.color, fontSize: 10, fontWeight: 600 }}
+                      />
                     ))}
                     {selRefLeft !== null && selRefRight !== null && selectingAxisRef.current === 'x' && (
                       <ReferenceArea x1={Math.min(selRefLeft, selRefRight)} x2={Math.max(selRefLeft, selRefRight)} fill={labelMode ? '#6366f1' : '#10b981'} fillOpacity={0.15} strokeOpacity={0.3} />
