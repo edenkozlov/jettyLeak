@@ -25,8 +25,11 @@ export async function GET_VOLUME_BUCKETS(sensorIds: number[]): Promise<VolumeBuc
     ]
   }
 
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+
   const { data, error } = await supabase.rpc('get_volume_buckets', {
     p_sensor_ids: sensorIds,
+    p_timezone: tz,
   })
   if (error) throw error
 

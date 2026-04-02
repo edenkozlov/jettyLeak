@@ -4,7 +4,8 @@
 -- - 15min & 1hr: peak detection on raw mag_report for exact time windows
 -- - 12hr, 24hr, Today: flow_hourly for completed hours + raw peaks for the
 --   current partial hour
--- - Automatically backfills any missing completed hours in the 24h window
+-- - Accepts timezone parameter so "Today" means midnight in the user's
+--   local timezone, not UTC
 -- ============================================================================
 
 -- Helper: count peaks for one sensor in an arbitrary time range
@@ -60,23 +61,21 @@ $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 
 CREATE OR REPLACE FUNCTION get_volume_buckets(
-    p_sensor_ids INTEGER[]
+    p_sensor_ids INTEGER[],
+    p_timezone   TEXT DEFAULT 'UTC'
 ) RETURNS JSON AS $$
 DECLARE
     v_now            TIMESTAMPTZ := now();
-    v_today_start    TIMESTAMPTZ := date_trunc('day', v_now);
+    v_today_start    TIMESTAMPTZ := date_trunc('day', v_now AT TIME ZONE p_timezone) AT TIME ZONE p_timezone;
     v_current_hour   TIMESTAMPTZ := date_trunc('hour', v_now);
     v_15m_ago        TIMESTAMPTZ := v_now - interval '15 minutes';
     v_1h_ago         TIMESTAMPTZ := v_now - interval '1 hour';
     v_12h_ago        TIMESTAMPTZ := v_now - interval '12 hours';
     v_24h_ago        TIMESTAMPTZ := v_now - interval '24 hours';
     v_range_start    TIMESTAMPTZ;
-    -- Short-window results (from raw peak detection)
     v_15m_peaks      INTEGER := 0;
     v_1h_peaks       INTEGER := 0;
-    -- Current partial-hour peaks (shared by long buckets)
     v_partial_peaks  INTEGER := 0;
-    -- Long-window results (flow_hourly + partial hour)
     v_12h_vol        DOUBLE PRECISION := 0;
     v_12h_cycles     INTEGER := 0;
     v_24h_vol        DOUBLE PRECISION := 0;
@@ -85,8 +84,6 @@ DECLARE
     v_today_cycles   INTEGER := 0;
     v_sid            INTEGER;
     v_mult           DOUBLE PRECISION;
-    v_hour_cursor    TIMESTAMPTZ;
-    -- Computed volumes
     v_15m_vol        DOUBLE PRECISION := 0;
     v_1h_vol         DOUBLE PRECISION := 0;
 BEGIN
@@ -102,7 +99,6 @@ BEGIN
         );
     END IF;
 
-    -- The earliest hour we need for 24hr/today buckets
     v_range_start := LEAST(date_trunc('hour', v_24h_ago), v_today_start);
 
     FOR v_sid IN SELECT unnest(p_sensor_ids) LOOP
@@ -115,63 +111,34 @@ BEGIN
             v_mult := 1.0;
         END IF;
 
-        -- Backfill any missing completed hours in the 24h window
-        v_hour_cursor := v_range_start;
-        WHILE v_hour_cursor < v_current_hour LOOP
-            IF NOT EXISTS (
-                SELECT 1 FROM flow_hourly
-                WHERE sensor_id = v_sid AND hour_start = v_hour_cursor
-            ) THEN
-                PERFORM compute_flow_hour(v_sid, v_hour_cursor, v_mult);
-            END IF;
-            v_hour_cursor := v_hour_cursor + interval '1 hour';
-        END LOOP;
-
-        -- Always recompute current partial hour (it's still accumulating data)
         PERFORM compute_flow_hour(v_sid, v_current_hour, v_mult);
 
-        -- 15-min peaks from raw data (exact window)
         v_15m_peaks := v_15m_peaks + count_peaks_in_range(v_sid, v_15m_ago, v_now);
-
-        -- 1-hr peaks from raw data (exact window)
-        v_1h_peaks := v_1h_peaks + count_peaks_in_range(v_sid, v_1h_ago, v_now);
-
-        -- Current partial hour peaks from raw data
+        v_1h_peaks  := v_1h_peaks  + count_peaks_in_range(v_sid, v_1h_ago, v_now);
         v_partial_peaks := v_partial_peaks + count_peaks_in_range(v_sid, v_current_hour, v_now);
 
-        -- Convert peaks to volume
         v_15m_vol := v_15m_vol + (v_15m_peaks::DOUBLE PRECISION / v_mult);
         v_1h_vol  := v_1h_vol  + (v_1h_peaks::DOUBLE PRECISION / v_mult);
     END LOOP;
 
-    -- Long buckets: sum completed hours from flow_hourly + partial hour
     SELECT
-        -- 12 hours (completed hours only)
         COALESCE(sum(volume_litres) FILTER (
-            WHERE hour_start >= date_trunc('hour', v_12h_ago)
-              AND hour_start < v_current_hour
+            WHERE hour_start >= date_trunc('hour', v_12h_ago) AND hour_start < v_current_hour
         ), 0),
         COALESCE(sum(peak_count) FILTER (
-            WHERE hour_start >= date_trunc('hour', v_12h_ago)
-              AND hour_start < v_current_hour
+            WHERE hour_start >= date_trunc('hour', v_12h_ago) AND hour_start < v_current_hour
         ), 0)::INTEGER,
-        -- 24 hours (completed hours only)
         COALESCE(sum(volume_litres) FILTER (
-            WHERE hour_start >= date_trunc('hour', v_24h_ago)
-              AND hour_start < v_current_hour
+            WHERE hour_start >= date_trunc('hour', v_24h_ago) AND hour_start < v_current_hour
         ), 0),
         COALESCE(sum(peak_count) FILTER (
-            WHERE hour_start >= date_trunc('hour', v_24h_ago)
-              AND hour_start < v_current_hour
+            WHERE hour_start >= date_trunc('hour', v_24h_ago) AND hour_start < v_current_hour
         ), 0)::INTEGER,
-        -- Today (completed hours only)
         COALESCE(sum(volume_litres) FILTER (
-            WHERE hour_start >= v_today_start
-              AND hour_start < v_current_hour
+            WHERE hour_start >= v_today_start AND hour_start < v_current_hour
         ), 0),
         COALESCE(sum(peak_count) FILTER (
-            WHERE hour_start >= v_today_start
-              AND hour_start < v_current_hour
+            WHERE hour_start >= v_today_start AND hour_start < v_current_hour
         ), 0)::INTEGER
     INTO
         v_12h_vol, v_12h_cycles,
@@ -182,11 +149,7 @@ BEGIN
       AND hour_start >= v_range_start
       AND hour_start < v_current_hour;
 
-    -- Add partial-hour volume to long buckets
-    SELECT COALESCE(s.multiplier, 1.0)
-    INTO v_mult
-    FROM sensor s
-    WHERE s.id = p_sensor_ids[1];
+    SELECT COALESCE(s.multiplier, 1.0) INTO v_mult FROM sensor s WHERE s.id = p_sensor_ids[1];
     IF v_mult IS NULL OR v_mult <= 0 THEN v_mult := 1.0; END IF;
 
     v_12h_vol    := v_12h_vol   + (v_partial_peaks::DOUBLE PRECISION / v_mult);
