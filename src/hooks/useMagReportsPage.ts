@@ -73,10 +73,6 @@ async function fetchMagOptimized(variables?: Record<string, unknown>) {
   return { mag_report: result.mag_report as unknown as MagReport[] }
 }
 
-interface MagSubscriptionResponse {
-  mag_report: MagReport[]
-}
-
 interface SensorsResponse {
   sensor: Sensor[]
 }
