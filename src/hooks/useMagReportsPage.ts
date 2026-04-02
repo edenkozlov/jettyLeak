@@ -334,6 +334,7 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
       }
     }
 
+    poll()
     const interval = setInterval(poll, 2000)
     return () => clearInterval(interval)
   }, [isLive, selectedSensorId, timeRange, periodOffset])

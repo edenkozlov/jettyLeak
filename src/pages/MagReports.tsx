@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useMemo, useRef, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import {
   CartesianGrid,
@@ -195,21 +195,38 @@ export default function MagReports() {
     return `${formatTooltipTime(sinceMs)} – ${formatTooltipTime(untilMs)}`
   }, [periodOffset, timeRange])
 
-  const visibleRangeMs = useMemo(() => {
-    if (chartData.length < 2) return RANGE_MS[timeRange] || 60_000
-    return chartData[chartData.length - 1]!.timestamp - chartData[0]!.timestamp
-  }, [chartData, timeRange])
+  // Tick a clock every 2s so the x-axis domain stays pinned to "now"
+  const [now, setNow] = useState(Date.now)
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 2000)
+    return () => clearInterval(id)
+  }, [])
+
+  const xDomain = useMemo<[number, number]>(() => {
+    if (timeRange === 'custom' && customWindow) {
+      return [new Date(customWindow.since).getTime(), new Date(customWindow.until).getTime()]
+    }
+    if (timeRange === 'all') {
+      if (chartData.length < 2) return [now - 60_000, now]
+      return [chartData[0]!.timestamp, chartData[chartData.length - 1]!.timestamp]
+    }
+    const rangeMs = RANGE_MS[timeRange]
+    const untilMs = now - rangeMs * periodOffset
+    const sinceMs = untilMs - rangeMs
+    return [sinceMs, untilMs]
+  }, [timeRange, periodOffset, customWindow, chartData, now])
+
+  const visibleRangeMs = xDomain[1] - xDomain[0] || 60_000
 
   const xTicks = useMemo(() => {
-    if (chartData.length < 2) return []
-    const min = chartData[0]!.timestamp
-    const max = chartData[chartData.length - 1]!.timestamp
+    const [min, max] = xDomain
+    if (max - min < 1) return []
     const step = computeTickInterval(max - min)
     const start = Math.ceil(min / step) * step
     const ticks: number[] = []
     for (let t = start; t <= max; t += step) ticks.push(t)
     return ticks
-  }, [chartData])
+  }, [xDomain])
 
   const totalMagYDomain = useMemo(
     () => computeYDomain(chartData.map((p) => p.total)),
@@ -1055,7 +1072,8 @@ export default function MagReports() {
                       <XAxis
                         dataKey="timestamp"
                         type="number"
-                        domain={['dataMin', 'dataMax']}
+                        domain={xDomain}
+                      allowDataOverflow
                         ticks={xTicks}
                         tickFormatter={(ts: number) => formatTick(ts, visibleRangeMs)}
                         tick={{ fontSize: 11, fill: colors.axis }}
@@ -1145,7 +1163,8 @@ export default function MagReports() {
                     <XAxis
                       dataKey="timestamp"
                       type="number"
-                      domain={['dataMin', 'dataMax']}
+                      domain={xDomain}
+                      allowDataOverflow
                       ticks={xTicks}
                       tickFormatter={(ts: number) => formatTick(ts, visibleRangeMs)}
                       tick={{ fontSize: 11, fill: colors.axis }}
@@ -1227,7 +1246,8 @@ export default function MagReports() {
                     <XAxis
                       dataKey="timestamp"
                       type="number"
-                      domain={['dataMin', 'dataMax']}
+                      domain={xDomain}
+                      allowDataOverflow
                       ticks={xTicks}
                       tickFormatter={(ts: number) => formatTick(ts, visibleRangeMs)}
                       tick={{ fontSize: 11, fill: colors.axis }}
@@ -1321,7 +1341,8 @@ export default function MagReports() {
                     <XAxis
                       dataKey="timestamp"
                       type="number"
-                      domain={['dataMin', 'dataMax']}
+                      domain={xDomain}
+                      allowDataOverflow
                       ticks={xTicks}
                       tickFormatter={(ts: number) => formatTick(ts, visibleRangeMs)}
                       tick={{ fontSize: 11, fill: colors.axis }}
@@ -1403,7 +1424,8 @@ export default function MagReports() {
                     <XAxis
                       dataKey="timestamp"
                       type="number"
-                      domain={['dataMin', 'dataMax']}
+                      domain={xDomain}
+                      allowDataOverflow
                       ticks={xTicks}
                       tickFormatter={(ts: number) => formatTick(ts, visibleRangeMs)}
                       tick={{ fontSize: 11, fill: colors.axis }}
@@ -1474,7 +1496,8 @@ export default function MagReports() {
                       <XAxis
                         dataKey="timestamp"
                         type="number"
-                        domain={['dataMin', 'dataMax']}
+                        domain={xDomain}
+                      allowDataOverflow
                         ticks={xTicks}
                         tickFormatter={(ts: number) => formatTick(ts, visibleRangeMs)}
                         tick={{ fontSize: 11, fill: colors.axis }}
@@ -1529,7 +1552,8 @@ export default function MagReports() {
                       <XAxis
                         dataKey="timestamp"
                         type="number"
-                        domain={['dataMin', 'dataMax']}
+                        domain={xDomain}
+                      allowDataOverflow
                         ticks={xTicks}
                         tickFormatter={(ts: number) => formatTick(ts, visibleRangeMs)}
                         tick={{ fontSize: 11, fill: colors.axis }}
@@ -1586,7 +1610,8 @@ export default function MagReports() {
                       <XAxis
                         dataKey="timestamp"
                         type="number"
-                        domain={['dataMin', 'dataMax']}
+                        domain={xDomain}
+                      allowDataOverflow
                         ticks={xTicks}
                         tickFormatter={(ts: number) => formatTick(ts, visibleRangeMs)}
                         tick={{ fontSize: 11, fill: colors.axis }}
@@ -1631,7 +1656,8 @@ export default function MagReports() {
                     <XAxis
                       dataKey="timestamp"
                       type="number"
-                      domain={['dataMin', 'dataMax']}
+                      domain={xDomain}
+                      allowDataOverflow
                       ticks={xTicks}
                       tickFormatter={(ts: number) => formatTick(ts, visibleRangeMs)}
                       tick={{ fontSize: 11, fill: colors.axis }}
