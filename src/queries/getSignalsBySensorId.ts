@@ -1,16 +1,20 @@
-import { fetchTimeSeriesRows } from '@/lib/supabaseFetch'
+import { supabase } from '@/lib/supabase'
 
 export async function GET_SIGNALS_BY_SENSOR_ID(variables?: Record<string, unknown>) {
   const sensorId = variables?.sensorId
-  const since = variables?.since as string
-  const until = variables?.until as string
 
-  const data = await fetchTimeSeriesRows(
-    'signal',
-    'id, created_at, value, time, sensor_id, start_time, end_time',
-    'start_time', since, until,
-    (q: any) => q.eq('sensor_id', sensorId),
-  )
+  const { data, error } = await supabase
+    .from('signal')
+    .select('id, created_at, value, time, sensor_id, start_time, end_time')
+    .eq('sensor_id', sensorId)
+    .order('start_time', { ascending: true })
 
-  return { signal: data } as any
+  if (error) {
+    console.error(`[SIGNALS] error fetching for sensor=${sensorId}:`, error)
+    throw error
+  }
+
+  console.log(`[SIGNALS] sensor=${sensorId} → ${data?.length ?? 0} signals`, data?.slice(0, 3))
+
+  return { signal: data ?? [] } as any
 }

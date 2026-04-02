@@ -29,6 +29,7 @@ import {
   type BucketedFlowPoint,
 } from '@/utils/flowComputation'
 import { useTheme } from '@/contexts/ThemeContext'
+import { parseSignalValue } from '@/types/signal'
 import { useChartTags } from '@/hooks/useChartTags'
 import { useChartZoomPan } from '@/hooks/useChartZoomPan'
 import { useVolumeSummary } from '@/hooks/useVolumeSummary'
@@ -513,6 +514,48 @@ export default function Reports() {
   }, [periodOffset, timeRange])
 
   const timeline = useMemo(() => compressTimeline(chartData), [chartData])
+
+  const SIGNAL_TYPE_COLORS: Record<string, string> = {
+    sink: '#f59e0b',
+    toilet: '#8b5cf6',
+    shower: '#3b82f6',
+    dishwasher: '#10b981',
+    unknown: '#6b7280',
+  }
+
+  const detectorSignalOverlays = useMemo(() => {
+    if (!parsedSignals.length) return []
+    const hasTimeline = timeline.points.length > 0
+    const result = parsedSignals
+      .map((sig) => {
+        const parsed = parseSignalValue(sig.value)
+        if (!parsed) return null
+        const startMs = sig.start_time ? new Date(sig.start_time).getTime() : null
+        const endMs = sig.end_time ? new Date(sig.end_time).getTime() : null
+        if (!startMs || !endMs) return null
+        const startCx = hasTimeline ? timeline.toCompressed(startMs) : startMs
+        const endCx = hasTimeline ? timeline.toCompressed(endMs) : endMs
+        const signalType = String(parsed.signal_type)
+        const fixtureName = parsed.fixture_name ?? '?'
+        const distance = parsed.cosine_distance ?? parsed.mass_distance
+        const classifications = parsed.classifications ?? []
+        const lines = [`→ ${signalType} (${fixtureName})${distance != null ? ` d=${distance.toFixed(3)}` : ''}`]
+        for (const c of classifications.slice(1)) {
+          lines.push(`  ${c.type} (${c.name}) d=${c.distance.toFixed(3)}`)
+        }
+        if (parsed.duration_s != null) lines.push(`  ${parsed.duration_s}s · ${parsed.readings} readings`)
+        return {
+          id: sig.id,
+          startCx,
+          endCx,
+          color: SIGNAL_TYPE_COLORS[signalType] ?? SIGNAL_TYPE_COLORS.unknown!,
+          fullLabel: lines.join('\n'),
+        }
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+    console.log(`[SIGNAL OVERLAYS] ${parsedSignals.length} → ${result.length} overlays`)
+    return result
+  }, [parsedSignals, timeline])
 
   const dataMin =
     timeline.points.length > 0 ? timeline.points[0]!.cx : 0
@@ -2320,14 +2363,17 @@ export default function Reports() {
                       borderRadius: 8,
                       fontSize: 12,
                       color: colors.tooltipText,
+                      whiteSpace: 'pre-line' as const,
                     }}
                     formatter={(value, name) => [
                       typeof value === 'number' ? value.toFixed(3) : '—',
                       name ?? '',
                     ]}
                     labelFormatter={(cx: unknown) => {
-                      const realTs = timeline.toReal(Number(cx))
-                      return new Date(realTs).toLocaleString('en-US', {
+                      const cxNum = Number(cx)
+                      const hasT = timeline.points.length > 0
+                      const realTs = hasT ? timeline.toReal(cxNum) : cxNum
+                      const timeStr = new Date(realTs).toLocaleString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
@@ -2335,6 +2381,10 @@ export default function Reports() {
                         second: '2-digit',
                         hour12: false,
                       })
+                      const match = detectorSignalOverlays.find(
+                        (s) => cxNum >= s.startCx && cxNum <= s.endCx,
+                      )
+                      return match ? `${timeStr}\n${match.fullLabel}` : timeStr
                     }}
                   />
                   {magRefAreaLeft !== null &&
@@ -2358,6 +2408,17 @@ export default function Reports() {
                       fillOpacity={0.12}
                     />
                   )}
+                  {detectorSignalOverlays.map((sig) => (
+                    <ReferenceArea
+                      key={`dsig-${sig.id}`}
+                      x1={sig.startCx}
+                      x2={sig.endCx}
+                      fill={sig.color}
+                      fillOpacity={0.18}
+                      stroke={sig.color}
+                      strokeWidth={1.5}
+                    />
+                  ))}
                   <Line
                     type="monotone"
                     dataKey="x"

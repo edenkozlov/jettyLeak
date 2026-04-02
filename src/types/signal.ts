@@ -1,8 +1,21 @@
+export interface SignalClassification {
+  type: string
+  name: string
+  distance: number
+}
+
 export interface SignalValue {
-  signal_type: number
-  confidence: number
+  source: string
+  method?: string
+  signal_type: string | number
+  fixture_name?: string
+  cosine_distance?: number
+  mass_distance?: number
+  confidence?: number
+  status?: string
+  classifications?: SignalClassification[]
   readings: number
-  status: string
+  duration_s?: number
 }
 
 export interface Signal {
@@ -17,9 +30,7 @@ export interface Signal {
 
 export function parseSignalValue(raw: string): SignalValue | null {
   try {
-    const parsed = JSON.parse(raw)
-    if (typeof parsed.signal_type === 'number') return parsed as SignalValue
-    return null
+    return JSON.parse(raw) as SignalValue
   } catch {
     return null
   }

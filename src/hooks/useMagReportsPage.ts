@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useGraphQL } from '@/hooks/useGraphQL'
-import { useSubscription } from '@/hooks/useSubscription'
 import { GET_BUILDINGS } from '@/queries/getBuildings'
 import { GET_MAG_SENSORS_BY_BUILDING_ID } from '@/queries/getMagDataByBuildingId'
 import { GET_MAG_DOWNSAMPLED } from '@/queries/getFlowAnalytics'
 import { GET_RANGE_LABELS_BY_SENSOR_ID } from '@/queries/getRangeLabelsBySensorId'
 import { GET_SENSORS_BY_BUILDING_ID } from '@/queries/getSensorsByBuildingId'
 import { INSERT_RANGE_LABEL, DELETE_RANGE_LABEL } from '@/mutations/rangeLabelMutations'
-import { LATEST_MAG_REPORT_SUBSCRIPTION } from '@/queries/magReportSubscription'
+import { GET_SIGNALS_BY_SENSOR_ID } from '@/queries/getSignalsBySensorId'
 
 import type { Building, MagReport, RangeLabel, Sensor } from '@/types'
+import type { Signal } from '@/types/signal'
 
 export interface MagChartPoint {
   timestamp: number
@@ -73,16 +73,16 @@ async function fetchMagOptimized(variables?: Record<string, unknown>) {
   return { mag_report: result.mag_report as unknown as MagReport[] }
 }
 
-interface MagSubscriptionResponse {
-  mag_report: MagReport[]
-}
-
 interface SensorsResponse {
   sensor: Sensor[]
 }
 
 interface RangeLabelsResponse {
   range_label: RangeLabel[]
+}
+
+interface SignalsResponse {
+  signal: Signal[]
 }
 
 interface InsertRangeLabelResponse {
@@ -94,7 +94,6 @@ interface DeleteRangeLabelResponse {
 }
 
 const MAX_CHART_POINTS = 1500
-const FLUSH_INTERVAL_MS = 500
 
 function computeTimeWindow(
   range: TimeRange,
@@ -206,6 +205,7 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
   const [isLive, setIsLive] = useState(true)
   const [periodOffset, setPeriodOffset] = useState(0)
   const [liveMagData, setLiveMagData] = useState<MagChartPoint[]>([])
+  const [signals, setSignals] = useState<Signal[]>([])
 
   const magBufferRef = useRef<MagChartPoint[]>([])
   const lastMagIdRef = useRef<number | null>(null)
@@ -280,56 +280,64 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
     fetchRangeLabelsRef.current({ sensorId: selectedSensorId })
   }, [selectedSensorId])
 
+  // Fetch signals for the current time window
+  const { executeQuery: fetchSignals } = useGraphQL<SignalsResponse>(GET_SIGNALS_BY_SENSOR_ID)
+  const fetchSignalsRef = useRef(fetchSignals)
+  fetchSignalsRef.current = fetchSignals
+
+  // Fetch signals on load + poll every 10s
+  useEffect(() => {
+    if (selectedSensorId === null) return
+
+    const fetchSigs = () => {
+      console.log(`[SIGNALS] polling for sensor=${selectedSensorId}`)
+      fetchSignalsRef.current({ sensorId: selectedSensorId }).then((result) => {
+        const sigs = result?.signal ?? []
+        console.log(`[SIGNALS] got ${sigs.length} signals`)
+        setSignals(sigs)
+      }).catch((err) => {
+        console.error(`[SIGNALS] fetch error:`, err)
+      })
+    }
+
+    fetchSigs()
+    const interval = setInterval(fetchSigs, 10_000)
+    return () => clearInterval(interval)
+  }, [selectedSensorId])
+
   const rangeLabels = useMemo<RangeLabel[]>(
     () => rangeLabelsData?.range_label ?? [],
     [rangeLabelsData],
   )
 
-  // Subscription
-  const magSubVars = useMemo(
-    () => (selectedSensorId != null ? { sensorIds: [selectedSensorId] } : undefined),
-    [selectedSensorId],
-  )
-
-  const { data: magSubData, connected } = useSubscription<MagSubscriptionResponse>(
-    LATEST_MAG_REPORT_SUBSCRIPTION,
-    magSubVars,
-    isLive && selectedSensorId != null && timeRange !== 'all' && timeRange !== 'custom' && periodOffset === 0,
-    'mag_report',
-    'sensor_id',
-    selectedSensorId ?? undefined,
-  )
+  // Poll for new mag data every 2s when live
+  const connected = isLive && selectedSensorId != null
 
   useEffect(() => {
-    if (!magSubData?.mag_report?.length) return
-    const report = magSubData.mag_report[0]!
-    if (
-      report.sensor_id != null &&
-      selectedSensorId != null &&
-      Number(report.sensor_id) !== selectedSensorId
-    ) {
-      return
-    }
-    if (report.id === lastMagIdRef.current) return
-    lastMagIdRef.current = report.id
-    const range = timeRangeRef.current
-    if (range !== 'all' && range !== 'custom') {
-      const cutoff = Date.now() - RANGE_MS[range] * 2
-      if (new Date(report.created_at).getTime() < cutoff) return
-    }
-    magBufferRef.current.push(magToPoint(report))
-  }, [magSubData, magSensorIds])
+    if (!isLive || selectedSensorId === null || timeRange === 'all' || timeRange === 'custom' || periodOffset > 0) return
 
-  useEffect(() => {
-    if (!isLive || timeRange === 'all' || timeRange === 'custom') return
-    const interval = setInterval(() => {
-      const pending = magBufferRef.current
-      if (pending.length === 0) return
-      magBufferRef.current = []
-      setLiveMagData((prev) => [...prev, ...pending])
-    }, FLUSH_INTERVAL_MS)
+    const poll = async () => {
+      try {
+        const result = await fetchMagReportsRef.current({
+          sensorIds: [selectedSensorId],
+          since: new Date(Date.now() - RANGE_MS[timeRange]).toISOString(),
+          until: new Date().toISOString(),
+        })
+        if (result?.mag_report?.length) {
+          const newPoints = result.mag_report
+            .sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+            .map(magToPoint)
+          setLiveMagData(newPoints)
+        }
+      } catch {
+        // silent retry on next poll
+      }
+    }
+
+    poll()
+    const interval = setInterval(poll, 2000)
     return () => clearInterval(interval)
-  }, [isLive, timeRange])
+  }, [isLive, selectedSensorId, timeRange, periodOffset])
 
   const magChartData = useMemo<MagChartPoint[]>(() => {
     const magReports = magData?.mag_report ?? []
@@ -442,6 +450,7 @@ export function useMagReportsPage(initialBuildingId?: number | null) {
     magSensorIds,
     selectedSensorId,
     rangeLabels,
+    signals,
     chartData,
     sensorMultiplier,
     timeRange,
