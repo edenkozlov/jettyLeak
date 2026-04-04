@@ -1,3 +1,5 @@
+import { Link } from 'react-router'
+
 import heroVideo from '@/assets/water.mp4'
 
 export function LandingHero() {
@@ -56,12 +58,12 @@ export function LandingHero() {
           </p>
 
           <div className="mt-10 animate-slide-up" style={{ animationDelay: '0.3s' }}>
-            <a
-              href="#interested"
+            <Link
+              to="/quote"
               className="inline-block rounded-full bg-indigo-500 px-8 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:bg-indigo-600 hover:shadow-xl hover:shadow-indigo-500/30"
             >
-              Start Monitoring
-            </a>
+              Get a quote
+            </Link>
           </div>
         </div>
       </div>

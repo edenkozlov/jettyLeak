@@ -24,6 +24,8 @@ const Login = lazy(() => import('@/pages/Login'))
 const Support = lazy(() => import('@/pages/Support'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
+const CompareFlo = lazy(() => import('@/pages/CompareFlo'))
+const GetQuote = lazy(() => import('@/pages/GetQuote'))
 const MagReports = lazy(() => import('@/pages/MagReports'))
 const Reports = lazy(() => import('@/pages/Reports'))
 const BuildingsMap = lazy(() => import('@/pages/BuildingsMap'))
@@ -64,6 +66,8 @@ function AppRoutes() {
           <Route path="/support" element={<Support />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
+          <Route path="/compare/flo-by-moen" element={<CompareFlo />} />
+          <Route path="/quote" element={<GetQuote />} />
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
           </Route>

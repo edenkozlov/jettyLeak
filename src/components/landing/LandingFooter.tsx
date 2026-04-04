@@ -24,6 +24,9 @@ export function LandingFooter() {
           <Link to="/case-study" className="text-[12px] text-gray-400 transition hover:text-gray-600">
             Case Study
           </Link>
+          <Link to="/compare/flo-by-moen" className="text-[12px] text-gray-400 transition hover:text-gray-600">
+            Beluga vs Flo
+          </Link>
           <a
             href="https://pitch.com/v/belugapitchdeck-j52a9r"
             target="_blank"

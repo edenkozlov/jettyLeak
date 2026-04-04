@@ -46,12 +46,12 @@ export function LandingNav() {
           >
             Sign In
           </Link>
-          <a
-            href="#interested"
+          <Link
+            to="/quote"
             className="rounded-full bg-indigo-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-600 sm:px-5 sm:text-[13px]"
           >
-            Get Started
-          </a>
+            Get a quote
+          </Link>
           <button
             type="button"
             onClick={() => setMenuOpen(!menuOpen)}
@@ -126,6 +126,13 @@ export function LandingNav() {
               className="text-[14px] text-gray-500 transition hover:text-gray-900"
             >
               Sign In
+            </Link>
+            <Link
+              to="/quote"
+              onClick={() => setMenuOpen(false)}
+              className="mt-1 inline-flex w-full items-center justify-center rounded-full bg-indigo-500 py-3 text-[14px] font-semibold text-white"
+            >
+              Get a quote
             </Link>
           </div>
         </div>

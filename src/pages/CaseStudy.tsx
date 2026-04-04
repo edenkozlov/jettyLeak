@@ -204,6 +204,7 @@ export default function CaseStudy() {
           <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
             <Link to="/" className="text-[12px] text-gray-400 transition hover:text-gray-600">Home</Link>
             <Link to="/case-study" className="text-[12px] text-gray-400 transition hover:text-gray-600">Case Study</Link>
+            <Link to="/compare/flo-by-moen" className="text-[12px] text-gray-400 transition hover:text-gray-600">Beluga vs Flo</Link>
             <Link to="/login" className="text-[12px] text-gray-400 transition hover:text-gray-600">Sign In</Link>
           </div>
           <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
