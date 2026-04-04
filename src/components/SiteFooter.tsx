@@ -79,23 +79,26 @@ export function SiteFooter({ variant = 'page' }: { variant?: 'landing' | 'page' 
             <nav className="flex flex-col gap-3" aria-label="Product comparisons">
               <NavHeading>Compare</NavHeading>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-x-10">
-                <Link to="/compare/flo-by-moen" className={linkClass}>
+                <Link to="/flo-by-moen-alternative" className={linkClass}>
                   Beluga vs Flo
                 </Link>
-                <Link to="/compare/phyn" className={linkClass}>
+                <Link to="/phyn-alternative" className={linkClass}>
                   Beluga vs Phyn
                 </Link>
-                <Link to="/compare/wint" className={linkClass}>
+                <Link to="/wint-alternative" className={linkClass}>
                   Beluga vs WINT
                 </Link>
-                <Link to="/compare/alert-labs" className={linkClass}>
+                <Link to="/alert-labs-alternative" className={linkClass}>
                   Beluga vs Alert Labs
                 </Link>
-                <Link to="/compare/water-alert" className={linkClass}>
+                <Link to="/water-alert-alternative" className={linkClass}>
                   Beluga vs Water Alert
                 </Link>
-                <Link to="/compare/flume" className={linkClass}>
+                <Link to="/flume-alternative" className={linkClass}>
                   Beluga vs Flume
+                </Link>
+                <Link to="/best-water-monitoring-systems" className={linkClass}>
+                  All Comparisons
                 </Link>
               </div>
             </nav>

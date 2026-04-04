@@ -30,6 +30,7 @@ const CompareWint = lazy(() => import('@/pages/CompareWint'))
 const CompareAlertLabs = lazy(() => import('@/pages/CompareAlertLabs'))
 const CompareWaterAlert = lazy(() => import('@/pages/CompareWaterAlert'))
 const CompareFlume = lazy(() => import('@/pages/CompareFlume'))
+const WaterMonitoringSystems = lazy(() => import('@/pages/WaterMonitoringSystems'))
 const GetQuote = lazy(() => import('@/pages/GetQuote'))
 const Faq = lazy(() => import('@/pages/Faq'))
 const MagReports = lazy(() => import('@/pages/MagReports'))
@@ -72,12 +73,13 @@ function AppRoutes() {
           <Route path="/support" element={<Support />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
-          <Route path="/compare/flo-by-moen" element={<CompareFlo />} />
-          <Route path="/compare/phyn" element={<ComparePhyn />} />
-          <Route path="/compare/wint" element={<CompareWint />} />
-          <Route path="/compare/alert-labs" element={<CompareAlertLabs />} />
-          <Route path="/compare/water-alert" element={<CompareWaterAlert />} />
-          <Route path="/compare/flume" element={<CompareFlume />} />
+          <Route path="/flo-by-moen-alternative" element={<CompareFlo />} />
+          <Route path="/phyn-alternative" element={<ComparePhyn />} />
+          <Route path="/wint-alternative" element={<CompareWint />} />
+          <Route path="/alert-labs-alternative" element={<CompareAlertLabs />} />
+          <Route path="/water-alert-alternative" element={<CompareWaterAlert />} />
+          <Route path="/flume-alternative" element={<CompareFlume />} />
+          <Route path="/best-water-monitoring-systems" element={<WaterMonitoringSystems />} />
           <Route path="/quote" element={<GetQuote />} />
           <Route path="/faq" element={<Faq />} />
           <Route element={<AuthLayout />}>

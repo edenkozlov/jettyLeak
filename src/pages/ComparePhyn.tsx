@@ -1,153 +1,163 @@
-import { useEffect } from 'react'
-import { Link } from 'react-router'
-
-import { BrandLogoMark } from '@/components/BrandLogoMark'
+import {
+  CompareNav,
+  CompareHero,
+  CompareTable,
+  CompareFaq,
+  CompareDisclaimer,
+  CompareCta,
+  CompareOtherSystems,
+  RelatedQuestions,
+  FaqSchema,
+  BreadcrumbSchema,
+  usePageSeo,
+  Bullet,
+  HUB_PATH,
+} from '@/components/ComparePageShell'
 import { SiteFooter } from '@/components/SiteFooter'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
 
-const PAGE_TITLE = 'Beluga vs Phyn: Comparing Water Monitoring Approaches'
+const CANONICAL = '/phyn-alternative'
+const PAGE_TITLE = 'Beluga vs Phyn: Water Monitor Comparison for Buildings'
 const META_DESCRIPTION =
-  'Compare Beluga and Phyn. Understand the difference between leak detection systems and water intelligence platforms.'
+  'Compare Beluga and Phyn. Pressure-based residential leak detection versus building-level water intelligence. Neutral comparison based on publicly available information.'
 
-const COMPARISON_ROWS: { feature: string; beluga: string; phyn: string }[] = [
-  { feature: 'Core purpose', beluga: 'Water system intelligence', phyn: 'Leak detection + shutoff' },
-  { feature: 'Installation', beluga: 'Non-invasive', phyn: 'Installed on main line' },
-  { feature: 'Leak detection', beluga: 'Yes (pattern/anomaly-based)', phyn: 'Yes (pressure sensing)' },
-  { feature: 'Automatic shutoff', beluga: 'Not core feature', phyn: 'Yes' },
-  { feature: 'Usage insights', beluga: 'System-level visibility', phyn: 'Basic usage insights' },
+const TABLE_ROWS: { feature: string; beluga: string; competitor: string }[] = [
+  {
+    feature: 'Core purpose',
+    beluga: 'Water system intelligence and monitoring',
+    competitor: 'Leak detection and automatic shutoff',
+  },
+  {
+    feature: 'Installation',
+    beluga: 'Non-invasive (no pipe cutting)',
+    competitor: 'Installed on main water line',
+  },
+  {
+    feature: 'Leak detection method',
+    beluga: 'Pattern and anomaly-based',
+    competitor: 'Pressure sensing and machine learning',
+  },
+  {
+    feature: 'Automatic shutoff',
+    beluga: 'Not core feature',
+    competitor: 'Yes',
+  },
+  {
+    feature: 'Usage insights',
+    beluga: 'System-level visibility and benchmarking',
+    competitor: 'Basic usage insights',
+  },
   {
     feature: 'Fixture-level understanding',
     beluga: 'Yes (pattern recognition)',
-    phyn: 'Limited',
+    competitor: 'Limited',
   },
-  { feature: 'Target use case', beluga: 'Commercial / multi-unit', phyn: 'Residential' },
-  { feature: 'Monitoring over time', beluga: 'Continuous benchmarking', phyn: 'Event-based alerts' },
+  {
+    feature: 'Target environment',
+    beluga: 'Commercial / multi-unit buildings',
+    competitor: 'Residential homes',
+  },
+  {
+    feature: 'Monitoring over time',
+    beluga: 'Continuous benchmarking and trend analysis',
+    competitor: 'Event-based alerts',
+  },
 ]
 
 const FAQ_ITEMS: { q: string; a: string }[] = [
   {
     q: 'Does Phyn detect small leaks?',
-    a: 'Phyn is designed to detect abnormal pressure patterns, which may include smaller leaks depending on system conditions.',
+    a: 'Phyn is designed to detect abnormal pressure patterns, which may include smaller leaks depending on system conditions. Its primary detection method is pressure-based analysis.',
   },
   {
-    q: 'Is Beluga only for leaks?',
-    a: 'No. Leak detection is one component, but the primary focus is system intelligence and monitoring.',
+    q: 'Is Beluga only for leak detection?',
+    a: 'No. Leak detection is one component, but Beluga\'s primary focus is system intelligence — understanding how water moves through a building, identifying fixtures, and tracking efficiency over time.',
+  },
+  {
+    q: 'Can Phyn be used in commercial buildings?',
+    a: 'Phyn is primarily designed and marketed for residential use. Specific commercial applications may vary and should be confirmed directly with the manufacturer.',
+  },
+  {
+    q: 'How does Phyn compare to Beluga for property managers?',
+    a: 'Phyn is oriented toward individual home protection. Beluga is designed for building-level and portfolio-level visibility, making it potentially more relevant for property managers overseeing multiple units or buildings.',
+  },
+  {
+    q: 'What is the key difference between Phyn and Beluga?',
+    a: 'Phyn focuses on pressure-based leak detection with automatic shutoff for homes. Beluga focuses on continuous water system intelligence for commercial and multi-unit buildings, using non-invasive installation.',
   },
 ]
 
+const RELATED_QUESTIONS = [
+  'What is a good alternative to Phyn for commercial buildings?',
+  'How does Phyn compare to other smart water monitors?',
+  'Is there a non-invasive water monitor for multi-unit buildings?',
+  'What is the best water monitoring system for property managers?',
+]
+
 export default function ComparePhyn() {
-  useEffect(() => {
-    document.title = PAGE_TITLE
-    const meta = document.querySelector('meta[name="description"]')
-    if (meta) {
-      meta.setAttribute('content', META_DESCRIPTION)
-    } else {
-      const el = document.createElement('meta')
-      el.name = 'description'
-      el.content = META_DESCRIPTION
-      document.head.appendChild(el)
-    }
-  }, [])
+  usePageSeo({ title: PAGE_TITLE, description: META_DESCRIPTION, canonicalPath: CANONICAL })
 
   return (
     <div className="min-h-screen bg-white antialiased">
-      <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-xl">
-        <div className="flex h-14 items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-10">
-          <Link to="/" className="flex items-center gap-2">
-            <BrandLogoMark />
-          </Link>
-          <div className="flex items-center gap-4 sm:gap-8">
-            <Link to="/" className="text-[13px] text-gray-400 transition hover:text-gray-700">Home</Link>
-            <Link to="/case-study" className="text-[13px] text-gray-400 transition hover:text-gray-700">Case Study</Link>
-            <Link
-              to="/login"
-              className="rounded-full bg-indigo-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-600 sm:px-5 sm:text-[13px]"
-            >
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <CompareNav />
 
-      <header className="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-cyan-50 pt-28 pb-16 sm:pt-36 sm:pb-24">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(68,87,194,0.10),transparent_50%),radial-gradient(ellipse_at_bottom_right,rgba(6,182,212,0.08),transparent_50%)]" />
-        <div className="absolute top-12 left-1/4 h-64 w-64 rounded-full bg-indigo-200/30 blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 h-48 w-48 rounded-full bg-cyan-200/20 blur-3xl" />
-        <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <p className="text-xs font-semibold tracking-[0.3em] text-indigo-600 uppercase">Comparison</p>
-          <h1 className="mt-5 text-[28px] leading-[1.15] font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl">
-            Beluga vs Phyn
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-[15px] leading-relaxed text-gray-500 sm:text-[16px]">
-            A neutral overview of two different approaches to water monitoring.
-          </p>
-        </div>
-      </header>
+      <CompareHero
+        h1="Beluga vs Phyn"
+        subtitle="A neutral comparison of pressure-based leak shutoff and building-level water intelligence."
+      />
 
       <article className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-20">
         <div className="space-y-16 sm:space-y-24">
+          {/* Intro */}
           <section className="mx-auto max-w-2xl">
             <div className="space-y-4 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]">
               <p>
-                Water monitoring solutions are often grouped together, but they can differ significantly
-                in how they operate and what problems they aim to solve.
+                If you are looking for a Phyn alternative or comparing Beluga vs Phyn, you are
+                likely evaluating smart water monitors and may be deciding between residential leak
+                protection and broader building intelligence. These two products target different
+                environments and different outcomes.
               </p>
               <p>
-                This page compares Beluga and Phyn using publicly available information to help clarify
-                those differences.
+                This page compares Beluga and Phyn using publicly available information to help
+                clarify those differences and assist you in evaluating the right fit.
               </p>
             </div>
           </section>
 
-          <section>
-            <h2 className="text-center text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">
-              Feature comparison
-            </h2>
-            <div className="mt-8 overflow-x-auto">
-              <table className="w-full min-w-[560px] border-collapse text-left text-[14px] sm:text-[15px]">
-                <thead>
-                  <tr className="border-b-2 border-gray-200">
-                    <th className="py-3 pr-4 font-semibold text-gray-500">Feature</th>
-                    <th className="py-3 px-4 font-semibold text-indigo-600">Beluga</th>
-                    <th className="py-3 pl-4 font-semibold text-gray-700">Phyn</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {COMPARISON_ROWS.map((row, i) => (
-                    <tr key={row.feature} className={i % 2 === 0 ? 'bg-gray-50/60' : ''}>
-                      <td className="py-3 pr-4 font-medium text-gray-900">{row.feature}</td>
-                      <td className="py-3 px-4 text-gray-600">{row.beluga}</td>
-                      <td className="py-3 pl-4 text-gray-600">{row.phyn}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <CompareTable competitorLabel="Phyn" rows={TABLE_ROWS} />
 
+          {/* Approach */}
           <section>
             <h2 className="text-center text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">
-              Key difference in approach
+              Key difference: pressure sensing vs system intelligence
             </h2>
             <div className="mx-auto mt-10 grid max-w-3xl gap-6 sm:grid-cols-2">
               <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
-                <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">Phyn</h3>
+                <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">
+                  Phyn — pressure-based detection
+                </h3>
                 <p className="mt-2 text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">
-                  Phyn focuses on detecting leaks through pressure sensing and machine learning. It is
-                  designed primarily for residential protection, with an emphasis on identifying
-                  abnormal water flow and stopping it quickly.
+                  Phyn focuses on detecting leaks through high-resolution pressure sensing and
+                  machine learning. It is designed primarily for residential protection, with an
+                  emphasis on identifying abnormal water flow and stopping it quickly through
+                  automatic shutoff.
                 </p>
               </div>
               <div className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-6 shadow-sm sm:p-8">
-                <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">Beluga</h3>
+                <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">
+                  Beluga — behavioral water intelligence
+                </h3>
                 <p className="mt-2 text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">
-                  Beluga focuses on understanding how a water system behaves over time. It tracks usage
-                  patterns, identifies inefficiencies, and detects anomalies at a system-wide level.
+                  Beluga focuses on understanding how a water system behaves over time. It tracks
+                  usage patterns, identifies individual fixtures, detects inefficiencies, and
+                  builds a system-wide model that surfaces insights continuously — not just when
+                  something goes wrong.
                 </p>
               </div>
             </div>
           </section>
 
+          {/* When each makes sense */}
           <section>
             <h2 className="text-center text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">
               When each solution makes sense
@@ -158,18 +168,10 @@ export default function ComparePhyn() {
                   Phyn may be a good fit if:
                 </h3>
                 <ul className="mt-4 space-y-2 text-[14px] leading-relaxed text-gray-600 sm:text-[15px]">
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
-                    You want automatic shutoff
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
-                    You are protecting a home
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
-                    Your focus is leak prevention
-                  </li>
+                  <Bullet>You want automatic shutoff protection for a home</Bullet>
+                  <Bullet>You are focused on residential leak prevention</Bullet>
+                  <Bullet>You prefer pressure-based sensing technology</Bullet>
+                  <Bullet>Your primary concern is stopping active leaks quickly</Bullet>
                 </ul>
               </div>
               <div className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-6 sm:p-8">
@@ -177,110 +179,52 @@ export default function ComparePhyn() {
                   Beluga may be a better fit if:
                 </h3>
                 <ul className="mt-4 space-y-2 text-[14px] leading-relaxed text-gray-600 sm:text-[15px]">
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
-                    You manage larger or multi-unit properties
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
-                    You want insight into system behavior
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
-                    You are optimizing usage and infrastructure
-                  </li>
+                  <Bullet variant="indigo">You manage larger or multi-unit properties</Bullet>
+                  <Bullet variant="indigo">You want insight into system behavior, not just leak events</Bullet>
+                  <Bullet variant="indigo">You are optimizing usage, infrastructure, and efficiency</Bullet>
+                  <Bullet variant="indigo">You need a non-invasive installation with no plumbing modifications</Bullet>
                 </ul>
               </div>
             </div>
           </section>
 
+          {/* About Beluga */}
           <section className="mx-auto max-w-2xl">
-            <h2 className="text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">About Beluga</h2>
+            <h2 className="text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">
+              About Beluga
+            </h2>
             <div className="mt-4 space-y-4 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]">
               <p>
                 Beluga is a water intelligence platform designed to help buildings better understand
-                their plumbing systems.
+                their plumbing systems. Using a non-invasive sensor approach, it provides continuous
+                insight into water usage, system behavior, and potential inefficiencies — without
+                requiring modifications to existing infrastructure.
               </p>
               <p>
-                Using a non-invasive sensor approach, it provides continuous insight into water usage,
-                system behavior, and potential inefficiencies — without requiring modifications to
-                existing infrastructure.
+                The goal is not only to detect problems, but to make the entire water system more
+                visible, measurable, and manageable over time.
               </p>
             </div>
           </section>
 
-          <section>
-            <h2 className="text-center text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">
-              Frequently asked questions
-            </h2>
-            <dl className="mx-auto mt-10 max-w-2xl divide-y divide-gray-200">
-              {FAQ_ITEMS.map((item) => (
-                <div key={item.q} className="py-6 first:pt-0 last:pb-0">
-                  <dt className="text-[15px] font-semibold text-gray-900 sm:text-[16px]">{item.q}</dt>
-                  <dd className="mt-2 text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">{item.a}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-
-          <section className="mx-auto max-w-2xl rounded-xl border border-gray-200 bg-gray-50 p-5 sm:p-6">
-            <h3 className="text-[13px] font-semibold tracking-wide text-gray-500 uppercase">Disclaimer</h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-gray-400">
-              This page is for informational purposes only. Information is based on publicly available
-              sources and may change. This content is not affiliated with or endorsed by Phyn.
-            </p>
-          </section>
+          <CompareFaq items={FAQ_ITEMS} />
+          <CompareDisclaimer competitorName="Phyn" />
         </div>
 
-        <div className="mt-16 border-t border-gray-100 pt-12 sm:mt-24 sm:pt-16">
-          <div className="mx-auto max-w-lg text-center sm:text-left">
-            <h2 className="text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">Get Beluga</h2>
-            <p className="mt-2 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]">
-              Early access, building water assessments, and a clear read on whether Beluga is the right
-              tool for you.
-            </p>
-            <Link
-              to="/quote"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-indigo-500 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-600 hover:shadow-xl sm:w-auto"
-            >
-              Get Beluga
-            </Link>
-          </div>
-
-          <div className="mx-auto mt-12 max-w-lg border-t border-gray-100 pt-12 text-center sm:text-left">
-            <h2 className="text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">Get Phyn</h2>
-            <p className="mt-2 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]">
-              Product details and purchase options are on Phyn&apos;s site—we don&apos;t sell or install Phyn.
-            </p>
-            <a
-              href="https://phyn.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-gray-900 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-gray-900/20 transition hover:bg-gray-800 hover:shadow-xl sm:w-auto"
-            >
-              Get Phyn
-            </a>
-          </div>
-        </div>
+        <CompareCta competitorName="Phyn" competitorUrl="https://phyn.com/" />
+        <RelatedQuestions questions={RELATED_QUESTIONS} />
+        <CompareOtherSystems currentPath={CANONICAL} />
       </article>
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'FAQPage',
-            mainEntity: FAQ_ITEMS.map((item) => ({
-              '@type': 'Question',
-              name: item.q,
-              acceptedAnswer: { '@type': 'Answer', text: item.a },
-            })),
-          }),
-        }}
+      <FaqSchema items={FAQ_ITEMS} />
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', path: '/' },
+          { name: 'Best Water Monitoring Systems', path: HUB_PATH },
+          { name: 'Beluga vs Phyn', path: CANONICAL },
+        ]}
       />
-
       <SiteFooter variant="page" />
-
       <ScrollToTopButton />
     </div>
   )

@@ -1,157 +1,180 @@
-import { useEffect } from 'react'
-import { Link } from 'react-router'
-
-import { BrandLogoMark } from '@/components/BrandLogoMark'
+import {
+  CompareNav,
+  CompareHero,
+  CompareTable,
+  CompareFaq,
+  CompareDisclaimer,
+  CompareCta,
+  CompareOtherSystems,
+  RelatedQuestions,
+  FaqSchema,
+  BreadcrumbSchema,
+  usePageSeo,
+  Bullet,
+  HUB_PATH,
+} from '@/components/ComparePageShell'
 import { SiteFooter } from '@/components/SiteFooter'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
 
-const PAGE_TITLE = 'Beluga vs WINT: Water Intelligence Systems Compared'
+const CANONICAL = '/wint-alternative'
+const PAGE_TITLE = 'Beluga vs WINT: Commercial Water Monitoring Compared'
 const META_DESCRIPTION =
-  'Compare Beluga and WINT. Explore differences in installation, monitoring approach, and system visibility.'
+  'Compare Beluga and WINT for commercial buildings. Two approaches to water monitoring — leak shutoff vs continuous system intelligence. Neutral, fact-based comparison.'
 
-const COMPARISON_ROWS: { feature: string; beluga: string; wint: string }[] = [
+const TABLE_ROWS: { feature: string; beluga: string; competitor: string }[] = [
   {
     feature: 'Core purpose',
-    beluga: 'Water intelligence + system visibility',
-    wint: 'Leak detection + water management',
+    beluga: 'Water intelligence and system visibility',
+    competitor: 'Leak detection and water management',
   },
-  { feature: 'Installation', beluga: 'Non-invasive', wint: 'Typically requires inline installation' },
-  { feature: 'Leak detection', beluga: 'Yes', wint: 'Yes' },
-  { feature: 'Automatic shutoff', beluga: 'Not core feature', wint: 'Yes' },
-  { feature: 'Usage insights', beluga: 'Deep system-level insights', wint: 'Usage tracking + alerts' },
+  {
+    feature: 'Installation approach',
+    beluga: 'Non-invasive (no pipe modification)',
+    competitor: 'Typically requires inline installation',
+  },
+  {
+    feature: 'Leak detection',
+    beluga: 'Yes (pattern and anomaly-based)',
+    competitor: 'Yes (flow-based with shutoff)',
+  },
+  {
+    feature: 'Automatic shutoff',
+    beluga: 'Not core feature',
+    competitor: 'Yes',
+  },
+  {
+    feature: 'System intelligence',
+    beluga: 'Deep, system-level behavioral insights',
+    competitor: 'Usage tracking with alerting',
+  },
   {
     feature: 'Fixture-level understanding',
-    beluga: 'Yes (pattern-based)',
-    wint: 'Limited',
+    beluga: 'Yes (pattern recognition)',
+    competitor: 'Limited',
   },
-  { feature: 'Target use case', beluga: 'Commercial / multi-unit', wint: 'Commercial / construction' },
-  { feature: 'Deployment complexity', beluga: 'Low', wint: 'Moderate' },
+  {
+    feature: 'Target environment',
+    beluga: 'Commercial / multi-unit buildings',
+    competitor: 'Commercial / construction sites',
+  },
+  {
+    feature: 'Deployment complexity',
+    beluga: 'Low (minimal hardware)',
+    competitor: 'Moderate (inline hardware required)',
+  },
+  {
+    feature: 'Monitoring philosophy',
+    beluga: 'Continuous behavioral modeling',
+    competitor: 'Real-time flow monitoring + alerts',
+  },
 ]
 
 const FAQ_ITEMS: { q: string; a: string }[] = [
   {
-    q: 'Is WINT used in buildings or construction sites?',
-    a: 'WINT is commonly used in both, particularly where leak prevention is critical.',
+    q: 'Is WINT used in commercial buildings or construction sites?',
+    a: 'WINT is commonly associated with both commercial buildings and construction environments, particularly where active leak prevention and water damage mitigation are priorities.',
   },
   {
     q: 'Does Beluga require plumbing modifications?',
-    a: 'No. Beluga is designed to be installed without altering existing infrastructure.',
+    a: 'No. Beluga is designed to be installed non-invasively, without altering existing piping or infrastructure. This can significantly reduce deployment time and cost.',
+  },
+  {
+    q: 'Can WINT provide system-wide water intelligence?',
+    a: 'WINT provides flow-based monitoring and alerting. Broader system intelligence — such as fixture identification and behavioral analysis — is a different focus area, which is central to Beluga\'s approach.',
+  },
+  {
+    q: 'Which system is better for a building operations team?',
+    a: 'It depends on the team\'s priorities. If real-time shutoff capability is essential, WINT may be a strong fit. If the goal is deeper understanding of how water is used across the building over time, Beluga\'s intelligence-first approach may be more aligned.',
+  },
+  {
+    q: 'How do deployment timelines compare between Beluga and WINT?',
+    a: 'Beluga\'s non-invasive approach generally allows for faster deployment with minimal disruption. WINT installations may require more coordination due to inline hardware requirements. Specific timelines depend on building configuration.',
+  },
+  {
+    q: 'Are Beluga and WINT designed for the same use cases?',
+    a: 'Both operate in the commercial water monitoring space, but they prioritize different things. WINT emphasizes leak detection and shutoff. Beluga emphasizes system visibility, pattern recognition, and long-term monitoring intelligence.',
   },
 ]
 
+const RELATED_QUESTIONS = [
+  'What is the best WINT alternative for commercial water monitoring?',
+  'How does WINT compare to other building water management systems?',
+  'What is the difference between leak shutoff and water intelligence?',
+  'Which water monitoring system is best for building operations teams?',
+  'Is non-invasive water monitoring effective in commercial buildings?',
+]
+
 export default function CompareWint() {
-  useEffect(() => {
-    document.title = PAGE_TITLE
-    const meta = document.querySelector('meta[name="description"]')
-    if (meta) {
-      meta.setAttribute('content', META_DESCRIPTION)
-    } else {
-      const el = document.createElement('meta')
-      el.name = 'description'
-      el.content = META_DESCRIPTION
-      document.head.appendChild(el)
-    }
-  }, [])
+  usePageSeo({ title: PAGE_TITLE, description: META_DESCRIPTION, canonicalPath: CANONICAL })
 
   return (
     <div className="min-h-screen bg-white antialiased">
-      <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-xl">
-        <div className="flex h-14 items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-10">
-          <Link to="/" className="flex items-center gap-2">
-            <BrandLogoMark />
-          </Link>
-          <div className="flex items-center gap-4 sm:gap-8">
-            <Link to="/" className="text-[13px] text-gray-400 transition hover:text-gray-700">Home</Link>
-            <Link to="/case-study" className="text-[13px] text-gray-400 transition hover:text-gray-700">Case Study</Link>
-            <Link
-              to="/login"
-              className="rounded-full bg-indigo-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-600 sm:px-5 sm:text-[13px]"
-            >
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <CompareNav />
 
-      <header className="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-cyan-50 pt-28 pb-16 sm:pt-36 sm:pb-24">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(68,87,194,0.10),transparent_50%),radial-gradient(ellipse_at_bottom_right,rgba(6,182,212,0.08),transparent_50%)]" />
-        <div className="absolute top-12 left-1/4 h-64 w-64 rounded-full bg-indigo-200/30 blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 h-48 w-48 rounded-full bg-cyan-200/20 blur-3xl" />
-        <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <p className="text-xs font-semibold tracking-[0.3em] text-indigo-600 uppercase">Comparison</p>
-          <h1 className="mt-5 text-[28px] leading-[1.15] font-bold tracking-tight text-gray-900 sm:text-4xl md:text-5xl">
-            Beluga vs WINT
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-[15px] leading-relaxed text-gray-500 sm:text-[16px]">
-            A neutral overview of two different approaches to water monitoring.
-          </p>
-        </div>
-      </header>
+      <CompareHero
+        h1="Beluga vs WINT"
+        subtitle="A detailed, neutral comparison of two commercial water monitoring platforms — leak mitigation versus system intelligence."
+      />
 
       <article className="mx-auto max-w-4xl px-4 py-12 sm:px-6 sm:py-20">
         <div className="space-y-16 sm:space-y-24">
+          {/* Intro */}
           <section className="mx-auto max-w-2xl">
             <div className="space-y-4 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]">
               <p>
-                As water monitoring becomes more advanced, some systems now focus on broader
-                infrastructure intelligence rather than only leak detection.
+                If you are evaluating a WINT alternative or comparing Beluga vs WINT, you are
+                likely managing a commercial property where water monitoring is an operational
+                priority. Both platforms serve this space, but they reflect different philosophies
+                in how buildings should interact with their water infrastructure.
               </p>
               <p>
-                This page compares Beluga and WINT to highlight differences in approach and deployment.
+                This page compares Beluga and WINT based on publicly available information to help
+                building owners, operators, and facilities teams evaluate the right approach.
               </p>
             </div>
           </section>
 
-          <section>
-            <h2 className="text-center text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">
-              Feature comparison
-            </h2>
-            <div className="mt-8 overflow-x-auto">
-              <table className="w-full min-w-[560px] border-collapse text-left text-[14px] sm:text-[15px]">
-                <thead>
-                  <tr className="border-b-2 border-gray-200">
-                    <th className="py-3 pr-4 font-semibold text-gray-500">Feature</th>
-                    <th className="py-3 px-4 font-semibold text-indigo-600">Beluga</th>
-                    <th className="py-3 pl-4 font-semibold text-gray-700">WINT</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {COMPARISON_ROWS.map((row, i) => (
-                    <tr key={row.feature} className={i % 2 === 0 ? 'bg-gray-50/60' : ''}>
-                      <td className="py-3 pr-4 font-medium text-gray-900">{row.feature}</td>
-                      <td className="py-3 px-4 text-gray-600">{row.beluga}</td>
-                      <td className="py-3 pl-4 text-gray-600">{row.wint}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <CompareTable competitorLabel="WINT" rows={TABLE_ROWS} />
 
+          {/* Key differences */}
           <section>
             <h2 className="text-center text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">
-              Key difference in approach
+              Key difference: shutoff vs intelligence
             </h2>
             <div className="mx-auto mt-10 grid max-w-3xl gap-6 sm:grid-cols-2">
               <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
-                <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">WINT</h3>
+                <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">
+                  WINT — real-time leak management
+                </h3>
                 <p className="mt-2 text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">
-                  WINT focuses on monitoring water flow in real time and detecting leaks, often with
-                  shutoff capabilities. It is commonly used in commercial and construction
-                  environments to reduce water damage risk.
+                  WINT focuses on monitoring water flow in real time, detecting leaks, and providing
+                  automatic shutoff capabilities. It is commonly used in commercial and construction
+                  environments where preventing water damage is an immediate operational concern.
+                </p>
+                <p className="mt-3 text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">
+                  This approach is well suited for teams that need rapid, automated response to
+                  active leak events.
                 </p>
               </div>
               <div className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-6 shadow-sm sm:p-8">
-                <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">Beluga</h3>
+                <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">
+                  Beluga — continuous system intelligence
+                </h3>
                 <p className="mt-2 text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">
-                  Beluga emphasizes understanding the full behavior of a water system. Rather than
-                  focusing only on flow events, it builds a continuous model of usage, enabling early
-                  detection of inefficiencies and long-term performance tracking.
+                  Beluga emphasizes understanding the full behavior of a building&apos;s water system.
+                  Rather than focusing only on flow events, it builds a continuous model of usage,
+                  enabling early detection of inefficiencies, fixture-level identification, and
+                  long-term performance tracking.
+                </p>
+                <p className="mt-3 text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">
+                  This approach is designed for teams that want to understand how water moves
+                  through a building — not just react when something goes wrong.
                 </p>
               </div>
             </div>
           </section>
 
+          {/* When each makes sense */}
           <section>
             <h2 className="text-center text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">
               When each solution makes sense
@@ -162,125 +185,63 @@ export default function CompareWint() {
                   WINT may be a strong fit if:
                 </h3>
                 <ul className="mt-4 space-y-2 text-[14px] leading-relaxed text-gray-600 sm:text-[15px]">
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
-                    You need real-time shutoff in commercial environments
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-gray-400" />
-                    You are focused on risk mitigation during construction or operations
-                  </li>
+                  <Bullet>You need real-time automatic shutoff in commercial environments</Bullet>
+                  <Bullet>Your primary concern is mitigating water damage risk during operations or construction</Bullet>
+                  <Bullet>You have the infrastructure to support inline hardware installation</Bullet>
+                  <Bullet>Your team needs event-based alerting tied to flow anomalies</Bullet>
                 </ul>
               </div>
               <div className="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-6 sm:p-8">
                 <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">
-                  Beluga may be a better fit if:
+                  Beluga may be a stronger fit if:
                 </h3>
                 <ul className="mt-4 space-y-2 text-[14px] leading-relaxed text-gray-600 sm:text-[15px]">
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
-                    You want non-invasive deployment
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
-                    You need long-term system intelligence
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
-                    You want to understand usage patterns and inefficiencies
-                  </li>
+                  <Bullet variant="indigo">You want non-invasive deployment with minimal disruption</Bullet>
+                  <Bullet variant="indigo">You need long-term water system intelligence, not just event alerts</Bullet>
+                  <Bullet variant="indigo">You want to understand usage patterns, track fixtures, and benchmark performance</Bullet>
+                  <Bullet variant="indigo">You manage multi-unit or portfolio properties and need scalable visibility</Bullet>
                 </ul>
               </div>
             </div>
           </section>
 
+          {/* About Beluga */}
           <section className="mx-auto max-w-2xl">
-            <h2 className="text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">About Beluga</h2>
+            <h2 className="text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">
+              About Beluga
+            </h2>
             <div className="mt-4 space-y-4 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]">
               <p>
                 Beluga is a water intelligence platform designed to help buildings better understand
-                their plumbing systems.
+                their plumbing systems. Using a non-invasive sensor approach, it provides continuous
+                insight into water usage, system behavior, and potential inefficiencies — without
+                requiring modifications to existing infrastructure.
               </p>
               <p>
-                Using a non-invasive sensor approach, it provides continuous insight into water usage,
-                system behavior, and potential inefficiencies — without requiring modifications to
-                existing infrastructure.
+                The platform is built for building owners, operators, and property managers who want
+                to move beyond reactive leak detection toward proactive water system visibility.
               </p>
             </div>
           </section>
 
-          <section>
-            <h2 className="text-center text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">
-              Frequently asked questions
-            </h2>
-            <dl className="mx-auto mt-10 max-w-2xl divide-y divide-gray-200">
-              {FAQ_ITEMS.map((item) => (
-                <div key={item.q} className="py-6 first:pt-0 last:pb-0">
-                  <dt className="text-[15px] font-semibold text-gray-900 sm:text-[16px]">{item.q}</dt>
-                  <dd className="mt-2 text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">{item.a}</dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-
-          <section className="mx-auto max-w-2xl rounded-xl border border-gray-200 bg-gray-50 p-5 sm:p-6">
-            <h3 className="text-[13px] font-semibold tracking-wide text-gray-500 uppercase">Disclaimer</h3>
-            <p className="mt-2 text-[13px] leading-relaxed text-gray-400">
-              This content is for informational purposes only. Information is based on publicly
-              available sources and may change. This page is not affiliated with or endorsed by WINT.
-            </p>
-          </section>
+          <CompareFaq items={FAQ_ITEMS} />
+          <CompareDisclaimer competitorName="WINT" />
         </div>
 
-        <div className="mt-16 border-t border-gray-100 pt-12 sm:mt-24 sm:pt-16">
-          <div className="mx-auto max-w-lg text-center sm:text-left">
-            <h2 className="text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">Get Beluga</h2>
-            <p className="mt-2 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]">
-              Early access, building water assessments, and a clear read on whether Beluga is the right
-              tool for you.
-            </p>
-            <Link
-              to="/quote"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-indigo-500 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-600 hover:shadow-xl sm:w-auto"
-            >
-              Get Beluga
-            </Link>
-          </div>
-
-          <div className="mx-auto mt-12 max-w-lg border-t border-gray-100 pt-12 text-center sm:text-left">
-            <h2 className="text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">Get WINT</h2>
-            <p className="mt-2 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]">
-              Product details and demos are on WINT&apos;s site—we don&apos;t sell or install WINT.
-            </p>
-            <a
-              href="https://wint.ai/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-6 inline-flex w-full items-center justify-center rounded-full bg-gray-900 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-gray-900/20 transition hover:bg-gray-800 hover:shadow-xl sm:w-auto"
-            >
-              Get WINT
-            </a>
-          </div>
-        </div>
+        <CompareCta competitorName="WINT" competitorUrl="https://wint.ai/" />
+        <RelatedQuestions questions={RELATED_QUESTIONS} />
+        <CompareOtherSystems currentPath={CANONICAL} />
       </article>
 
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            '@context': 'https://schema.org',
-            '@type': 'FAQPage',
-            mainEntity: FAQ_ITEMS.map((item) => ({
-              '@type': 'Question',
-              name: item.q,
-              acceptedAnswer: { '@type': 'Answer', text: item.a },
-            })),
-          }),
-        }}
+      <FaqSchema items={FAQ_ITEMS} />
+      <BreadcrumbSchema
+        items={[
+          { name: 'Home', path: '/' },
+          { name: 'Best Water Monitoring Systems', path: HUB_PATH },
+          { name: 'Beluga vs WINT', path: CANONICAL },
+        ]}
       />
-
       <SiteFooter variant="page" />
-
       <ScrollToTopButton />
     </div>
   )
