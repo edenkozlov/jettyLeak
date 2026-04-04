@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 
 import { BrandLogoMark } from '@/components/BrandLogoMark'
 import { QuoteForm } from '@/components/QuoteForm'
+import { SiteFooter } from '@/components/SiteFooter'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
 
 export default function GetQuote() {
@@ -31,6 +32,8 @@ export default function GetQuote() {
           <QuoteForm />
         </div>
       </main>
+
+      <SiteFooter variant="page" />
 
       <ScrollToTopButton />
     </div>

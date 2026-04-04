@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 
-import { BrandLogoMark, BRAND_LOGO_FOOTER_CLASS } from '@/components/BrandLogoMark'
+import { BrandLogoMark } from '@/components/BrandLogoMark'
+import { SiteFooter } from '@/components/SiteFooter'
 import cs1 from '@/assets/CS1.jpg'
 import cs2 from '@/assets/CS2.jpg'
 import cs3 from '@/assets/CS3.jpg'
@@ -195,26 +196,7 @@ export default function CaseStudy() {
         </div>
       </article>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-100 bg-white py-8 sm:py-10">
-        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 px-4 sm:gap-6 sm:px-6 md:flex-row">
-          <Link to="/" className="flex items-center gap-2">
-            <BrandLogoMark className={BRAND_LOGO_FOOTER_CLASS} />
-          </Link>
-          <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
-            <Link to="/" className="text-[12px] text-gray-400 transition hover:text-gray-600">Home</Link>
-            <Link to="/case-study" className="text-[12px] text-gray-400 transition hover:text-gray-600">Case Study</Link>
-            <Link to="/compare/flo-by-moen" className="text-[12px] text-gray-400 transition hover:text-gray-600">Beluga vs Flo</Link>
-            <Link to="/login" className="text-[12px] text-gray-400 transition hover:text-gray-600">Sign In</Link>
-          </div>
-          <div className="flex flex-wrap justify-center gap-5 sm:gap-8">
-            <Link to="/support" className="text-[12px] text-gray-400 transition hover:text-gray-600">Support</Link>
-            <Link to="/privacy" className="text-[12px] text-gray-400 transition hover:text-gray-600">Privacy Policy</Link>
-            <Link to="/terms" className="text-[12px] text-gray-400 transition hover:text-gray-600">Terms of Service</Link>
-          </div>
-          <p className="text-[12px] text-gray-300">&copy; {new Date().getFullYear()} Beluga — Made in Canada</p>
-        </div>
-      </footer>
+      <SiteFooter variant="page" />
 
       <ScrollToTopButton />
     </div>

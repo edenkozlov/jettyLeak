@@ -25,7 +25,10 @@ const Support = lazy(() => import('@/pages/Support'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
 const CompareFlo = lazy(() => import('@/pages/CompareFlo'))
+const ComparePhyn = lazy(() => import('@/pages/ComparePhyn'))
+const CompareWint = lazy(() => import('@/pages/CompareWint'))
 const GetQuote = lazy(() => import('@/pages/GetQuote'))
+const Faq = lazy(() => import('@/pages/Faq'))
 const MagReports = lazy(() => import('@/pages/MagReports'))
 const Reports = lazy(() => import('@/pages/Reports'))
 const BuildingsMap = lazy(() => import('@/pages/BuildingsMap'))
@@ -67,7 +70,10 @@ function AppRoutes() {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/compare/flo-by-moen" element={<CompareFlo />} />
+          <Route path="/compare/phyn" element={<ComparePhyn />} />
+          <Route path="/compare/wint" element={<CompareWint />} />
           <Route path="/quote" element={<GetQuote />} />
+          <Route path="/faq" element={<Faq />} />
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
           </Route>
