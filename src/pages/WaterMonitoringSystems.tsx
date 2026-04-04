@@ -26,8 +26,8 @@ const SYSTEMS: {
     name: 'Beluga',
     summary:
       'A water intelligence platform focused on system visibility, usage insights, and anomaly detection for commercial and multi-unit buildings. Uses non-invasive installation and pattern recognition to identify fixtures and track system behavior over time.',
-    path: '/quote',
-    tags: ['Water intelligence', 'Non-invasive', 'Commercial'],
+    path: '/',
+    tags: ['Water intelligence', 'Non-invasive', 'Commercial', 'Residential'],
   },
   {
     name: 'Flo by Moen',
