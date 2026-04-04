@@ -27,6 +27,9 @@ const Terms = lazy(() => import('@/pages/Terms'))
 const CompareFlo = lazy(() => import('@/pages/CompareFlo'))
 const ComparePhyn = lazy(() => import('@/pages/ComparePhyn'))
 const CompareWint = lazy(() => import('@/pages/CompareWint'))
+const CompareAlertLabs = lazy(() => import('@/pages/CompareAlertLabs'))
+const CompareWaterAlert = lazy(() => import('@/pages/CompareWaterAlert'))
+const CompareFlume = lazy(() => import('@/pages/CompareFlume'))
 const GetQuote = lazy(() => import('@/pages/GetQuote'))
 const Faq = lazy(() => import('@/pages/Faq'))
 const MagReports = lazy(() => import('@/pages/MagReports'))
@@ -72,6 +75,9 @@ function AppRoutes() {
           <Route path="/compare/flo-by-moen" element={<CompareFlo />} />
           <Route path="/compare/phyn" element={<ComparePhyn />} />
           <Route path="/compare/wint" element={<CompareWint />} />
+          <Route path="/compare/alert-labs" element={<CompareAlertLabs />} />
+          <Route path="/compare/water-alert" element={<CompareWaterAlert />} />
+          <Route path="/compare/flume" element={<CompareFlume />} />
           <Route path="/quote" element={<GetQuote />} />
           <Route path="/faq" element={<Faq />} />
           <Route element={<AuthLayout />}>
