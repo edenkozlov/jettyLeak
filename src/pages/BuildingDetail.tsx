@@ -30,6 +30,7 @@ import {
   UPDATE_SENSOR_POSITION,
 } from '@/mutations/sensorMutations'
 import type { Building, Fixture, FixtureType, Sensor } from '@/types'
+import { isCertificationEligible } from '@/utils/certification'
 
 // Ray-casting point-in-polygon test
 function pointInPolygon(
@@ -462,10 +463,30 @@ export default function BuildingDetail() {
               )}
             </div>
 
+            {/* Certification link */}
+            <button
+              onClick={() => navigate(`/dashboard/buildings/${id}/certification`, {
+                state: { bhi: instantBhi, bhiLabel: instantBhiLabel },
+              })}
+              className={`ml-auto shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                isCertificationEligible(instantBhi)
+                  ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30'
+                  : 'bg-gray-50 text-gray-400 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-500 dark:hover:bg-gray-700'
+              }`}
+              title="Building Certification"
+            >
+              <span className="flex items-center gap-1.5">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                Certification
+              </span>
+            </button>
+
             {/* Edit toggle */}
             <button
               onClick={() => setEditingPanel((v) => !v)}
-              className={`ml-auto shrink-0 rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300 ${editingPanel ? 'bg-gray-100 text-indigo-500 dark:bg-gray-700 dark:text-indigo-400' : ''}`}
+              className={`shrink-0 rounded-lg p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300 ${editingPanel ? 'bg-gray-100 text-indigo-500 dark:bg-gray-700 dark:text-indigo-400' : ''}`}
               title="Edit building details"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

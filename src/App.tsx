@@ -39,6 +39,7 @@ const BuildingsMap = lazy(() => import('@/pages/BuildingsMap'))
 const Sensors = lazy(() => import('@/pages/Sensors'))
 const Admin = lazy(() => import('@/pages/Admin'))
 const Settings = lazy(() => import('@/pages/Settings'))
+const BuildingCertification = lazy(() => import('@/pages/BuildingCertification'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -90,6 +91,7 @@ function AppRoutes() {
             <Route path="buildings" element={<Buildings />} />
             <Route path="buildings/map" element={<BuildingsMap />} />
             <Route path="buildings/:id" element={<BuildingDetail />} />
+            <Route path="buildings/:id/certification" element={<BuildingCertification />} />
             <Route path="reports/:sensorId?" element={<Reports />} />
             <Route path="reports/:sensorId/:timeWindow/raw" element={<Reports />} />
             <Route path="reports/:sensorId/:timeWindow/flow" element={<Reports />} />
