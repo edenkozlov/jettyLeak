@@ -15,4 +15,6 @@ export interface Client {
       aggregate: { count: number }
     }
   }[]
+  users?: { id: string; role: string; email: string | null }[]
+  users_count?: number
 }

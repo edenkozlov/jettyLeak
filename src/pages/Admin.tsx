@@ -12,6 +12,7 @@ import {
 
 import { useGraphQL } from '@/hooks/useGraphQL'
 import { useTheme } from '@/contexts/ThemeContext'
+import { supabase } from '@/lib/supabase'
 import { GET_PREDICTED_SIGNALS } from '@/queries/getPredictedSignals'
 import { GET_LABELS } from '@/queries/getLabels'
 import { GET_SENSORS } from '@/queries/getSensors'
@@ -22,7 +23,7 @@ import type { MagReport } from '@/types/magReport'
 
 const EXPRESS_URL = import.meta.env.VITE_EXPRESS_ENDPOINT || 'http://localhost:3000'
 
-type Tab = 'predictions' | 'labels' | 'retrain' | 'firmware' | 'bluetooth'
+type Tab = 'predictions' | 'labels' | 'retrain' | 'firmware' | 'bluetooth' | 'invites'
 
 interface PredictedSignal {
   id: number
@@ -111,6 +112,7 @@ const TAB_ITEMS: { key: Tab; label: string }[] = [
   { key: 'retrain', label: 'Tools' },
   { key: 'firmware', label: 'Firmware' },
   { key: 'bluetooth', label: 'Bluetooth' },
+  { key: 'invites', label: 'Invite Codes' },
 ]
 
 // BLE UUIDs — must match the sensor firmware
@@ -830,11 +832,110 @@ export default function Admin() {
     command: BluetoothRemoteGATTCharacteristic
   } | null>(null)
 
+  // Invite codes state
+  interface InviteCode {
+    id: string
+    code: string
+    client_id: string
+    created_at: string
+    used_by: string | null
+    used_at: string | null
+    expires_at: string | null
+    client_first_name?: string | null
+    client_last_name?: string | null
+  }
+  const [inviteCodes, setInviteCodes] = useState<InviteCode[]>([])
+  const [inviteClients, setInviteClients] = useState<{ id: string; first_name: string | null; last_name: string | null; email: string | null }[]>([])
+  const [inviteSelectedClient, setInviteSelectedClient] = useState('')
+  const [inviteLoading, setInviteLoading] = useState(false)
+  const [inviteGenerating, setInviteGenerating] = useState(false)
+  const [inviteCopied, setInviteCopied] = useState<string | null>(null)
+  const [inviteError, setInviteError] = useState('')
+
+  const fetchInviteCodes = useCallback(async () => {
+    setInviteLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('invite_codes')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+
+      const clientIds = [...new Set((data ?? []).map((c: any) => c.client_id))]
+      let clientMap: Record<string, { first_name: string | null; last_name: string | null }> = {}
+      if (clientIds.length > 0) {
+        const { data: clients } = await supabase
+          .from('client')
+          .select('id, first_name, last_name')
+          .in('id', clientIds)
+        if (clients) {
+          for (const c of clients) clientMap[c.id] = { first_name: c.first_name, last_name: c.last_name }
+        }
+      }
+
+      setInviteCodes((data ?? []).map((c: any) => ({
+        ...c,
+        client_first_name: clientMap[c.client_id]?.first_name ?? null,
+        client_last_name: clientMap[c.client_id]?.last_name ?? null,
+      })))
+    } catch (e: unknown) {
+      setInviteError(e instanceof Error ? e.message : 'Failed to load invite codes')
+    } finally {
+      setInviteLoading(false)
+    }
+  }, [])
+
+  const fetchInviteClients = useCallback(async () => {
+    const { data } = await supabase
+      .from('client')
+      .select('id, first_name, last_name, email')
+      .order('created_at', { ascending: false })
+    setInviteClients(data ?? [])
+  }, [])
+
+  function generateCode(): string {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+    let result = ''
+    for (let i = 0; i < 8; i++) result += chars[Math.floor(Math.random() * chars.length)]
+    return result
+  }
+
+  const handleGenerateInvite = useCallback(async () => {
+    if (!inviteSelectedClient) return
+    setInviteGenerating(true)
+    setInviteError('')
+    try {
+      const code = generateCode()
+      const { error } = await supabase
+        .from('invite_codes')
+        .insert({ code, client_id: inviteSelectedClient })
+      if (error) throw error
+      await fetchInviteCodes()
+    } catch (e: unknown) {
+      setInviteError(e instanceof Error ? e.message : 'Failed to generate invite code')
+    } finally {
+      setInviteGenerating(false)
+    }
+  }, [inviteSelectedClient, fetchInviteCodes])
+
+  const handleCopyCode = useCallback((code: string) => {
+    navigator.clipboard.writeText(code)
+    setInviteCopied(code)
+    setTimeout(() => setInviteCopied(null), 2000)
+  }, [])
+
   const sensors = sensorsData?.sensor ?? []
   const predictions = predictionsData?.predicted_signal ?? []
   const labels = labelsData?.signal ?? []
 
   useEffect(() => { fetchSensorsRef.current() }, [])
+
+  useEffect(() => {
+    if (activeTab === 'invites') {
+      fetchInviteCodes()
+      fetchInviteClients()
+    }
+  }, [activeTab, fetchInviteCodes, fetchInviteClients])
 
   // Poll sensors + firmware history every 30s on firmware tab for live status
   const [now, setNow] = useState(Date.now())
@@ -1896,6 +1997,97 @@ export default function Admin() {
               )}
             </>
           )}
+        </div>
+      )}
+
+      {/* Invite Codes */}
+      {activeTab === 'invites' && (
+        <div className="mx-auto max-w-3xl space-y-6">
+          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Generate Invite Code</h2>
+            <div className="flex flex-wrap items-end gap-4">
+              <div className="flex-1">
+                <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Client</label>
+                <select
+                  value={inviteSelectedClient}
+                  onChange={(e) => setInviteSelectedClient(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                >
+                  <option value="">Select a client</option>
+                  {inviteClients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {[c.first_name, c.last_name].filter(Boolean).join(' ') || c.email || c.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={handleGenerateInvite}
+                disabled={inviteGenerating || !inviteSelectedClient}
+                className="rounded-md bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+              >
+                {inviteGenerating ? 'Generating…' : 'Generate Code'}
+              </button>
+            </div>
+            {inviteError && (
+              <p className="mt-3 rounded-md bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">{inviteError}</p>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Existing Codes</h2>
+            {inviteLoading && <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>}
+            {!inviteLoading && inviteCodes.length === 0 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">No invite codes yet.</p>
+            )}
+            {!inviteLoading && inviteCodes.length > 0 && (
+              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                  <thead className="bg-gray-50 dark:bg-gray-800">
+                    <tr>
+                      {['Code', 'Client', 'Status', 'Created', ''].map((h, i) => (
+                        <th key={i} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
+                    {inviteCodes.map((ic) => {
+                      const isUsed = !!ic.used_by
+                      const isExpired = ic.expires_at && new Date(ic.expires_at) < new Date()
+                      return (
+                        <tr key={ic.id}>
+                          <td className="whitespace-nowrap px-4 py-3 font-mono text-sm font-semibold text-gray-900 dark:text-gray-100">{ic.code}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+                            {[ic.client_first_name, ic.client_last_name].filter(Boolean).join(' ') || ic.client_id.slice(0, 8)}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm">
+                            {isUsed ? (
+                              <span className="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-400">Used</span>
+                            ) : isExpired ? (
+                              <span className="rounded-full bg-red-100 px-2 py-1 text-xs font-medium text-red-700 dark:bg-red-900/40 dark:text-red-300">Expired</span>
+                            ) : (
+                              <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700 dark:bg-green-900/40 dark:text-green-300">Active</span>
+                            )}
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{new Date(ic.created_at).toLocaleDateString()}</td>
+                          <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
+                            {!isUsed && (
+                              <button
+                                onClick={() => handleCopyCode(ic.code)}
+                                className="rounded-md px-3 py-1 text-sm font-medium text-indigo-600 hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30"
+                              >
+                                {inviteCopied === ic.code ? 'Copied!' : 'Copy'}
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -25,6 +25,7 @@ export function useClientsPage() {
     clients,
     loading,
     error,
+    refetch: executeQuery,
   }
 }
 

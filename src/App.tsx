@@ -21,6 +21,7 @@ const Demo = lazy(() => import('@/pages/Demo'))
 const Landing = lazy(() => import('@/pages/Landing'))
 const ClientsDirectoryPage = lazy(() => import('@/pages/ClientsDirectoryPage'))
 const Login = lazy(() => import('@/pages/Login'))
+const Signup = lazy(() => import('@/pages/Signup'))
 const Support = lazy(() => import('@/pages/Support'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
@@ -107,6 +108,7 @@ function AppRoutes() {
           <Route path="/articles/what-is-water-intelligence-system" element={<ArticleWaterIntelligence />} />
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
           </Route>
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Home />} />
