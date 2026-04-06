@@ -103,6 +103,14 @@ export interface BucketedFlowPoint {
    * or elapsed time in-slot when `partial`).
    */
   bucketVolumeL: number
+  /** Volume breakdown by signal type (sink, toilet, etc.). */
+  volumeByType?: Record<string, number>
+}
+
+export interface SignalTimeRange {
+  startMs: number
+  endMs: number
+  signalType: string
 }
 
 /** A per-peak flow rate measurement for the line chart. */
@@ -548,6 +556,7 @@ export function computeBucketedFlow(
   minVibration = DEFAULT_MIN_VIBRATION,
   minBar = DEFAULT_MIN_BAR,
   now = Date.now(),
+  signals: SignalTimeRange[] = [],
 ): BucketedFlowPoint[] {
   const vibMap = buildVibrationMap(magData)
   const buckets: BucketedFlowPoint[] = []
@@ -571,17 +580,23 @@ export function computeBucketedFlow(
     flowBucketCount[bi]!++
   }
 
+  // Per-bucket cycle counts: total + per signal type
   const cycleBucketCount = new Uint32Array(numBuckets)
+  const cycleBucketByType: Map<string, Uint32Array> = new Map()
   for (let j = 1; j < peakTimestamps.length; j++) {
     const a = peakTimestamps[j - 1]!
     const b = peakTimestamps[j]!
-    // Skip cycles whose first peak is before the chart window (consistent
-    // with volumeFromFullCyclesInWindow).  Assign the cycle to the bucket
-    // where it completes (peak B) so boundary-straddling cycles aren't lost.
     if (a < chartWindowStart) continue
     const biB = Math.floor((b - chartWindowStart) / bucketMs)
     if (biB >= 0 && biB < numBuckets) {
       cycleBucketCount[biB]!++
+      const sigType = getSignalTypeAt(b, signals)
+      let arr = cycleBucketByType.get(sigType)
+      if (!arr) {
+        arr = new Uint32Array(numBuckets)
+        cycleBucketByType.set(sigType, arr)
+      }
+      arr[biB]!++
     }
   }
 
@@ -603,16 +618,37 @@ export function computeBucketedFlow(
 
     const bucketVolumeL =
       Math.round(cyclesInBucket * litresPerCycle * 10000) / 10000
+
+    const volumeByType: Record<string, number> = {}
+    if (cyclesInBucket > 0) {
+      for (const [type, arr] of cycleBucketByType) {
+        const tc = arr[i]!
+        if (tc > 0) {
+          volumeByType[type] = Math.round(tc * litresPerCycle * 10000) / 10000
+        }
+      }
+    }
+
     buckets.push({
       timestamp: bMid,
       flowRateLph,
       flowRateBarVisual: flowRateLph === 0 ? minBar : flowRateLph,
       partial: isPartial,
       bucketVolumeL,
+      volumeByType,
     })
   }
 
   return buckets
+}
+
+function getSignalTypeAt(timestampMs: number, signals: SignalTimeRange[]): string {
+  for (const s of signals) {
+    if (timestampMs >= s.startMs && timestampMs <= s.endMs) {
+      return s.signalType
+    }
+  }
+  return 'unknown'
 }
 
 /**

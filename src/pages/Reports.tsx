@@ -6,7 +6,6 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   Line,
   LineChart,
   ReferenceArea,
@@ -27,6 +26,7 @@ import {
   litresPerCycleFromMultiplier,
   volumeFromFullCyclesInWindow,
   type BucketedFlowPoint,
+  type SignalTimeRange,
 } from '@/utils/flowComputation'
 import { useTheme } from '@/contexts/ThemeContext'
 import { parseSignalValue } from '@/types/signal'
@@ -934,6 +934,19 @@ export default function Reports() {
     [sensorMultiplier],
   )
 
+  const signalTimeRanges: SignalTimeRange[] = useMemo(() => {
+    return parsedSignals
+      .map((sig) => {
+        const parsed = parseSignalValue(sig.value)
+        if (!parsed) return null
+        const startMs = sig.start_time ? new Date(sig.start_time).getTime() : null
+        const endMs = sig.end_time ? new Date(sig.end_time).getTime() : null
+        if (!startMs || !endMs) return null
+        return { startMs, endMs, signalType: String(parsed.signal_type) }
+      })
+      .filter((x): x is SignalTimeRange => x !== null)
+  }, [parsedSignals])
+
   const bucketedFlowData = useMemo(() => {
     // For 6h+ ranges, use pre-computed flow_hourly data instead of
     // client-side peak detection (downsampled data is too sparse for peaks).
@@ -991,6 +1004,10 @@ export default function Reports() {
       bucketMs,
       chartWindowStart,
       numFlowBuckets,
+      undefined,
+      undefined,
+      undefined,
+      signalTimeRanges,
     )
   }, [
     flowHourlyRows,
@@ -1003,7 +1020,40 @@ export default function Reports() {
     chartWindowEnd,
     numFlowBuckets,
     slotAnchor,
+    signalTimeRanges,
   ])
+
+  const volumeSignalTypes = useMemo(() => {
+    const types = new Set<string>()
+    for (const b of bucketedFlowData) {
+      for (const t of Object.keys(b.volumeByType ?? {})) types.add(t)
+    }
+    const order = ['sink', 'toilet', 'shower', 'dishwasher', 'urinal']
+    const sorted = order.filter((t) => types.has(t))
+    for (const t of types) {
+      if (!sorted.includes(t)) sorted.push(t)
+    }
+    return sorted
+  }, [bucketedFlowData])
+
+  const stackedBarData = useMemo(() => {
+    return bucketedFlowData.map((b) => {
+      const row: Record<string, number> = {
+        timestamp: b.timestamp,
+        bucketVolumeL: b.bucketVolumeL,
+        flowRateLph: b.flowRateLph,
+        partial: b.partial ? 1 : 0,
+      }
+      let attributed = 0
+      for (const t of volumeSignalTypes) {
+        const v = (b.volumeByType ?? {})[t] ?? 0
+        row[`vol_${t}`] = v
+        attributed += v
+      }
+      row['vol__unattributed'] = Math.max(0, Math.round((b.bucketVolumeL - attributed) * 10000) / 10000)
+      return row
+    })
+  }, [bucketedFlowData, volumeSignalTypes])
 
   const peakFlowData = useMemo(
     () =>
@@ -1793,7 +1843,7 @@ export default function Reports() {
             <div className="h-[200px] w-full min-w-0 overflow-hidden sm:h-[280px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={bucketedFlowData}
+                  data={stackedBarData}
                   margin={{ top: 5, right: 20, left: 10, bottom: 14 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
@@ -1823,8 +1873,11 @@ export default function Reports() {
                     cursor={{ fill: 'rgba(59, 130, 246, 0.06)' }}
                     content={({ active, payload, label }) => {
                       if (!active || !payload?.length) return null
-                      const p = payload[0]?.payload as BucketedFlowPoint | undefined
-                      if (!p) return null
+                      const row = payload[0]?.payload as Record<string, number> | undefined
+                      if (!row) return null
+                      const totalL = row.bucketVolumeL ?? 0
+                      const flowRate = row.flowRateLph ?? 0
+                      const isPartial = row.partial === 1
                       const bStart = typeof label === 'number' ? label - bucketMs / 2 : null
                       const bEnd = typeof label === 'number' ? label + bucketMs / 2 : null
                       const fmtBucket = (ms: number) =>
@@ -1837,6 +1890,13 @@ export default function Reports() {
                       const timeStr = bStart != null && bEnd != null
                         ? `${fmtBucket(bStart)} – ${fmtBucket(bEnd)}`
                         : ''
+                      const breakdown: { type: string; vol: number; color: string }[] = []
+                      for (const t of volumeSignalTypes) {
+                        const v = row[`vol_${t}`] ?? 0
+                        if (v > 0) breakdown.push({ type: t, vol: v, color: SIGNAL_TYPE_COLORS[t] ?? '#6b7280' })
+                      }
+                      const unattr = row['vol__unattributed'] ?? 0
+                      if (unattr > 0) breakdown.push({ type: 'unclassified', vol: unattr, color: '#3b82f6' })
                       return (
                         <div
                           className="rounded-lg border px-3 py-2 text-xs shadow-sm"
@@ -1853,28 +1913,45 @@ export default function Reports() {
                             className="font-medium tabular-nums"
                             style={{ fontSize: 13, color: '#3b82f6' }}
                           >
-                            {p.bucketVolumeL < 0.01 ? p.bucketVolumeL.toFixed(4) : p.bucketVolumeL.toFixed(3)} L
-                            {p.partial ? ' (so far)' : ''}
+                            {totalL < 0.01 ? totalL.toFixed(4) : totalL.toFixed(3)} L
+                            {isPartial ? ' (so far)' : ''}
                           </p>
+                          {breakdown.length > 0 && (
+                            <div className="mt-1 space-y-0.5">
+                              {breakdown.map((b) => (
+                                <p key={b.type} className="tabular-nums text-[11px]" style={{ color: b.color }}>
+                                  {b.type}: {b.vol < 0.01 ? b.vol.toFixed(4) : b.vol.toFixed(3)} L
+                                </p>
+                              ))}
+                            </div>
+                          )}
                           <p className="mt-1 text-[11px] leading-snug tabular-nums text-gray-500 dark:text-gray-400">
-                            {p.flowRateLph.toFixed(1)} L/h avg
+                            {flowRate.toFixed(1)} L/h avg
                           </p>
                         </div>
                       )
                     }}
                   />
-                  <Bar yAxisId="left" dataKey="bucketVolumeL" name="Volume (L)" radius={[3, 3, 0, 0]} isAnimationActive={false}>
-                    {bucketedFlowData.map((entry, index) => (
-                      <Cell
-                        key={index}
-                        fill={entry.partial ? '#3b82f6' : '#3b82f6'}
-                        fillOpacity={entry.partial ? 0.4 : 1}
-                        stroke={entry.partial ? '#3b82f6' : 'none'}
-                        strokeWidth={entry.partial ? 1.5 : 0}
-                        strokeDasharray={entry.partial ? '4 2' : 'none'}
-                      />
-                    ))}
-                  </Bar>
+                  {volumeSignalTypes.map((t) => (
+                    <Bar
+                      key={t}
+                      yAxisId="left"
+                      dataKey={`vol_${t}`}
+                      stackId="volume"
+                      name={t}
+                      fill={SIGNAL_TYPE_COLORS[t] ?? '#6b7280'}
+                      isAnimationActive={false}
+                    />
+                  ))}
+                  <Bar
+                    yAxisId="left"
+                    dataKey="vol__unattributed"
+                    stackId="volume"
+                    name="Unclassified"
+                    fill="#3b82f6"
+                    radius={[3, 3, 0, 0]}
+                    isAnimationActive={false}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
