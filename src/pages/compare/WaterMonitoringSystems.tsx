@@ -263,6 +263,39 @@ export default function WaterMonitoringSystems() {
             </div>
           </section>
 
+          {/* Educational articles */}
+          <section>
+            <h2 className="text-center text-[22px] font-bold tracking-tight text-gray-900 sm:text-[28px]">
+              Learn more about water monitoring
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-center text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">
+              Explore our educational articles to better understand water monitoring systems,
+              how they differ, and how to choose the right approach for your building.
+            </p>
+            <div className="mx-auto mt-8 max-w-3xl space-y-4">
+              <Link to="/articles/what-is-water-monitoring-system" className="block rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-8">
+                <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">What Is a Water Monitoring System?</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">Understand what water monitoring systems do and why most are different.</p>
+              </Link>
+              <Link to="/articles/4-types-of-water-monitoring-systems" className="block rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-8">
+                <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">4 Types of Water Monitoring Systems</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">A framework for understanding the four main approaches to water monitoring.</p>
+              </Link>
+              <Link to="/articles/water-monitoring-vs-leak-detection" className="block rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-8">
+                <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">Water Monitoring vs Leak Detection</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">The key distinction between continuous monitoring and event-based detection.</p>
+              </Link>
+              <Link to="/articles/how-to-choose-water-monitoring-system" className="block rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-8">
+                <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">How to Choose a Water Monitoring System</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">A step-by-step guide to matching a system to your building.</p>
+              </Link>
+              <Link to="/articles/what-is-water-intelligence-system" className="block rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-8">
+                <h3 className="text-[16px] font-bold text-gray-900 sm:text-[18px]">What Is a Water Intelligence System?</h3>
+                <p className="mt-2 text-[14px] leading-relaxed text-gray-500 sm:text-[15px]">How intelligence systems go beyond detection and monitoring.</p>
+              </Link>
+            </div>
+          </section>
+
           {/* FAQ */}
           <CompareFaq items={FAQ_ITEMS} />
         </div>

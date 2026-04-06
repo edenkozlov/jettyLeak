@@ -1,3 +1,5 @@
+import { Link } from 'react-router'
+
 import {
   CompareNav,
   CompareHero,
@@ -237,6 +239,27 @@ export default function CompareWaterAlert() {
         <CompareCta competitorName="Water Alert" competitorUrl="https://www.wateralert.com/" />
         <RelatedQuestions questions={RELATED_QUESTIONS} />
         <CompareOtherSystems currentPath={CANONICAL} />
+
+        {/* Recommended reading */}
+        <section className="mt-16 sm:mt-20">
+          <h2 className="text-[20px] font-bold tracking-tight text-gray-900 sm:text-[22px]">
+            Recommended reading
+          </h2>
+          <div className="mt-5 space-y-3">
+            <Link to="/articles/water-monitoring-vs-leak-detection" className="block rounded-xl border border-gray-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-5">
+              <p className="text-[15px] font-semibold text-gray-900">Water Monitoring vs Leak Detection</p>
+              <p className="mt-1 text-[13px] text-gray-500">Understanding the difference between monitoring and detection.</p>
+            </Link>
+            <Link to="/articles/what-happens-after-leak-alert" className="block rounded-xl border border-gray-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-5">
+              <p className="text-[15px] font-semibold text-gray-900">What Happens After a Leak Alert</p>
+              <p className="mt-1 text-[13px] text-gray-500">Why detection is only the first step.</p>
+            </Link>
+            <Link to="/articles/why-leak-detection-not-enough-commercial" className="block rounded-xl border border-gray-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-5">
+              <p className="text-[15px] font-semibold text-gray-900">Why Leak Detection Alone Isn't Enough</p>
+              <p className="mt-1 text-[13px] text-gray-500">What commercial buildings actually need.</p>
+            </Link>
+          </div>
+        </section>
       </article>
 
       <FaqSchema items={FAQ_ITEMS} />

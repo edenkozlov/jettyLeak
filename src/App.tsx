@@ -24,13 +24,13 @@ const Login = lazy(() => import('@/pages/Login'))
 const Support = lazy(() => import('@/pages/Support'))
 const Privacy = lazy(() => import('@/pages/Privacy'))
 const Terms = lazy(() => import('@/pages/Terms'))
-const CompareFlo = lazy(() => import('@/pages/CompareFlo'))
-const ComparePhyn = lazy(() => import('@/pages/ComparePhyn'))
-const CompareWint = lazy(() => import('@/pages/CompareWint'))
-const CompareAlertLabs = lazy(() => import('@/pages/CompareAlertLabs'))
-const CompareWaterAlert = lazy(() => import('@/pages/CompareWaterAlert'))
-const CompareFlume = lazy(() => import('@/pages/CompareFlume'))
-const WaterMonitoringSystems = lazy(() => import('@/pages/WaterMonitoringSystems'))
+const CompareFlo = lazy(() => import('@/pages/compare/CompareFlo'))
+const ComparePhyn = lazy(() => import('@/pages/compare/ComparePhyn'))
+const CompareWint = lazy(() => import('@/pages/compare/CompareWint'))
+const CompareAlertLabs = lazy(() => import('@/pages/compare/CompareAlertLabs'))
+const CompareWaterAlert = lazy(() => import('@/pages/compare/CompareWaterAlert'))
+const CompareFlume = lazy(() => import('@/pages/compare/CompareFlume'))
+const WaterMonitoringSystems = lazy(() => import('@/pages/compare/WaterMonitoringSystems'))
 const GetQuote = lazy(() => import('@/pages/GetQuote'))
 const Faq = lazy(() => import('@/pages/Faq'))
 const MagReports = lazy(() => import('@/pages/MagReports'))
@@ -40,6 +40,17 @@ const Sensors = lazy(() => import('@/pages/Sensors'))
 const Admin = lazy(() => import('@/pages/Admin'))
 const Settings = lazy(() => import('@/pages/Settings'))
 const BuildingCertification = lazy(() => import('@/pages/BuildingCertification'))
+const Articles = lazy(() => import('@/pages/articles/Articles'))
+const ArticleWhatIsWaterMonitoring = lazy(() => import('@/pages/articles/ArticleWhatIsWaterMonitoring'))
+const ArticleHowToChoose = lazy(() => import('@/pages/articles/ArticleHowToChoose'))
+const ArticleMonitoringVsDetection = lazy(() => import('@/pages/articles/ArticleMonitoringVsDetection'))
+const ArticleFourTypes = lazy(() => import('@/pages/articles/ArticleFourTypes'))
+const ArticleBestCommercial = lazy(() => import('@/pages/articles/ArticleBestCommercial'))
+const ArticleNonInvasiveVsInline = lazy(() => import('@/pages/articles/ArticleNonInvasiveVsInline'))
+const ArticleAfterLeakAlert = lazy(() => import('@/pages/articles/ArticleAfterLeakAlert'))
+const ArticleLeakDetectionNotEnough = lazy(() => import('@/pages/articles/ArticleLeakDetectionNotEnough'))
+const ArticlePropertyManagers = lazy(() => import('@/pages/articles/ArticlePropertyManagers'))
+const ArticleWaterIntelligence = lazy(() => import('@/pages/articles/ArticleWaterIntelligence'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -83,6 +94,17 @@ function AppRoutes() {
           <Route path="/best-water-monitoring-systems" element={<WaterMonitoringSystems />} />
           <Route path="/quote" element={<GetQuote />} />
           <Route path="/faq" element={<Faq />} />
+          <Route path="/articles" element={<Articles />} />
+          <Route path="/articles/what-is-water-monitoring-system" element={<ArticleWhatIsWaterMonitoring />} />
+          <Route path="/articles/how-to-choose-water-monitoring-system" element={<ArticleHowToChoose />} />
+          <Route path="/articles/water-monitoring-vs-leak-detection" element={<ArticleMonitoringVsDetection />} />
+          <Route path="/articles/4-types-of-water-monitoring-systems" element={<ArticleFourTypes />} />
+          <Route path="/articles/best-water-monitoring-commercial-buildings" element={<ArticleBestCommercial />} />
+          <Route path="/articles/non-invasive-vs-inline-water-monitoring" element={<ArticleNonInvasiveVsInline />} />
+          <Route path="/articles/what-happens-after-leak-alert" element={<ArticleAfterLeakAlert />} />
+          <Route path="/articles/why-leak-detection-not-enough-commercial" element={<ArticleLeakDetectionNotEnough />} />
+          <Route path="/articles/how-property-managers-handle-water-issues" element={<ArticlePropertyManagers />} />
+          <Route path="/articles/what-is-water-intelligence-system" element={<ArticleWaterIntelligence />} />
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
           </Route>

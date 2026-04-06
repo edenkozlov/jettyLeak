@@ -1,3 +1,5 @@
+import { Link } from 'react-router'
+
 import {
   CompareNav,
   CompareHero,
@@ -214,6 +216,27 @@ export default function ComparePhyn() {
         <CompareCta competitorName="Phyn" competitorUrl="https://phyn.com/" />
         <RelatedQuestions questions={RELATED_QUESTIONS} />
         <CompareOtherSystems currentPath={CANONICAL} />
+
+        {/* Recommended reading */}
+        <section className="mt-16 sm:mt-20">
+          <h2 className="text-[20px] font-bold tracking-tight text-gray-900 sm:text-[22px]">
+            Recommended reading
+          </h2>
+          <div className="mt-5 space-y-3">
+            <Link to="/articles/what-is-water-monitoring-system" className="block rounded-xl border border-gray-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-5">
+              <p className="text-[15px] font-semibold text-gray-900">What Is a Water Monitoring System?</p>
+              <p className="mt-1 text-[13px] text-gray-500">Understanding the different types of water monitoring systems.</p>
+            </Link>
+            <Link to="/articles/4-types-of-water-monitoring-systems" className="block rounded-xl border border-gray-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-5">
+              <p className="text-[15px] font-semibold text-gray-900">4 Types of Water Monitoring Systems</p>
+              <p className="mt-1 text-[13px] text-gray-500">How leak detection, shutoff, monitoring, and intelligence compare.</p>
+            </Link>
+            <Link to="/articles/water-monitoring-vs-leak-detection" className="block rounded-xl border border-gray-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-5">
+              <p className="text-[15px] font-semibold text-gray-900">Water Monitoring vs Leak Detection</p>
+              <p className="mt-1 text-[13px] text-gray-500">The key distinction most buyers miss.</p>
+            </Link>
+          </div>
+        </section>
       </article>
 
       <FaqSchema items={FAQ_ITEMS} />

@@ -54,6 +54,9 @@ export function SiteFooter({ variant = 'page' }: { variant?: 'landing' | 'page' 
                   >
                     Investor
                   </a>
+                  <Link to="/articles" className={linkClass}>
+                    Articles
+                  </Link>
                   <Link to="/login" className={linkClass}>
                     Sign In
                   </Link>
@@ -68,6 +71,9 @@ export function SiteFooter({ variant = 'page' }: { variant?: 'landing' | 'page' 
                   </Link>
                   <Link to="/quote" className={linkClass}>
                     Get a quote
+                  </Link>
+                  <Link to="/articles" className={linkClass}>
+                    Articles
                   </Link>
                   <Link to="/login" className={linkClass}>
                     Sign In

@@ -241,6 +241,27 @@ export default function CompareFlume() {
         <CompareCta competitorName="Flume" competitorUrl="https://flumewater.com/" />
         <RelatedQuestions questions={RELATED_QUESTIONS} />
         <CompareOtherSystems currentPath={CANONICAL} />
+
+        {/* Recommended reading */}
+        <section className="mt-16 sm:mt-20">
+          <h2 className="text-[20px] font-bold tracking-tight text-gray-900 sm:text-[22px]">
+            Recommended reading
+          </h2>
+          <div className="mt-5 space-y-3">
+            <Link to="/articles/non-invasive-vs-inline-water-monitoring" className="block rounded-xl border border-gray-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-5">
+              <p className="text-[15px] font-semibold text-gray-900">Non-Invasive vs Inline Water Monitoring</p>
+              <p className="mt-1 text-[13px] text-gray-500">Comparing installation approaches and their trade-offs.</p>
+            </Link>
+            <Link to="/articles/what-is-water-monitoring-system" className="block rounded-xl border border-gray-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-5">
+              <p className="text-[15px] font-semibold text-gray-900">What Is a Water Monitoring System?</p>
+              <p className="mt-1 text-[13px] text-gray-500">Understanding the different categories of water monitoring.</p>
+            </Link>
+            <Link to="/articles/how-to-choose-water-monitoring-system" className="block rounded-xl border border-gray-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-5">
+              <p className="text-[15px] font-semibold text-gray-900">How to Choose a Water Monitoring System</p>
+              <p className="mt-1 text-[13px] text-gray-500">A practical guide to selecting the right system.</p>
+            </Link>
+          </div>
+        </section>
       </article>
 
       <FaqSchema items={FAQ_ITEMS} />

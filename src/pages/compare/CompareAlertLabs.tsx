@@ -1,3 +1,5 @@
+import { Link } from 'react-router'
+
 import {
   CompareNav,
   CompareHero,
@@ -229,6 +231,27 @@ export default function CompareAlertLabs() {
         <CompareCta competitorName="Alert Labs" competitorUrl="https://alertlabs.com/" />
         <RelatedQuestions questions={RELATED_QUESTIONS} />
         <CompareOtherSystems currentPath={CANONICAL} />
+
+        {/* Recommended reading */}
+        <section className="mt-16 sm:mt-20">
+          <h2 className="text-[20px] font-bold tracking-tight text-gray-900 sm:text-[22px]">
+            Recommended reading
+          </h2>
+          <div className="mt-5 space-y-3">
+            <Link to="/articles/best-water-monitoring-commercial-buildings" className="block rounded-xl border border-gray-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-5">
+              <p className="text-[15px] font-semibold text-gray-900">Best Water Monitoring for Commercial Buildings</p>
+              <p className="mt-1 text-[13px] text-gray-500">A guide to systems designed for commercial environments.</p>
+            </Link>
+            <Link to="/articles/4-types-of-water-monitoring-systems" className="block rounded-xl border border-gray-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-5">
+              <p className="text-[15px] font-semibold text-gray-900">4 Types of Water Monitoring Systems</p>
+              <p className="mt-1 text-[13px] text-gray-500">Understanding the different approaches in water monitoring.</p>
+            </Link>
+            <Link to="/articles/non-invasive-vs-inline-water-monitoring" className="block rounded-xl border border-gray-200 p-4 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-5">
+              <p className="text-[15px] font-semibold text-gray-900">Non-Invasive vs Inline Water Monitoring</p>
+              <p className="mt-1 text-[13px] text-gray-500">How installation method shapes system selection.</p>
+            </Link>
+          </div>
+        </section>
       </article>
 
       <FaqSchema items={FAQ_ITEMS} />
