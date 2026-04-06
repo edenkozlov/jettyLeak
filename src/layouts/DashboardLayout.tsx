@@ -161,7 +161,7 @@ const HAMBURGER_ICON = (
 )
 
 export default function DashboardLayout() {
-  const { sidebarOpen, handleToggleSidebar } = useDashboardLayout()
+  const { sidebarOpen, handleToggleSidebar, closeSidebar } = useDashboardLayout()
   const { role, client_id } = useAuth()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
@@ -227,7 +227,7 @@ export default function DashboardLayout() {
 
         {/* Nav */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          <SidebarNav groups={visibleGroups} collapsed={sidebarCollapsed} />
+          <SidebarNav groups={visibleGroups} collapsed={sidebarCollapsed} onNavigate={closeSidebar} />
         </div>
 
         {/* Collapse toggle at bottom (desktop only) */}
@@ -265,7 +265,7 @@ export default function DashboardLayout() {
           <ProfileMenu />
         </header>
 
-        <main className="flex-1 overflow-y-auto p-3 sm:p-6">
+        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6">
           <Outlet />
         </main>
       </div>
@@ -280,7 +280,15 @@ function isItemActive(item: NavItem, pathname: string) {
   )
 }
 
-function SidebarNav({ groups, collapsed }: { groups: NavGroup[]; collapsed: boolean }) {
+function SidebarNav({
+  groups,
+  collapsed,
+  onNavigate,
+}: {
+  groups: NavGroup[]
+  collapsed: boolean
+  onNavigate: () => void
+}) {
   const { pathname } = useLocation()
   const [groupCollapsed, setGroupCollapsed] = useState<Record<string, boolean>>({})
 
@@ -306,6 +314,7 @@ function SidebarNav({ groups, collapsed }: { groups: NavGroup[]; collapsed: bool
                     end={item.path === '/dashboard'}
                     title={item.label}
                     className={() => navLinkCollapsedClass(active)}
+                    onClick={onNavigate}
                   >
                     {item.icon}
                   </NavLink>
@@ -358,6 +367,7 @@ function SidebarNav({ groups, collapsed }: { groups: NavGroup[]; collapsed: bool
                         to={item.path}
                         end={item.path === '/dashboard'}
                         className={() => navLinkClass(active)}
+                        onClick={onNavigate}
                       >
                         {item.icon}
                         {item.label}

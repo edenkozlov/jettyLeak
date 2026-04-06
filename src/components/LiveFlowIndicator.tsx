@@ -115,14 +115,14 @@ export default function LiveFlowIndicator({
   }
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
-      <div className="mb-2 flex items-center justify-between">
+    <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 sm:p-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
           Live Flow
         </p>
         {relTime && (
           <span
-            className={`text-[10px] tabular-nums ${
+            className={`shrink-0 text-[10px] tabular-nums ${
               status === 'stale'
                 ? 'text-amber-500'
                 : 'text-gray-400 dark:text-gray-500'
@@ -132,10 +132,10 @@ export default function LiveFlowIndicator({
           </span>
         )}
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5 sm:gap-3">
         <StatusDot status={status} />
         <span
-          className={`text-2xl font-bold ${
+          className={`text-xl font-bold tabular-nums sm:text-2xl ${
             status === 'flowing'
               ? 'text-emerald-600 dark:text-emerald-400'
               : status === 'error'

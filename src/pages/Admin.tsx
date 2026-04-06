@@ -243,9 +243,12 @@ function SegmentPanel({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4 sm:p-6"
+      onClick={onClose}
+    >
       <div
-        className="relative max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-xl border border-indigo-200 bg-white p-5 shadow-2xl dark:border-indigo-800 dark:bg-gray-800"
+        className="relative my-auto max-h-[min(90vh,100dvh)] w-full max-w-4xl overflow-y-auto rounded-xl border border-indigo-200 bg-white p-4 shadow-2xl sm:p-5 dark:border-indigo-800 dark:bg-gray-800"
         onClick={(e) => e.stopPropagation()}
       >
       {/* Header */}
@@ -278,7 +281,7 @@ function SegmentPanel({
 
       {/* Stats row */}
       {stats && (
-        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
           {[
             { label: 'Duration', value: `${(stats.durationMs / 1000).toFixed(1)}s` },
             { label: 'Readings', value: stats.readings.toString() },
@@ -575,17 +578,17 @@ function LabelCreator({
   const selectionMax = selLeft != null && selRight != null ? Math.max(selLeft, selRight) : null
 
   return (
-    <div className="mb-6 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+    <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
       <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Add New Label</h2>
 
       {/* Controls row */}
-      <div className="mb-4 flex flex-wrap items-end gap-4">
-        <div>
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+        <div className="min-w-0 sm:max-w-[min(100%,20rem)]">
           <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Sensor</label>
           <select
             value={sensorId}
             onChange={(e) => { setSensorId(e.target.value); setSelectedRange(null); setSaved(false) }}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
             <option value="">Select sensor</option>
             {sensors.map((s) => (
@@ -593,12 +596,12 @@ function LabelCreator({
             ))}
           </select>
         </div>
-        <div>
+        <div className="min-w-0 sm:w-40">
           <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Fixture Type</label>
           <select
             value={fixtureType}
             onChange={(e) => setFixtureType(e.target.value)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
           >
             <option value="">Select type</option>
             {FIXTURE_TYPES.map((ft) => (
@@ -606,15 +609,15 @@ function LabelCreator({
             ))}
           </select>
         </div>
-        <div>
+        <div className="min-w-0">
           <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Time Range</label>
-          <div className="inline-flex rounded-md border border-gray-300 dark:border-gray-600">
+          <div className="flex max-w-full overflow-x-auto rounded-md border border-gray-300 [-webkit-overflow-scrolling:touch] dark:border-gray-600">
             {TIME_RANGES.map((tr) => (
               <button
                 key={tr.ms}
                 type="button"
                 onClick={() => setTimeRangeMs(tr.ms)}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors first:rounded-l-md last:rounded-r-md ${
+                className={`shrink-0 px-3 py-1.5 text-xs font-medium transition-colors first:rounded-l-md last:rounded-r-md ${
                   timeRangeMs === tr.ms
                     ? 'bg-indigo-500 text-white'
                     : 'bg-white text-gray-600 hover:bg-gray-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
@@ -707,16 +710,16 @@ function LabelCreator({
 
       {/* Selected range confirmation */}
       {selectedRange && (
-        <div className="mt-4 flex flex-wrap items-center gap-4 rounded-lg border border-indigo-200 bg-indigo-50/60 px-4 py-3 dark:border-indigo-800 dark:bg-indigo-900/20">
-          <div className="text-xs text-gray-600 dark:text-gray-300">
+        <div className="mt-4 flex flex-col gap-3 rounded-lg border border-indigo-200 bg-indigo-50/60 px-3 py-3 dark:border-indigo-800 dark:bg-indigo-900/20 sm:flex-row sm:flex-wrap sm:items-center sm:px-4">
+          <div className="min-w-0 text-xs text-gray-600 dark:text-gray-300">
             <span className="font-medium">Selected:</span>{' '}
             {formatTime(selectedRange.start)} — {formatTime(selectedRange.end)}{' '}
             <span className="text-gray-400">({((selectedRange.end - selectedRange.start) / 1000).toFixed(1)}s)</span>
           </div>
           {fixtureType && (
-            <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300">{fixtureType}</span>
+            <span className="w-fit rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300">{fixtureType}</span>
           )}
-          <div className="ml-auto flex gap-2">
+          <div className="flex w-full gap-2 sm:ml-auto sm:w-auto">
             <button
               onClick={() => setSelectedRange(null)}
               className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
@@ -1258,16 +1261,17 @@ export default function Admin() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
-      <h1 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">Admin</h1>
+    <div className="mx-auto min-w-0 max-w-6xl">
+      <h1 className="mb-4 text-xl font-bold text-gray-900 dark:text-white sm:mb-6 sm:text-2xl">Admin</h1>
 
-      {/* Tabs */}
-      <div className="mb-6 flex gap-1 rounded-lg border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-800">
+      {/* Tabs — horizontal scroll on narrow screens */}
+      <div className="mb-4 flex gap-1 overflow-x-auto rounded-lg border border-gray-200 bg-gray-100 p-1 [-webkit-overflow-scrolling:touch] sm:mb-6 dark:border-gray-700 dark:bg-gray-800">
         {TAB_ITEMS.map((tab) => (
           <button
             key={tab.key}
+            type="button"
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+            className={`shrink-0 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors sm:px-4 ${
               activeTab === tab.key
                 ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white'
                 : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
@@ -1281,12 +1285,12 @@ export default function Admin() {
       {/* Predicted Signals */}
       {activeTab === 'predictions' && (
         <div>
-          <div className="mb-4 flex items-center gap-4">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter by sensor:</label>
+          <div className="mb-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
+            <label className="shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">Filter by sensor:</label>
             <select
               value={sensorFilter}
               onChange={(e) => setSensorFilter(e.target.value)}
-              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              className="min-w-0 w-full max-w-md rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
             >
               <option value="">All sensors</option>
               {sensors.map((s) => (
@@ -1301,8 +1305,8 @@ export default function Admin() {
           )}
 
           {!predictionsLoading && !predictionsError && (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-gray-200 [-webkit-overflow-scrolling:touch] dark:border-gray-700">
+              <table className="min-w-[720px] divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
                     {['ID', 'Sensor', 'Building', 'Prediction', 'Confidence', 'Start Time', 'End Time', ''].map((header, i) => (
@@ -1386,8 +1390,8 @@ export default function Admin() {
           )}
 
           {!labelsLoading && !labelsError && (
-            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-gray-200 [-webkit-overflow-scrolling:touch] dark:border-gray-700">
+              <table className="min-w-[640px] divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
                     {['ID', 'Sensor', 'Value', 'Start Time', 'End Time', ''].map((header, i) => (
@@ -1440,9 +1444,9 @@ export default function Admin() {
 
       {/* Retrain */}
       {activeTab === 'retrain' && (
-        <div className="mx-auto max-w-lg space-y-6">
+        <div className="mx-auto min-w-0 max-w-lg space-y-6">
           {/* Retrain */}
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
             <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Retrain Model</h2>
             <div className="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-700 dark:bg-amber-900/30">
               <p className="text-sm text-amber-800 dark:text-amber-300">
@@ -1480,14 +1484,14 @@ export default function Admin() {
 
                 {/* Test results table */}
                 {retrainResult.testResults && retrainResult.testResults.length > 0 && (
-                  <div className="rounded-md border border-gray-200 dark:border-gray-700">
+                  <div className="min-w-0 overflow-hidden rounded-md border border-gray-200 dark:border-gray-700">
                     <div className="border-b border-gray-200 bg-gray-50 px-4 py-2 dark:border-gray-700 dark:bg-gray-800">
                       <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                         Test Results ({retrainResult.testResults.filter(r => r.correct).length}/{retrainResult.testResults.length} correct)
                       </h3>
                     </div>
-                    <div className="max-h-64 overflow-y-auto">
-                      <table className="min-w-full divide-y divide-gray-200 text-xs dark:divide-gray-700">
+                    <div className="max-h-64 overflow-x-auto overflow-y-auto overscroll-x-contain">
+                      <table className="min-w-[520px] divide-y divide-gray-200 text-xs dark:divide-gray-700">
                         <thead className="bg-gray-50 dark:bg-gray-800">
                           <tr>
                             {['Signal', 'True Label', 'Predicted', 'Confidence', 'Result'].map((h) => (
@@ -1524,7 +1528,7 @@ export default function Admin() {
           </div>
 
           {/* Sanitize */}
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
             <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Sanitize Sensor Data</h2>
             <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 dark:border-red-700 dark:bg-red-900/30">
               <p className="text-sm text-red-800 dark:text-red-300">
@@ -1569,10 +1573,10 @@ export default function Admin() {
 
       {/* Firmware OTA */}
       {activeTab === 'firmware' && (
-        <div className="mx-auto max-w-3xl space-y-6">
+        <div className="mx-auto min-w-0 max-w-3xl space-y-6">
           {/* Sensor Status & Controls */}
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
+            <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Sensors</h2>
               <span className="text-xs text-gray-400 dark:text-gray-500">Auto-refreshes every 30s</span>
             </div>
@@ -1598,31 +1602,32 @@ export default function Admin() {
                   const alive = wifiAlive && (!isLora || loraAlive)
 
                   return (
-                    <div key={s.id} className={`rounded-md border px-4 py-3 ${alive ? 'border-gray-200 dark:border-gray-700' : 'border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-900/10'}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                    <div key={s.id} className={`rounded-md border px-3 py-3 sm:px-4 ${alive ? 'border-gray-200 dark:border-gray-700' : 'border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-900/10'}`}>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
                           <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${alive ? 'bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`} />
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">{s.name || `Sensor #${s.id}`}</span>
-                          <span className="text-xs text-gray-400 dark:text-gray-500">#{s.id}</span>
+                          <span className="min-w-0 truncate text-sm font-medium text-gray-900 dark:text-white">{s.name || `Sensor #${s.id}`}</span>
+                          <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">#{s.id}</span>
                           {s.type && (
-                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${s.type === 'wifi' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'}`}>
+                            <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${s.type === 'wifi' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'}`}>
                               {s.type === 'wifi' ? 'WiFi' : 'LoRa'}
                             </span>
                           )}
                           {s.firmware_version && (
-                            <span className="text-[10px] text-gray-400 dark:text-gray-500">v{s.firmware_version}</span>
+                            <span className="shrink-0 text-[10px] text-gray-400 dark:text-gray-500">v{s.firmware_version}</span>
                           )}
                         </div>
                         <button
+                          type="button"
                           onClick={() => handleReboot(s.id)}
                           disabled={rebootingSensorId === s.id}
-                          className="rounded-md bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200 disabled:opacity-50 dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
+                          className="w-full shrink-0 rounded-md bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-200 disabled:opacity-50 sm:w-auto dark:bg-amber-900/40 dark:text-amber-300 dark:hover:bg-amber-900/60"
                         >
                           {rebootingSensorId === s.id ? 'Reboot queued...' : 'Reboot'}
                         </button>
                       </div>
                       {/* Status row */}
-                      <div className="mt-1.5 flex items-center gap-4 pl-[18px]">
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 pl-0 sm:pl-[18px]">
                         <div className="flex items-center gap-1.5">
                           <span className={`inline-block h-1.5 w-1.5 rounded-full ${wifiAlive ? 'bg-green-400' : 'bg-red-400'}`} />
                           <span className={`text-xs ${wifiAlive ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
@@ -1651,10 +1656,10 @@ export default function Admin() {
           </div>
 
           {/* Upload */}
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
             <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Upload Firmware</h2>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Sensor Type</label>
                   <select
@@ -1814,7 +1819,7 @@ export default function Admin() {
 
           {/* History */}
           {(['receiver', 'dual'] as const).map((type) => (
-            <div key={type} className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+            <div key={type} className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
               <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">{type === 'receiver' ? 'LoRa (Receiver)' : 'WiFi (Dual)'} Firmware History</h2>
               {fwHistory[type].length === 0 ? (
                 <p className="text-sm text-gray-500 dark:text-gray-400">No firmware uploaded yet.</p>
@@ -1831,14 +1836,14 @@ export default function Admin() {
                     return (
                       <div key={fw.id} className="rounded-md border border-gray-200 dark:border-gray-700">
                         {/* Header row */}
-                        <div className="flex items-center justify-between px-4 py-3">
-                          <div className="flex items-center gap-3">
+                        <div className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+                          <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
                             <span className="text-sm font-semibold text-gray-900 dark:text-white">v{fw.version}</span>
                             <span className="text-xs text-gray-400 dark:text-gray-500">{(fw.file_size / 1024).toFixed(0)} KB</span>
                             <span className="text-xs text-gray-400 dark:text-gray-500">{new Date(fw.uploaded_at).toLocaleDateString()}</span>
-                            {fw.notes && <span className="text-xs text-gray-500 dark:text-gray-400">— {fw.notes}</span>}
+                            {fw.notes && <span className="min-w-0 truncate text-xs text-gray-500 dark:text-gray-400 sm:max-w-[12rem]">— {fw.notes}</span>}
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                             {hasTargets && (
                               <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${allUpdated ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'}`}>
                                 {updatedCount}/{totalTargets} updated
@@ -1901,7 +1906,7 @@ export default function Admin() {
 
       {/* Bluetooth WiFi Config */}
       {activeTab === 'bluetooth' && (
-        <div className="mx-auto max-w-lg space-y-6">
+        <div className="mx-auto min-w-0 max-w-lg space-y-6">
           {!('bluetooth' in navigator) ? (
             <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-4 dark:border-amber-700 dark:bg-amber-900/30">
               <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
@@ -1911,7 +1916,7 @@ export default function Admin() {
           ) : (
             <>
               {/* Connection */}
-              <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+              <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
                 <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Connect to Sensor</h2>
                 <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
                   Make sure you are near the sensor and Bluetooth is enabled on this device.
@@ -1926,18 +1931,19 @@ export default function Admin() {
                   </button>
                 ) : (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between rounded-md border border-green-200 bg-green-50 px-4 py-3 dark:border-green-700 dark:bg-green-900/30">
-                      <div>
+                    <div className="flex flex-col gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-3 dark:border-green-700 dark:bg-green-900/30 sm:flex-row sm:items-center sm:justify-between sm:px-4">
+                      <div className="min-w-0">
                         <p className="text-sm font-medium text-green-800 dark:text-green-300">
                           Connected: {bleDevice?.name || 'Unknown'}
                         </p>
-                        <p className="text-xs text-green-700 dark:text-green-400">
+                        <p className="break-words text-xs text-green-700 dark:text-green-400">
                           Current SSID: {bleCurrentSSID || '—'} | Status: {bleWifiStatus || '—'}
                         </p>
                       </div>
                       <button
+                        type="button"
                         onClick={handleBleDisconnect}
-                        className="rounded-md bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-200 dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
+                        className="w-full shrink-0 rounded-md bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-200 sm:w-auto dark:bg-red-900/40 dark:text-red-300 dark:hover:bg-red-900/60"
                       >
                         Disconnect
                       </button>
@@ -1951,7 +1957,7 @@ export default function Admin() {
 
               {/* WiFi Config (only when connected) */}
               {bleConnected && (
-                <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+                <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
                   <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Configure WiFi</h2>
                   <div className="space-y-4">
                     <div>
@@ -2002,11 +2008,11 @@ export default function Admin() {
 
       {/* Invite Codes */}
       {activeTab === 'invites' && (
-        <div className="mx-auto max-w-3xl space-y-6">
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+        <div className="mx-auto min-w-0 max-w-3xl space-y-6">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
             <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Generate Invite Code</h2>
-            <div className="flex flex-wrap items-end gap-4">
-              <div className="flex-1">
+            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+              <div className="min-w-0 flex-1">
                 <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Client</label>
                 <select
                   value={inviteSelectedClient}
@@ -2022,9 +2028,10 @@ export default function Admin() {
                 </select>
               </div>
               <button
+                type="button"
                 onClick={handleGenerateInvite}
                 disabled={inviteGenerating || !inviteSelectedClient}
-                className="rounded-md bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+                className="w-full rounded-md bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 sm:w-auto dark:bg-indigo-500 dark:hover:bg-indigo-600"
               >
                 {inviteGenerating ? 'Generating…' : 'Generate Code'}
               </button>
@@ -2034,15 +2041,15 @@ export default function Admin() {
             )}
           </div>
 
-          <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
+          <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
             <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Existing Codes</h2>
             {inviteLoading && <p className="text-sm text-gray-500 dark:text-gray-400">Loading…</p>}
             {!inviteLoading && inviteCodes.length === 0 && (
               <p className="text-sm text-gray-500 dark:text-gray-400">No invite codes yet.</p>
             )}
             {!inviteLoading && inviteCodes.length > 0 && (
-              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-gray-200 [-webkit-overflow-scrolling:touch] dark:border-gray-700">
+                <table className="min-w-[560px] divide-y divide-gray-200 dark:divide-gray-700">
                   <thead className="bg-gray-50 dark:bg-gray-800">
                     <tr>
                       {['Code', 'Client', 'Status', 'Created', ''].map((h, i) => (
