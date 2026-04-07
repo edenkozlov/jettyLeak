@@ -31,7 +31,7 @@ async function fetchSensorDataOptimized(variables?: Record<string, unknown>) {
   const until = variables?.until as string
 
   const [reportResult, signalResult] = await Promise.all([
-    GET_REPORT_DOWNSAMPLED({ sensorId, since, until, maxPoints: 1500 }),
+    GET_REPORT_DOWNSAMPLED({ sensorId, since, until, maxPoints: 1000 }),
     GET_SIGNAL_DOWNSAMPLED({ sensorId, since, until, maxRows: 500 }),
   ])
 
@@ -52,7 +52,7 @@ async function fetchMagOptimized(variables?: Record<string, unknown>) {
   const since = variables?.since as string
   const until = variables?.until as string
   if (!sensorIds || sensorIds.length === 0) return { mag_report: [] as MagReport[] }
-  const result = await GET_MAG_DOWNSAMPLED({ sensorIds, since, until, maxPoints: 1500 })
+  const result = await GET_MAG_DOWNSAMPLED({ sensorIds, since, until, maxPoints: 1000 })
   return { mag_report: result.mag_report as unknown as MagReport[] }
 }
 
@@ -582,11 +582,21 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
     if (timeRange === 'custom' && !customWindow) return
     const window = computeTimeWindow(timeRange, periodOffset, customWindow ?? undefined)
     setMagFetchWindow(window)
-    await fetchMagSupplementRef.current({
-      sensorIds: magSensorIdsForQuery,
-      since: window.since,
-      until: window.until,
-    })
+    // Refetch mag data + report/signal data in parallel so detector predictions
+    // (signals) stay live alongside the mag/flow charts.
+    await Promise.all([
+      fetchMagSupplementRef.current({
+        sensorIds: magSensorIdsForQuery,
+        since: window.since,
+        until: window.until,
+      }),
+      fetchSensorDataRef.current({
+        sensorId: selectedSensorId,
+        since: window.since,
+        until: window.until,
+        magSensorIds: [],
+      }),
+    ])
     const rangeMs = RANGE_MS[timeRange]
     if (rangeMs >= 6 * 60 * 60_000 || timeRange === 'all') {
       GET_FLOW_ANALYTICS({

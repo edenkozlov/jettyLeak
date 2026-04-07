@@ -619,7 +619,10 @@ export default function Reports() {
   }
 
   const lastRefetchMsRef = useRef(Date.now())
-  const MIN_REFETCH_INTERVAL_MS = 15_000
+  // Floor of how often we'll refetch. Should be < the smallest bucketMs across
+  // all time ranges (1min view = 5s buckets) so the racing-with-bucket-boundary
+  // doesn't cause refetches to be skipped.
+  const MIN_REFETCH_INTERVAL_MS = 4_000
 
   // Tick counter drives the timer loop without moving the chart window.
   // slotAnchor only advances after a successful data refetch so the charts
@@ -629,18 +632,23 @@ export default function Reports() {
   useEffect(() => {
     const now = Date.now()
     const nextBoundary = (Math.floor(now / bucketMs) + 1) * bucketMs
-    const delay = nextBoundary - now
+    const delay = Math.max(500, nextBoundary - now)
 
     const timeout = setTimeout(async () => {
-      const elapsed = Date.now() - lastRefetchMsRef.current
-      if (elapsed >= MIN_REFETCH_INTERVAL_MS) {
-        lastRefetchMsRef.current = Date.now()
-        await refetchMagRef.current()
-        // Advance the chart window only after fresh data has arrived
-        setSlotAnchor(Math.floor(Date.now() / bucketMs) * bucketMs)
+      try {
+        const elapsed = Date.now() - lastRefetchMsRef.current
+        if (elapsed >= MIN_REFETCH_INTERVAL_MS) {
+          lastRefetchMsRef.current = Date.now()
+          await refetchMagRef.current()
+          // Advance the chart window only after fresh data has arrived
+          setSlotAnchor(Math.floor(Date.now() / bucketMs) * bucketMs)
+        }
+      } catch (err) {
+        console.warn('[Reports] refetchMag failed', err)
+      } finally {
+        // Always bump the tick so the next timeout is scheduled, even on error
+        setTick((t) => t + 1)
       }
-      // Always bump the tick so the next timeout is scheduled
-      setTick((t) => t + 1)
     }, delay)
 
     return () => clearTimeout(timeout)
