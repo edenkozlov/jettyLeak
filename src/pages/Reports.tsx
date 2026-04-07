@@ -201,9 +201,9 @@ function renderValueLabel(
   )
 }
 
-function rangeButtonClass(isActive: boolean): string {
+function rangeButtonClass(isActive: boolean, isLoading?: boolean): string {
   if (isActive) {
-    return 'bg-indigo-500 text-white'
+    return `bg-indigo-500 text-white${isLoading ? ' animate-pulse' : ''}`
   }
   return 'bg-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
 }
@@ -1048,6 +1048,14 @@ export default function Reports() {
   }, [bucketedFlowData])
 
   const stackedBarData = useMemo(() => {
+    // Find the max volume to compute a proportional sliver height for zero-flow buckets
+    let maxVol = 0
+    for (const b of bucketedFlowData) {
+      if (b.bucketVolumeL > maxVol) maxVol = b.bucketVolumeL
+    }
+    // Sliver = 1.5% of max, or a small absolute minimum so empty ranges still show bars
+    const sliverL = maxVol > 0 ? maxVol * 0.015 : 0.001
+
     return bucketedFlowData.map((b) => {
       const row: Record<string, number> = {
         timestamp: b.timestamp,
@@ -1061,7 +1069,10 @@ export default function Reports() {
         row[`vol_${t}`] = v
         attributed += v
       }
-      row['vol__unattributed'] = Math.max(0, Math.round((b.bucketVolumeL - attributed) * 10000) / 10000)
+      const unattr = Math.max(0, Math.round((b.bucketVolumeL - attributed) * 10000) / 10000)
+      // For zero-volume buckets, use a tiny sliver so the bar is still visible & hoverable
+      row['vol__unattributed'] = b.bucketVolumeL === 0 ? sliverL : unattr
+      row['_isZeroSliver'] = b.bucketVolumeL === 0 ? 1 : 0
       return row
     })
   }, [bucketedFlowData, volumeSignalTypes])
@@ -1573,7 +1584,7 @@ export default function Reports() {
                   onClick={() =>
                     onTimeRangeChange(opt.value as TimeRange)
                   }
-                  className={`shrink-0 rounded-md px-2 py-1 transition-colors sm:px-3 sm:py-1.5 ${rangeButtonClass(timeRange === opt.value)}`}
+                  className={`shrink-0 rounded-md px-2 py-1 transition-colors sm:px-3 sm:py-1.5 ${rangeButtonClass(timeRange === opt.value, reportsLoading || magLoading)}`}
                 >
                   {opt.label}
                 </button>
@@ -1581,7 +1592,7 @@ export default function Reports() {
               <button
                 type="button"
                 onClick={() => setShowCustomPicker((v) => !v)}
-                className={`shrink-0 rounded-md px-2 py-1 transition-colors sm:px-3 sm:py-1.5 ${rangeButtonClass(timeRange === 'custom')}`}
+                className={`shrink-0 rounded-md px-2 py-1 transition-colors sm:px-3 sm:py-1.5 ${rangeButtonClass(timeRange === 'custom', reportsLoading || magLoading)}`}
               >
                 Custom
               </button>
@@ -1867,7 +1878,7 @@ export default function Reports() {
 
         {/* Water Usage per bucket */}
         {bucketedFlowData.length > 0 && (
-          <div className="mb-6">
+          <div className={`mb-6 transition-opacity duration-200 ${(reportsLoading || magLoading) ? 'pointer-events-none opacity-40' : 'opacity-100'}`}>
             <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Water Usage
             </h3>
@@ -1920,8 +1931,9 @@ export default function Reports() {
                       if (!active || !payload?.length) return null
                       const row = payload[0]?.payload as Record<string, number> | undefined
                       if (!row) return null
-                      const totalL = row.bucketVolumeL ?? 0
-                      const flowRate = row.flowRateLph ?? 0
+                      const isZeroSliver = row._isZeroSliver === 1
+                      const totalL = isZeroSliver ? 0 : (row.bucketVolumeL ?? 0)
+                      const flowRate = isZeroSliver ? 0 : (row.flowRateLph ?? 0)
                       const isPartial = row.partial === 1
                       const bStart = typeof label === 'number' ? label - bucketMs / 2 : null
                       const bEnd = typeof label === 'number' ? label + bucketMs / 2 : null
@@ -1996,6 +2008,21 @@ export default function Reports() {
                     fill="#3b82f6"
                     radius={[3, 3, 0, 0]}
                     isAnimationActive={false}
+                    shape={((props: { x: number; y: number; width: number; height: number; payload: Record<string, number> }) => {
+                      const isSliver = props.payload?._isZeroSliver === 1
+                      return (
+                        <rect
+                          x={props.x}
+                          y={props.y}
+                          width={props.width}
+                          height={props.height}
+                          rx={3}
+                          ry={3}
+                          fill={isSliver ? '#94a3b8' : '#3b82f6'}
+                          fillOpacity={isSliver ? 0.25 : 1}
+                        />
+                      )
+                    }) as unknown as undefined}
                   />
                 </BarChart>
               </ResponsiveContainer>
@@ -2090,9 +2117,18 @@ export default function Reports() {
             No data for this time range
           </div>
         ) : chartData.length > 0 ? (
+          <div className="relative">
+          {(reportsLoading || magLoading) && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center">
+              <svg className="h-5 w-5 animate-spin text-indigo-500" viewBox="0 0 24 24" fill="none">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+              </svg>
+            </div>
+          )}
           <div
             ref={chartWrapperRef}
-            className={`h-[280px] select-none sm:h-[400px] ${maSelectMode ? 'cursor-crosshair' : ''}`}
+            className={`h-[280px] select-none transition-opacity duration-200 sm:h-[400px] ${(reportsLoading || magLoading) ? 'pointer-events-none opacity-40' : 'opacity-100'} ${maSelectMode ? 'cursor-crosshair' : ''}`}
             onMouseLeave={chartMouseLeave}
           >
             <ResponsiveContainer width="100%" height="100%">
@@ -2236,6 +2272,7 @@ export default function Reports() {
                 )}
               </LineChart>
             </ResponsiveContainer>
+          </div>
           </div>
         ) : null}
 
