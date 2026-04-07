@@ -17,6 +17,7 @@ import {
 } from 'recharts'
 
 import LiveFlowIndicator from '@/components/LiveFlowIndicator'
+import useAuth from '@/hooks/auth/useAuth'
 import { computeWaveFrequency } from '@/utils/fft'
 import {
   computeFlowFromPeaks,
@@ -402,6 +403,8 @@ function CustomTooltip({ active, payload, colors }: CustomTooltipProps) {
 export default function Reports() {
   const { mode } = useTheme()
   const colors = CHART_COLORS[mode]
+  const { role } = useAuth()
+  const showMagnetometerUi = role !== 'client'
   const navigate = useNavigate()
   const location = useLocation()
   const { sensorId: sensorIdParam, timeWindow: timeWindowParam } = useParams<{ sensorId: string; timeWindow: string }>()
@@ -1449,7 +1452,10 @@ export default function Reports() {
       )}
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-        <div className="w-full min-w-0 sm:max-w-sm sm:min-w-0 sm:flex-1">
+        <div
+          className={`w-full min-w-0 sm:max-w-sm sm:min-w-0 sm:flex-1 ${showMagnetometerUi ? '' : 'hidden'}`}
+          aria-hidden={!showMagnetometerUi}
+        >
           <LiveFlowIndicator
             buildingId={selectedBuildingId ?? undefined}
             fallbackMagSensorId={selectedSensorId ?? undefined}
@@ -1469,7 +1475,7 @@ export default function Reports() {
             </p>
           </div>
         )}
-        {volumeBuckets.some((b) => b.volumeL > 0) && (
+        {showMagnetometerUi && volumeBuckets.some((b) => b.volumeL > 0) && (
           <div className="w-full min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-3 sm:flex-[2] sm:px-4 dark:border-gray-700 dark:bg-gray-800">
             <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sm:mb-3">
               Volume Used
@@ -1514,7 +1520,11 @@ export default function Reports() {
                 </span>
                 {isLive && (
                   <span className="ml-1 text-xs text-gray-400">
-                    ({chartData.length || magChartData.length} pts)
+                    (
+                    {showMagnetometerUi
+                      ? chartData.length || magChartData.length
+                      : chartData.length}{' '}
+                    pts)
                   </span>
                 )}
               </p>
@@ -1528,7 +1538,7 @@ export default function Reports() {
               </p>
             )}
             </div>
-            {magChartData.length > 0 && (
+            {showMagnetometerUi && magChartData.length > 0 && (
               <button
                 type="button"
                 onClick={() => {
@@ -1853,7 +1863,7 @@ export default function Reports() {
             <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Water Usage
             </h3>
-            {showRawData && magVolumeFromCycles && (
+            {showMagnetometerUi && showRawData && magVolumeFromCycles && (
               <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
                 <span className="font-medium text-gray-600 dark:text-gray-300">
                   {magVolumeFromCycles.fullCycles}
@@ -1986,7 +1996,7 @@ export default function Reports() {
         )}
 
         {/* Per-peak flow rate line chart */}
-        {peakFlowData.length > 0 && (
+        {showMagnetometerUi && peakFlowData.length > 0 && (
           <div className="mb-6">
             <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Flow Rate (per cycle)
@@ -2221,7 +2231,7 @@ export default function Reports() {
           </div>
         ) : null}
 
-        {showRawData && magLayerBaseData.length > 0 && (
+        {showMagnetometerUi && showRawData && magLayerBaseData.length > 0 && (
           <div
             ref={magRawChartWrapperRef}
             className="select-none"

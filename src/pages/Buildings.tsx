@@ -162,11 +162,13 @@ function FlowBadge({ buildingId, flowStatus }: { buildingId: number; flowStatus:
 function BuildingCard({
   building,
   flowStatus,
+  showLiveFlowRow,
   onMouseEnter,
   onClick,
 }: {
   building: Building
   flowStatus: FlowStatusMap
+  showLiveFlowRow: boolean
   onMouseEnter: () => void
   onClick: () => void
 }) {
@@ -215,10 +217,11 @@ function BuildingCard({
 
       {/* Body */}
       <div className="space-y-3 px-4 pb-4 pt-3">
-        {/* Live Flow */}
-        <div className="flex items-center justify-between">
-          <FlowBadge buildingId={building.id} flowStatus={flowStatus} />
-        </div>
+        {showLiveFlowRow && (
+          <div className="flex items-center justify-between">
+            <FlowBadge buildingId={building.id} flowStatus={flowStatus} />
+          </div>
+        )}
 
         {/* Meta row */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400 dark:text-gray-500">
@@ -328,6 +331,7 @@ export default function Buildings() {
   const { buildings, flowStatus, loading, error } = useBuildingsPage()
   const { role } = useAuth()
   const isAdmin = role === 'admin'
+  const showMagnetometerFlowUi = role !== 'client'
   const token = useAppSelector((state) => state.login.token)
 
   const handlePrefetch = useCallback(
@@ -535,6 +539,7 @@ export default function Buildings() {
                   key={building.id}
                   building={building}
                   flowStatus={flowStatus}
+                  showLiveFlowRow={showMagnetometerFlowUi}
                   onMouseEnter={() => handlePrefetch(building.id)}
                   onClick={() => goToBuilding(building)}
                 />
@@ -577,12 +582,14 @@ export default function Buildings() {
                         Health
                       </span>
                     </th>
-                    <th className="px-4 py-3 sm:px-6">
-                      <span className="inline-flex items-center gap-1.5">
-                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        Flow
-                      </span>
-                    </th>
+                    {showMagnetometerFlowUi && (
+                      <th className="px-4 py-3 sm:px-6">
+                        <span className="inline-flex items-center gap-1.5">
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          Flow
+                        </span>
+                      </th>
+                    )}
                     <th className="px-4 py-3 sm:px-6">
                       <span className="inline-flex items-center gap-1.5">
                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
@@ -616,9 +623,11 @@ export default function Buildings() {
                       <td className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
                         <BhiBadge bhi={building.bhi} label={building.bhi_label} />
                       </td>
-                      <td className="min-w-[8rem] px-4 py-3 sm:px-6 sm:py-4">
-                        <FlowBadge buildingId={building.id} flowStatus={flowStatus} />
-                      </td>
+                      {showMagnetometerFlowUi && (
+                        <td className="min-w-[8rem] px-4 py-3 sm:px-6 sm:py-4">
+                          <FlowBadge buildingId={building.id} flowStatus={flowStatus} />
+                        </td>
+                      )}
                       <td className="max-w-[8rem] truncate px-4 py-3 text-gray-500 dark:text-gray-400 sm:max-w-[10rem] sm:px-6 sm:py-4">
                         {clientName(building) ?? '—'}
                       </td>
