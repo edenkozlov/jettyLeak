@@ -102,6 +102,65 @@ function extractSlug(url: string): string {
   }
 }
 
+// ── Title translation (FR → EN) ───────────────────────────────────────
+
+// Ordered longest-first so longer phrases match before shorter substrings
+const TITLE_PHRASES: [RegExp, string][] = [
+  [/^Fin de l['']avis pr[ée]ventif d['']?[ée]bullition de l['']eau/i, 'End of preventive boil water advisory'],
+  [/^Fin de la coupure d['']eau/i, 'End of water service interruption'],
+  [/^Avis pr[ée]ventif d['']?[ée]bullition d['']eau/i, 'Preventive boil water advisory'],
+  [/^Interruption temporaire de l['']alimentation en eau/i, 'Temporary water supply interruption'],
+  [/^Rin[çc]age du r[ée]seau d['']eau et inspection des bornes fontaines/i, 'Water system flushing & hydrant inspection'],
+  [/^Coupure d['']eau/i, 'Water service interruption'],
+  [/^MISE [ÀA] JOUR\s*[–\-]\s*/i, 'UPDATE – '],
+  [/^PROLONGATION\s*[–\-]\s*/i, 'EXTENSION – '],
+  [/^ANNUL[ÉE]\s*[–\-]\s*/i, 'CANCELLED – '],
+  [/^ANNULATION\s*[–\-]\s*/i, 'CANCELLATION – '],
+  [/^REPORT[ÉE]E?\s*[–\-]\s*/i, 'POSTPONED – '],
+  [/^R[ée]ouverture/i, 'Reopening'],
+  [/^ERRATUM\s*[–\-]\s*/i, 'ERRATUM – '],
+]
+
+const CONNECTOR_PHRASES: [RegExp, string][] = [
+  [/,?\s*arrondissement\s+(?:de\s+|d['']|du\s+)/gi, ', '],
+  [/,?\s*arr\.?\s+(?:de\s+|d[''])/gi, ', '],
+  [/\s+entre\s+(les?\s+)?/gi, ', between '],
+  [/\s+et\s+(la\s+|le\s+|les\s+|l[''])?/gi, ' and '],
+  [/,\s*le\s+\d{2}\/\d{2}\/\d{4}/gi, ''],  // remove inline dates like ", le 26/03/2026"
+  [/\s*[–\-]\s*[Dd]irection\s+[Nn]ord/gi, ' – northbound'],
+  [/\s*[–\-]\s*[Dd]irection\s+[Ss]ud/gi, ' – southbound'],
+  [/\s*[–\-]\s*[Dd]irection\s+[Ee]st/gi, ' – eastbound'],
+  [/\s*[–\-]\s*[Dd]irection\s+[Oo]uest/gi, ' – westbound'],
+]
+
+function translateTitle(frTitle: string): string {
+  let title = frTitle
+
+  // Apply prefix phrase replacements (first match wins)
+  for (const [re, en] of TITLE_PHRASES) {
+    if (re.test(title)) {
+      title = title.replace(re, en)
+      break
+    }
+  }
+
+  // Apply connector translations
+  for (const [re, en] of CONNECTOR_PHRASES) {
+    title = title.replace(re, en as string)
+  }
+
+  return title.replace(/\s{2,}/g, ' ').trim()
+}
+
+function toEnglishUrl(frUrl: string): string {
+  return frUrl.replace('montreal.ca/alertes/', 'montreal.ca/en/alerts/')
+}
+
+const CATEGORY_MAP: Record<string, string> = {
+  'Eau et aqueduc': 'Water & waterworks',
+  'Urgence': 'Urgent',
+}
+
 // ── Filter helpers ─────────────────────────────────────────────────────
 
 function isWaterRelated(f: FeedFeature): boolean {
@@ -151,9 +210,9 @@ export async function fetchLiveWaterAlerts(): Promise<WaterAlert[]> {
     return {
       id: idx + 1,
       source_slug: slug,
-      source_url: p.lien,
-      title: p.titre,
-      category: p.type,
+      source_url: toEnglishUrl(p.lien),
+      title: translateTitle(p.titre),
+      category: CATEGORY_MAP[p.type] ?? p.type,
       borough,
       status,
       published_at: p.date_debut,
