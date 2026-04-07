@@ -162,11 +162,13 @@ function FlowBadge({ buildingId, flowStatus }: { buildingId: number; flowStatus:
 function BuildingCard({
   building,
   flowStatus,
+  showLiveFlowRow,
   onMouseEnter,
   onClick,
 }: {
   building: Building
   flowStatus: FlowStatusMap
+  showLiveFlowRow: boolean
   onMouseEnter: () => void
   onClick: () => void
 }) {
@@ -178,7 +180,7 @@ function BuildingCard({
 
   return (
     <div
-      className="group cursor-pointer rounded-xl border border-gray-200 bg-white transition-all hover:border-gray-300 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600"
+      className="group min-w-0 max-w-full cursor-pointer rounded-xl border border-gray-200 bg-white transition-all hover:border-gray-300 hover:shadow-lg dark:border-gray-700 dark:bg-gray-800 dark:hover:border-gray-600"
       onMouseEnter={onMouseEnter}
       onClick={onClick}
     >
@@ -215,10 +217,11 @@ function BuildingCard({
 
       {/* Body */}
       <div className="space-y-3 px-4 pb-4 pt-3">
-        {/* Live Flow */}
-        <div className="flex items-center justify-between">
-          <FlowBadge buildingId={building.id} flowStatus={flowStatus} />
-        </div>
+        {showLiveFlowRow && (
+          <div className="flex items-center justify-between">
+            <FlowBadge buildingId={building.id} flowStatus={flowStatus} />
+          </div>
+        )}
 
         {/* Meta row */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400 dark:text-gray-500">
@@ -255,6 +258,48 @@ function BuildingCard({
 const shimmer =
   'relative overflow-hidden before:absolute before:inset-0 before:-translate-x-full before:animate-[shimmer_1.5s_infinite] before:bg-gradient-to-r before:from-transparent before:via-white/40 before:to-transparent dark:before:via-white/[0.06]'
 
+/** First column stays visible when scrolling the table horizontally */
+const STICKY_NAME_TH =
+  'sticky left-0 z-[2] bg-gray-50 px-4 py-3 shadow-[4px_0_8px_-2px_rgba(15,23,42,0.12)] sm:px-6 dark:bg-gray-950 dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.45)]'
+const STICKY_NAME_TD =
+  'sticky left-0 z-[1] bg-white px-4 py-3 font-medium shadow-[4px_0_8px_-2px_rgba(15,23,42,0.08)] group-hover:bg-gray-50 sm:px-6 sm:py-4 dark:bg-gray-800 dark:shadow-[4px_0_8px_-2px_rgba(0,0,0,0.4)] dark:group-hover:bg-gray-700/50'
+
+function TableSkeleton() {
+  return (
+    <div className="min-w-0 max-w-full overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+      <table className="w-full min-w-[680px] border-separate border-spacing-0 text-left text-sm">
+        <thead className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
+          <tr>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <th key={i} className={i === 0 ? STICKY_NAME_TH : 'px-4 py-3 sm:px-6'}>
+                <div className={`h-3 w-16 rounded bg-gray-200/70 dark:bg-gray-700/50 ${shimmer}`} />
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+          {Array.from({ length: 8 }).map((_, row) => (
+            <tr key={row} className="group">
+              {Array.from({ length: 6 }).map((_, col) => (
+                <td
+                  key={col}
+                  className={
+                    col === 0
+                      ? `${STICKY_NAME_TD} max-w-[10rem] truncate sm:max-w-[14rem] md:max-w-xs`
+                      : 'px-4 py-3 sm:px-6 sm:py-4'
+                  }
+                >
+                  <div className={`h-4 rounded bg-gray-200/70 dark:bg-gray-700/50 ${shimmer} ${col === 1 ? 'w-full max-w-md' : 'w-24'}`} />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function CardSkeleton() {
   return (
     <div className="rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
@@ -286,6 +331,7 @@ export default function Buildings() {
   const { buildings, flowStatus, loading, error } = useBuildingsPage()
   const { role } = useAuth()
   const isAdmin = role === 'admin'
+  const showMagnetometerFlowUi = role !== 'client'
   const token = useAppSelector((state) => state.login.token)
 
   const handlePrefetch = useCallback(
@@ -293,7 +339,7 @@ export default function Buildings() {
     [token],
   )
 
-  const [viewMode, setViewMode] = useState<ViewMode>('cards')
+  const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [showForm, setShowForm] = useState(false)
   const [address, setAddress] = useState('')
   const [clientId, setClientId] = useState('')
@@ -369,10 +415,10 @@ export default function Buildings() {
   }
 
   return (
-    <div>
+    <div className="min-w-0 max-w-full">
       {/* Header */}
-      <div className="mb-4 flex items-center justify-between sm:mb-6">
-        <div className="flex items-center gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 sm:mb-6">
+        <div className="flex min-w-0 items-center gap-3">
           <h1 className="text-xl font-bold sm:text-2xl">Buildings</h1>
           {!loading && (
             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium tabular-nums text-gray-500 dark:bg-gray-700 dark:text-gray-400">
@@ -380,9 +426,9 @@ export default function Buildings() {
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-shrink-0 items-center gap-2">
           {/* View toggle */}
-          <div className="hidden items-center rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-gray-700 dark:bg-gray-800 sm:flex">
+          <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-gray-700 dark:bg-gray-800">
             <button
               onClick={() => setViewMode('cards')}
               className={`rounded-md p-1.5 transition-colors ${viewMode === 'cards' ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-700 dark:text-white' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
@@ -460,15 +506,18 @@ export default function Buildings() {
       )}
 
       {/* Loading */}
-      {loading && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <CardSkeleton key={i} />
-          ))}
-        </div>
-      )}
+      {loading &&
+        (viewMode === 'table' ? (
+          <TableSkeleton />
+        ) : (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <CardSkeleton key={i} />
+            ))}
+          </div>
+        ))}
 
-      {/* Card View (default) */}
+      {/* Card view */}
       {!loading && viewMode === 'cards' && (
         <>
           {buildings.length === 0 ? (
@@ -484,12 +533,13 @@ export default function Buildings() {
               )}
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {buildings.map((building) => (
                 <BuildingCard
                   key={building.id}
                   building={building}
                   flowStatus={flowStatus}
+                  showLiveFlowRow={showMagnetometerFlowUi}
                   onMouseEnter={() => handlePrefetch(building.id)}
                   onClick={() => goToBuilding(building)}
                 />
@@ -510,11 +560,11 @@ export default function Buildings() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
-              <table className="w-full text-left text-sm">
+            <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain rounded-xl border border-gray-200 bg-white [-webkit-overflow-scrolling:touch] dark:border-gray-700 dark:bg-gray-800">
+              <table className="w-full min-w-[680px] border-separate border-spacing-0 text-left text-sm">
                 <thead className="border-b border-gray-200 bg-gray-50 text-xs font-medium uppercase tracking-wider text-gray-500 dark:border-gray-700 dark:bg-gray-800/50 dark:text-gray-400">
                   <tr>
-                    <th className="px-4 py-3 sm:px-6">
+                    <th className={STICKY_NAME_TH}>
                       <span className="inline-flex items-center gap-1.5">
                         <BuildingIcon className="h-3.5 w-3.5" />
                         Name
@@ -532,12 +582,14 @@ export default function Buildings() {
                         Health
                       </span>
                     </th>
-                    <th className="px-4 py-3 sm:px-6">
-                      <span className="inline-flex items-center gap-1.5">
-                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        Flow
-                      </span>
-                    </th>
+                    {showMagnetometerFlowUi && (
+                      <th className="px-4 py-3 sm:px-6">
+                        <span className="inline-flex items-center gap-1.5">
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                          Flow
+                        </span>
+                      </th>
+                    )}
                     <th className="px-4 py-3 sm:px-6">
                       <span className="inline-flex items-center gap-1.5">
                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
@@ -556,23 +608,27 @@ export default function Buildings() {
                   {buildings.map((building) => (
                     <tr
                       key={building.id}
-                      className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                      className="group cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50"
                       onMouseEnter={() => handlePrefetch(building.id)}
                       onClick={() => goToBuilding(building)}
                     >
-                      <td className="whitespace-nowrap px-4 py-3 font-medium sm:px-6 sm:py-4">
+                      <td
+                        className={`${STICKY_NAME_TD} max-w-[10rem] truncate sm:max-w-[14rem] md:max-w-xs`}
+                      >
                         {building.name ?? '—'}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 dark:text-gray-400 sm:px-6 sm:py-4">
+                      <td className="max-w-[12rem] truncate px-4 py-3 text-gray-500 dark:text-gray-400 sm:max-w-xs sm:px-6 sm:py-4 md:max-w-md lg:max-w-lg">
                         {building.full_address ?? '—'}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
                         <BhiBadge bhi={building.bhi} label={building.bhi_label} />
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
-                        <FlowBadge buildingId={building.id} flowStatus={flowStatus} />
-                      </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400 sm:px-6 sm:py-4">
+                      {showMagnetometerFlowUi && (
+                        <td className="min-w-[8rem] px-4 py-3 sm:px-6 sm:py-4">
+                          <FlowBadge buildingId={building.id} flowStatus={flowStatus} />
+                        </td>
+                      )}
+                      <td className="max-w-[8rem] truncate px-4 py-3 text-gray-500 dark:text-gray-400 sm:max-w-[10rem] sm:px-6 sm:py-4">
                         {clientName(building) ?? '—'}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-gray-500 dark:text-gray-400 sm:px-6 sm:py-4">

@@ -17,6 +17,7 @@ import {
 } from 'recharts'
 
 import LiveFlowIndicator from '@/components/LiveFlowIndicator'
+import useAuth from '@/hooks/auth/useAuth'
 import { computeWaveFrequency } from '@/utils/fft'
 import {
   computeFlowFromPeaks,
@@ -402,6 +403,8 @@ function CustomTooltip({ active, payload, colors }: CustomTooltipProps) {
 export default function Reports() {
   const { mode } = useTheme()
   const colors = CHART_COLORS[mode]
+  const { role } = useAuth()
+  const showMagnetometerUi = role !== 'client'
   const navigate = useNavigate()
   const location = useLocation()
   const { sensorId: sensorIdParam, timeWindow: timeWindowParam } = useParams<{ sensorId: string; timeWindow: string }>()
@@ -1407,9 +1410,9 @@ export default function Reports() {
   }
 
   return (
-    <div>
+    <div className="min-w-0 max-w-full">
       <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <h1 className="text-xl font-bold sm:text-2xl">Flow Reports</h1>
           {isLive && connected && (
             <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
@@ -1422,10 +1425,11 @@ export default function Reports() {
           )}
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:gap-3">
           <button
+            type="button"
             onClick={handleToggleLive}
-            className={`rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors sm:px-3 sm:py-2 sm:text-sm ${
+            className={`w-full shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors sm:w-auto sm:px-3 sm:py-2 sm:text-sm ${
               isLive
                 ? 'bg-green-600 text-white hover:bg-green-500'
                 : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
@@ -1437,7 +1441,7 @@ export default function Reports() {
           <select
             value={selectedSensorId ?? ''}
             onChange={onSensorChange}
-            className="min-w-0 flex-1 truncate rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:flex-none sm:px-3 sm:py-2 sm:text-sm"
+            className="min-w-0 w-full truncate rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:min-w-[12rem] sm:max-w-md sm:flex-1 sm:px-3 sm:py-2 sm:text-sm"
           >
             {sensors.map((sensor) => (
               <option key={sensor.id} value={sensor.id}>
@@ -1455,19 +1459,22 @@ export default function Reports() {
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-3">
-        <div className="max-w-sm min-w-[200px] flex-1">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <div
+          className={`w-full min-w-0 sm:max-w-sm sm:min-w-0 sm:flex-1 ${showMagnetometerUi ? '' : 'hidden'}`}
+          aria-hidden={!showMagnetometerUi}
+        >
           <LiveFlowIndicator
             buildingId={selectedBuildingId ?? undefined}
             fallbackMagSensorId={selectedSensorId ?? undefined}
           />
         </div>
         {liveSensorFlowLph != null && (
-          <div className="max-w-sm min-w-[200px] flex-1 rounded-xl border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+          <div className="w-full min-w-0 rounded-xl border border-gray-200 bg-white p-3 sm:max-w-sm sm:flex-1 sm:p-4 dark:border-gray-700 dark:bg-gray-800">
             <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
               Live (sensor report)
             </p>
-            <p className="text-2xl font-bold text-sky-600 dark:text-sky-400">
+            <p className="text-xl font-bold tabular-nums text-sky-600 sm:text-2xl dark:text-sky-400">
               {liveSensorFlowLph.toFixed(1)}{' '}
               <span className="text-sm font-normal text-gray-400">L/h</span>
             </p>
@@ -1476,21 +1483,34 @@ export default function Reports() {
             </p>
           </div>
         )}
-        {volumeBuckets.some((b) => b.volumeL > 0) && (
-          <div className="min-w-0 flex-[2] rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+        {showMagnetometerUi && volumeBuckets.some((b) => b.volumeL > 0) && (
+          <div className="w-full min-w-0 rounded-xl border border-gray-200 bg-white px-3 py-3 sm:flex-[2] sm:px-4 dark:border-gray-700 dark:bg-gray-800">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 sm:mb-3">
               Volume Used
             </p>
-            <div className="flex flex-wrap gap-x-5 gap-y-2">
-              {volumeBuckets.map((b) => (
-                <div key={b.label} className="min-w-[70px]">
-                  <p className="text-lg font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-                    {b.volumeL < 1 ? b.volumeL.toFixed(3) : b.volumeL < 100 ? b.volumeL.toFixed(1) : Math.round(b.volumeL)}{' '}
-                    <span className="text-xs font-normal text-gray-400">L</span>
-                  </p>
-                  <p className="text-[11px] text-gray-500 dark:text-gray-400">{b.label}</p>
-                </div>
-              ))}
+            <div className="flex flex-col divide-y divide-gray-100 dark:divide-gray-700/80 sm:flex sm:flex-row sm:flex-wrap sm:gap-x-6 sm:gap-y-3 sm:divide-y-0">
+              {volumeBuckets.map((b) => {
+                const vol =
+                  b.volumeL < 1
+                    ? b.volumeL.toFixed(3)
+                    : b.volumeL < 100
+                      ? b.volumeL.toFixed(1)
+                      : Math.round(b.volumeL)
+                return (
+                  <div
+                    key={b.label}
+                    className="flex min-w-0 flex-row items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0 sm:min-w-[4.25rem] sm:flex-col sm:items-start sm:justify-start sm:gap-0 sm:py-0"
+                  >
+                    <p className="text-xs text-gray-600 dark:text-gray-300 sm:order-2 sm:mt-1 sm:text-[11px] sm:font-normal sm:text-gray-500 dark:sm:text-gray-400">
+                      {b.label}
+                    </p>
+                    <p className="text-lg font-bold tabular-nums text-emerald-600 sm:order-1 sm:text-lg dark:text-emerald-400">
+                      {vol}
+                      <span className="text-xs font-normal text-gray-400"> L</span>
+                    </p>
+                  </div>
+                )
+              })}
             </div>
           </div>
         )}
@@ -1498,16 +1518,21 @@ export default function Reports() {
 
       <div className="rounded-xl border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
         <div className="mb-4 space-y-3 sm:mb-5">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 sm:gap-4">
             {selectedSensorName && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
+              <p className="min-w-0 text-xs text-gray-500 dark:text-gray-400 sm:text-sm">
                 Sensor:{' '}
                 <span className="font-medium text-gray-900 dark:text-white">
                   {selectedSensorName}
                 </span>
                 {isLive && (
                   <span className="ml-1 text-xs text-gray-400">
-                    ({chartData.length || magChartData.length} pts)
+                    (
+                    {showMagnetometerUi
+                      ? chartData.length || magChartData.length
+                      : chartData.length}{' '}
+                    pts)
                   </span>
                 )}
               </p>
@@ -1520,13 +1545,15 @@ export default function Reports() {
                 </span>
               </p>
             )}
-            {magChartData.length > 0 && (
+            </div>
+            {showMagnetometerUi && magChartData.length > 0 && (
               <button
+                type="button"
                 onClick={() => {
                   if (selectedSensorId == null) return
                   navigate(buildPath(selectedSensorId, timeRange, !showRawData))
                 }}
-                className={`ml-auto rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                className={`w-full shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors sm:ml-auto sm:w-auto sm:py-1 ${
                   showRawData
                     ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400'
                     : 'border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
@@ -1537,22 +1564,24 @@ export default function Reports() {
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex overflow-x-auto rounded-lg border border-gray-200 bg-gray-100 p-0.5 text-[11px] font-medium dark:border-gray-700 dark:bg-gray-900 sm:p-1 sm:text-xs">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
+            <div className="inline-flex max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-gray-200 bg-gray-100 p-0.5 text-[11px] font-medium [-webkit-overflow-scrolling:touch] dark:border-gray-700 dark:bg-gray-900 sm:p-1 sm:text-xs">
               {TIME_RANGE_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
+                  type="button"
                   onClick={() =>
                     onTimeRangeChange(opt.value as TimeRange)
                   }
-                  className={`rounded-md px-2 py-1 transition-colors sm:px-3 sm:py-1.5 ${rangeButtonClass(timeRange === opt.value)}`}
+                  className={`shrink-0 rounded-md px-2 py-1 transition-colors sm:px-3 sm:py-1.5 ${rangeButtonClass(timeRange === opt.value)}`}
                 >
                   {opt.label}
                 </button>
               ))}
               <button
+                type="button"
                 onClick={() => setShowCustomPicker((v) => !v)}
-                className={`rounded-md px-2 py-1 transition-colors sm:px-3 sm:py-1.5 ${rangeButtonClass(timeRange === 'custom')}`}
+                className={`shrink-0 rounded-md px-2 py-1 transition-colors sm:px-3 sm:py-1.5 ${rangeButtonClass(timeRange === 'custom')}`}
               >
                 Custom
               </button>
@@ -1619,20 +1648,23 @@ export default function Reports() {
         </div>
 
         {periodLabel && (
-          <div className="mb-3 flex items-center gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-900/20 dark:text-indigo-300">
-            <span className="font-medium">Viewing past period:</span>
-            <span>{periodLabel}</span>
+          <div className="mb-3 flex flex-col gap-2 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-2 text-xs text-indigo-700 dark:border-indigo-900/50 dark:bg-indigo-900/20 dark:text-indigo-300 sm:flex-row sm:items-center sm:gap-2">
+            <div className="min-w-0">
+              <span className="font-medium">Viewing past period:</span>{' '}
+              <span className="break-words">{periodLabel}</span>
+            </div>
             <button
+              type="button"
               onClick={handleNextPeriod}
-              className="ml-auto rounded px-2 py-0.5 font-medium transition-colors hover:bg-indigo-100 dark:hover:bg-indigo-900/40"
+              className="w-full shrink-0 rounded px-2 py-1 font-medium transition-colors hover:bg-indigo-100 dark:hover:bg-indigo-900/40 sm:ml-auto sm:w-auto sm:py-0.5"
             >
               ← Back to current
             </button>
           </div>
         )}
 
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div className="inline-flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-700 dark:bg-gray-900">
+        <div className="mb-3 flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
+          <div className="inline-flex w-fit max-w-full shrink-0 items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-100 p-0.5 dark:border-gray-700 dark:bg-gray-900">
             <button
               onClick={panLeft}
               className="rounded-md px-1.5 py-1 text-xs text-gray-500 transition-colors hover:bg-white hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white sm:px-2 sm:text-sm"
@@ -1662,9 +1694,10 @@ export default function Reports() {
               ▶
             </button>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex min-w-0 w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-1 sm:justify-end">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
               <button
+                type="button"
                 onClick={() => {
                   setShowMovingAverage((v) => {
                     if (v) { setMaSelectMode(false); setMaRegion(null) }
@@ -1682,12 +1715,13 @@ export default function Reports() {
               </button>
               {showMovingAverage && (
                 <>
-                  <div className="inline-flex overflow-x-auto rounded-md border border-orange-200 bg-orange-50 p-0.5 dark:border-orange-800 dark:bg-orange-900/20">
+                  <div className="inline-flex max-w-full overflow-x-auto overscroll-x-contain rounded-md border border-orange-200 bg-orange-50 p-0.5 [-webkit-overflow-scrolling:touch] dark:border-orange-800 dark:bg-orange-900/20">
                     {MA_RANGE_OPTIONS.map((opt) => (
                       <button
                         key={opt.value}
+                        type="button"
                         onClick={() => setMaRangeMs(opt.value)}
-                        className={`rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors sm:px-2 sm:py-0.5 sm:text-xs ${
+                        className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors sm:px-2 sm:py-0.5 sm:text-xs ${
                           maRangeMs === opt.value
                             ? 'bg-orange-500 text-white'
                             : 'text-orange-600 hover:bg-orange-100 dark:text-orange-400 dark:hover:bg-orange-900/40'
@@ -1698,6 +1732,7 @@ export default function Reports() {
                     ))}
                   </div>
                   <button
+                    type="button"
                     onClick={() => { setMaSelectMode(true); setMaRegion(null) }}
                     className={`rounded-md border px-2 py-0.5 text-[11px] font-medium transition-colors sm:px-2.5 sm:text-xs ${
                       maSelectMode
@@ -1710,6 +1745,7 @@ export default function Reports() {
                   </button>
                   {maRegion && (
                     <button
+                      type="button"
                       onClick={() => setMaRegion(null)}
                       className="rounded-md border border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] font-medium text-orange-600 transition-colors hover:bg-orange-100 dark:border-orange-700 dark:bg-orange-900/30 dark:text-orange-400 dark:hover:bg-orange-900/40 sm:px-2.5 sm:text-xs"
                       title="Clear selected region — MA will apply to full chart"
@@ -1722,13 +1758,14 @@ export default function Reports() {
             </div>
             {isZoomed && (
               <button
+                type="button"
                 onClick={resetZoom}
                 className="rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] font-medium text-indigo-600 transition-colors hover:bg-indigo-100 dark:border-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50 sm:px-2.5 sm:text-xs"
               >
                 Reset
               </button>
             )}
-            <span className="hidden text-xs text-gray-400 dark:text-gray-500 sm:inline">
+            <span className="hidden text-xs text-gray-400 dark:text-gray-500 lg:inline">
               Drag to zoom · Scroll to zoom · Swipe to pan
             </span>
           </div>
@@ -1834,7 +1871,7 @@ export default function Reports() {
             <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Water Usage
             </h3>
-            {showRawData && magVolumeFromCycles && (
+            {showMagnetometerUi && showRawData && magVolumeFromCycles && (
               <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
                 <span className="font-medium text-gray-600 dark:text-gray-300">
                   {magVolumeFromCycles.fullCycles}
@@ -1967,7 +2004,7 @@ export default function Reports() {
         )}
 
         {/* Per-peak flow rate line chart */}
-        {peakFlowData.length > 0 && (
+        {showMagnetometerUi && peakFlowData.length > 0 && (
           <div className="mb-6">
             <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
               Flow Rate (per cycle)
@@ -2202,7 +2239,7 @@ export default function Reports() {
           </div>
         ) : null}
 
-        {showRawData && magLayerBaseData.length > 0 && (
+        {showMagnetometerUi && showRawData && magLayerBaseData.length > 0 && (
           <div
             ref={magRawChartWrapperRef}
             className="select-none"
@@ -3130,11 +3167,11 @@ export default function Reports() {
 
       {tagFormTimestamp !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4 sm:p-6"
           onClick={handleCancelTag}
         >
           <div
-            className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800 sm:p-6"
+            className="my-auto w-full max-w-md max-h-[min(90vh,100dvh)] overflow-y-auto rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800 sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -3200,11 +3237,11 @@ export default function Reports() {
 
       {selectedTag && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4 sm:p-6"
           onClick={closeTagModal}
         >
           <div
-            className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800 sm:p-6"
+            className="my-auto w-full max-w-md max-h-[min(90vh,100dvh)] overflow-y-auto rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-800 sm:p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between">

@@ -13,6 +13,8 @@ interface NavItem {
   label: string
   path: string
   adminOnly: boolean
+  /** When set, only shown to signed-in users with role client and a linked organization. */
+  clientOnly?: boolean
   alsoMatches?: string[]
   icon: ReactNode
 }
@@ -46,6 +48,17 @@ const NAV_GROUPS: NavGroup[] = [
         icon: (
           <svg className={ICON_CLS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        ),
+      },
+      {
+        label: 'Team',
+        path: '/dashboard/team',
+        adminOnly: false,
+        clientOnly: true,
+        icon: (
+          <svg className={ICON_CLS} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         ),
       },
@@ -148,14 +161,18 @@ const HAMBURGER_ICON = (
 )
 
 export default function DashboardLayout() {
-  const { sidebarOpen, handleToggleSidebar } = useDashboardLayout()
-  const { role } = useAuth()
+  const { sidebarOpen, handleToggleSidebar, closeSidebar } = useDashboardLayout()
+  const { role, client_id } = useAuth()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
 
   const visibleGroups = NAV_GROUPS
     .map((g) => ({
       ...g,
-      items: g.items.filter((item) => !item.adminOnly || role === 'admin'),
+      items: g.items.filter((item) => {
+        if (item.adminOnly && role !== 'admin') return false
+        if (item.clientOnly && (role !== 'client' || !client_id)) return false
+        return true
+      }),
     }))
     .filter((g) => g.items.length > 0)
 
@@ -210,7 +227,7 @@ export default function DashboardLayout() {
 
         {/* Nav */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden">
-          <SidebarNav groups={visibleGroups} collapsed={sidebarCollapsed} />
+          <SidebarNav groups={visibleGroups} collapsed={sidebarCollapsed} onNavigate={closeSidebar} />
         </div>
 
         {/* Collapse toggle at bottom (desktop only) */}
@@ -248,7 +265,7 @@ export default function DashboardLayout() {
           <ProfileMenu />
         </header>
 
-        <main className="flex-1 overflow-y-auto p-3 sm:p-6">
+        <main className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6">
           <Outlet />
         </main>
       </div>
@@ -263,7 +280,15 @@ function isItemActive(item: NavItem, pathname: string) {
   )
 }
 
-function SidebarNav({ groups, collapsed }: { groups: NavGroup[]; collapsed: boolean }) {
+function SidebarNav({
+  groups,
+  collapsed,
+  onNavigate,
+}: {
+  groups: NavGroup[]
+  collapsed: boolean
+  onNavigate: () => void
+}) {
   const { pathname } = useLocation()
   const [groupCollapsed, setGroupCollapsed] = useState<Record<string, boolean>>({})
 
@@ -289,6 +314,7 @@ function SidebarNav({ groups, collapsed }: { groups: NavGroup[]; collapsed: bool
                     end={item.path === '/dashboard'}
                     title={item.label}
                     className={() => navLinkCollapsedClass(active)}
+                    onClick={onNavigate}
                   >
                     {item.icon}
                   </NavLink>
@@ -341,6 +367,7 @@ function SidebarNav({ groups, collapsed }: { groups: NavGroup[]; collapsed: bool
                         to={item.path}
                         end={item.path === '/dashboard'}
                         className={() => navLinkClass(active)}
+                        onClick={onNavigate}
                       >
                         {item.icon}
                         {item.label}

@@ -37,9 +37,23 @@ export async function GET_CLIENTS() {
     }
   }
 
+  let usersByClient: Record<string, { id: string; role: string; email: string | null }[]> = {}
+  if (clientIds.length > 0) {
+    const { data: users } = await supabase.rpc('get_client_users', {
+      p_client_ids: clientIds,
+    })
+    if (users) {
+      for (const u of users as any[]) {
+        if (!usersByClient[u.client_id]) usersByClient[u.client_id] = []
+        usersByClient[u.client_id]!.push({ id: u.id, role: u.role, email: u.email ?? null })
+      }
+    }
+  }
+
   return {
     client: (data ?? []).map((c: any) => {
       const clientBuildings = buildingsByClient[c.id] ?? []
+      const clientUsers = usersByClient[c.id] ?? []
       return {
         ...c,
         buildings_aggregate: { aggregate: { count: clientBuildings.length } },
@@ -47,6 +61,8 @@ export async function GET_CLIENTS() {
           ...b,
           sensors_aggregate: { aggregate: { count: sensorCountsByBuilding[b.id] ?? 0 } },
         })),
+        users: clientUsers,
+        users_count: clientUsers.length,
       }
     }),
   } as any
