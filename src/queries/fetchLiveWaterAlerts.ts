@@ -152,8 +152,10 @@ function translateTitle(frTitle: string): string {
   return title.replace(/\s{2,}/g, ' ').trim()
 }
 
+/** Keep the original French URL — montreal.ca doesn't serve English pages
+ *  for alert slugs, so the /en/alerts/ rewrite results in 404s. */
 function toEnglishUrl(frUrl: string): string {
-  return frUrl.replace('montreal.ca/alertes/', 'montreal.ca/en/alerts/')
+  return frUrl
 }
 
 const CATEGORY_MAP: Record<string, string> = {
