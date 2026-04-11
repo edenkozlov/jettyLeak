@@ -1,0 +1,51 @@
+{
+  "phyn": {
+    "pageTitle": "Beluga vs Phyn: Water Monitor Comparison for Buildings",
+    "metaDescription": "Compare Beluga and Phyn. Pressure-based residential leak detection versus building-level water intelligence. Neutral comparison based on publicly available information.",
+    "heroH1": "Beluga vs Phyn",
+    "heroSubtitle": "A neutral comparison of pressure-based leak shutoff and building-level water intelligence.",
+    "introP1": "If you are looking for a Phyn alternative or comparing Beluga vs Phyn, you are likely evaluating smart water monitors and may be deciding between residential leak protection and broader building intelligence. These two products target different environments and different outcomes.",
+    "introP2": "This page compares Beluga and Phyn using publicly available information to help clarify those differences and assist you in evaluating the right fit.",
+    "competitorLabel": "Phyn",
+    "disclaimerCompetitorName": "Phyn",
+    "ctaCompetitorName": "Phyn",
+    "breadcrumbVs": "Beluga vs Phyn",
+    "tableRows": [
+      { "feature": "Core purpose", "beluga": "Water system intelligence and monitoring", "competitor": "Leak detection and automatic shutoff" },
+      { "feature": "Installation", "beluga": "Non-invasive (no pipe cutting)", "competitor": "Installed on main water line" },
+      { "feature": "Leak detection method", "beluga": "Pattern and anomaly-based", "competitor": "Pressure sensing and machine learning" },
+      { "feature": "Automatic shutoff", "beluga": "Not core feature", "competitor": "Yes" },
+      { "feature": "Usage insights", "beluga": "System-level visibility and benchmarking", "competitor": "Basic usage insights" },
+      { "feature": "Fixture-level understanding", "beluga": "Yes (pattern recognition)", "competitor": "Limited" },
+      { "feature": "Target environment", "beluga": "Commercial / multi-unit buildings", "competitor": "Residential homes" },
+      { "feature": "Monitoring over time", "beluga": "Continuous benchmarking and trend analysis", "competitor": "Event-based alerts" }
+    ],
+    "midTitle": "Key difference: pressure sensing vs system intelligence",
+    "midLeftTitle": "Phyn — pressure-based detection",
+    "midLeftP": "Phyn focuses on detecting leaks through high-resolution pressure sensing and machine learning. It is designed primarily for residential protection, with an emphasis on identifying abnormal water flow and stopping it quickly through automatic shutoff.",
+    "midRightTitle": "Beluga — behavioral water intelligence",
+    "midRightP": "Beluga focuses on understanding how a water system behaves over time. It tracks usage patterns, identifies individual fixtures, detects inefficiencies, and builds a system-wide model that surfaces insights continuously — not just when something goes wrong.",
+    "whenCompetitorHeading": "Phyn may be a good fit if:",
+    "whenCompetitorBullets": ["You want automatic shutoff protection for a home", "You are focused on residential leak prevention", "You prefer pressure-based sensing technology", "Your primary concern is stopping active leaks quickly"],
+    "whenBelugaHeading": "Beluga may be a better fit if:",
+    "whenBelugaBullets": ["You manage larger or multi-unit properties", "You want insight into system behavior, not just leak events", "You are optimizing usage, infrastructure, and efficiency", "You need a non-invasive installation with no plumbing modifications"],
+    "faq": [
+      { "q": "Does Phyn detect small leaks?", "a": "Phyn is designed to detect abnormal pressure patterns, which may include smaller leaks depending on system conditions. Its primary detection method is pressure-based analysis." },
+      { "q": "Is Beluga only for leak detection?", "a": "No. Leak detection is one component, but Beluga's primary focus is system intelligence — understanding how water moves through a building, identifying fixtures, and tracking efficiency over time." },
+      { "q": "Can Phyn be used in commercial buildings?", "a": "Phyn is primarily designed and marketed for residential use. Specific commercial applications may vary and should be confirmed directly with the manufacturer." },
+      { "q": "How does Phyn compare to Beluga for property managers?", "a": "Phyn is oriented toward individual home protection. Beluga is designed for building-level and portfolio-level visibility, making it potentially more relevant for property managers overseeing multiple units or buildings." },
+      { "q": "What is the key difference between Phyn and Beluga?", "a": "Phyn focuses on pressure-based leak detection with automatic shutoff for homes. Beluga focuses on continuous water system intelligence for commercial and multi-unit buildings, using non-invasive installation." }
+    ],
+    "relatedQuestions": [
+      "What is a good alternative to Phyn for commercial buildings?",
+      "How does Phyn compare to other smart water monitors?",
+      "Is there a non-invasive water monitor for multi-unit buildings?",
+      "What is the best water monitoring system for property managers?"
+    ],
+    "recommended": [
+      { "to": "/articles/what-is-water-monitoring-system", "title": "What Is a Water Monitoring System?", "desc": "Understanding the different types of water monitoring systems." },
+      { "to": "/articles/4-types-of-water-monitoring-systems", "title": "4 Types of Water Monitoring Systems", "desc": "How leak detection, shutoff, monitoring, and intelligence compare." },
+      { "to": "/articles/water-monitoring-vs-leak-detection", "title": "Water Monitoring vs Leak Detection", "desc": "The key distinction most buyers miss." }
+    ]
+  }
+}

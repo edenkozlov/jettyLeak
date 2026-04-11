@@ -1,10 +1,12 @@
-/** Mock weekly series for landing — illustrative only */
+/** Mock weekly series for landing — illustrative only. Day labels come from i18n `buildingHealth.chart.days.*`. */
+export const LANDING_BHI_DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+
 export const LANDING_BHI_WEEKLY = [
-  { day: 'Mon', bhi: 72 },
-  { day: 'Tue', bhi: 73 },
-  { day: 'Wed', bhi: 74 },
-  { day: 'Thu', bhi: 74 },
-  { day: 'Fri', bhi: 76 },
-  { day: 'Sat', bhi: 77 },
-  { day: 'Sun', bhi: 78 },
+  { bhi: 72 },
+  { bhi: 73 },
+  { bhi: 74 },
+  { bhi: 74 },
+  { bhi: 76 },
+  { bhi: 77 },
+  { bhi: 78 },
 ] as const

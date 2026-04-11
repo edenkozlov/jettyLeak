@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 
 import { BrandLogoMark, BRAND_LOGO_FOOTER_CLASS } from '@/components/BrandLogoMark'
@@ -42,11 +43,12 @@ function LinkedInGlyph({ className }: { className?: string }) {
 }
 
 export function SiteFooter({ variant = 'page' }: { variant?: 'landing' | 'page' }) {
+  const { t } = useTranslation('landing')
   const year = new Date().getFullYear()
   const copyrightLine =
     variant === 'landing'
-      ? `© ${year} Beluga — Water intelligence for buildings`
-      : `© ${year} Beluga — Made in Canada`
+      ? t('footer.copyright.landing', { year })
+      : t('footer.copyright.page', { year })
 
   return (
     <footer className="border-t border-gray-200/90 bg-white">
@@ -57,62 +59,62 @@ export function SiteFooter({ variant = 'page' }: { variant?: 'landing' | 'page' 
               <BrandLogoMark className={BRAND_LOGO_FOOTER_CLASS} />
             </Link>
             <p className="mt-5 max-w-[16rem] text-[13px] leading-relaxed text-gray-500">
-              Non-invasive water monitoring and leak intelligence for commercial buildings.
+              {t('footer.tagline')}
             </p>
             <a
               href={LINKEDIN_COMPANY_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="group mt-6 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200/90 text-gray-500 transition-colors duration-200 hover:border-gray-300 hover:text-gray-900"
-              aria-label="Beluga on LinkedIn"
+              aria-label={t('footer.linkedinAria')}
             >
               <LinkedInGlyph className="h-[18px] w-[18px]" />
             </a>
           </div>
 
           <div className="grid grid-cols-2 gap-10 sm:grid-cols-4 lg:col-span-9 lg:gap-8">
-            <FooterColumn heading="Product">
+            <FooterColumn heading={t('footer.columns.product')}>
               {variant === 'landing' ? (
                 <>
-                  {LANDING_ANCHOR_LINKS.map(({ label, href }) => (
+                  {LANDING_ANCHOR_LINKS.map(({ labelKey, href }) => (
                     <a key={href} href={href} className={linkClass}>
-                      {label}
+                      {t(labelKey)}
                     </a>
                   ))}
                   <Link to="/quote" className={linkClass}>
-                    Get a quote
+                    {t('footer.links.getQuote')}
                   </Link>
                   <Link to="/login" className={linkClass}>
-                    Sign In
+                    {t('footer.links.signIn')}
                   </Link>
                 </>
               ) : (
                 <>
                   <Link to="/" className={linkClass}>
-                    Home
+                    {t('footer.links.home')}
                   </Link>
                   <Link to="/quote" className={linkClass}>
-                    Get a quote
+                    {t('footer.links.getQuote')}
                   </Link>
                   <Link to="/login" className={linkClass}>
-                    Sign In
+                    {t('footer.links.signIn')}
                   </Link>
                 </>
               )}
             </FooterColumn>
 
-            <FooterColumn heading="Resources">
+            <FooterColumn heading={t('footer.columns.resources')}>
               <Link to="/case-study" className={linkClass}>
-                Case study
+                {t('footer.links.caseStudy')}
               </Link>
               <Link to="/articles" className={linkClass}>
-                Articles
+                {t('footer.links.articles')}
               </Link>
               <Link to="/faq" className={linkClass}>
-                FAQ
+                {t('footer.links.faq')}
               </Link>
               <Link to="/support" className={linkClass}>
-                Support
+                {t('footer.links.support')}
               </Link>
               {variant === 'landing' ? (
                 <a
@@ -121,41 +123,41 @@ export function SiteFooter({ variant = 'page' }: { variant?: 'landing' | 'page' 
                   rel="noopener noreferrer"
                   className={linkClass}
                 >
-                  Investor deck
+                  {t('footer.links.investorDeck')}
                 </a>
               ) : null}
             </FooterColumn>
 
-            <FooterColumn heading="Compare">
+            <FooterColumn heading={t('compare.columnTitle')}>
               <Link to="/flo-by-moen-alternative" className={linkClass}>
-                Beluga vs Flo
+                {t('compare.linkFloByMoen')}
               </Link>
               <Link to="/phyn-alternative" className={linkClass}>
-                Beluga vs Phyn
+                {t('compare.linkPhyn')}
               </Link>
               <Link to="/wint-alternative" className={linkClass}>
-                Beluga vs WINT
+                {t('compare.linkWint')}
               </Link>
               <Link to="/alert-labs-alternative" className={linkClass}>
-                Beluga vs Alert Labs
+                {t('compare.linkAlertLabs')}
               </Link>
               <Link to="/water-alert-alternative" className={linkClass}>
-                Beluga vs Water Alert
+                {t('compare.linkWaterAlert')}
               </Link>
               <Link to="/flume-alternative" className={linkClass}>
-                Beluga vs Flume
+                {t('compare.linkFlume')}
               </Link>
               <Link to="/best-water-monitoring-systems" className={linkClass}>
-                All comparisons
+                {t('compare.allComparisons')}
               </Link>
             </FooterColumn>
 
-            <FooterColumn heading="Legal">
+            <FooterColumn heading={t('footer.columns.legal')}>
               <Link to="/privacy" className={linkClass}>
-                Privacy policy
+                {t('footer.links.privacy')}
               </Link>
               <Link to="/terms" className={linkClass}>
-                Terms of service
+                {t('footer.links.terms')}
               </Link>
             </FooterColumn>
           </div>

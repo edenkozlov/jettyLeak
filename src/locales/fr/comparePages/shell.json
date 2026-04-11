@@ -1,0 +1,31 @@
+{
+  "shell": {
+    "navHome": "Accueil",
+    "navCaseStudy": "Étude de cas",
+    "navGetQuote": "Obtenir un devis",
+    "heroEyebrow": "Comparaison",
+    "tableSectionTitle": "Comparaison des fonctionnalités",
+    "tableColFeature": "Fonctionnalité",
+    "tableColBeluga": "Beluga",
+    "faqSectionTitle": "Questions fréquentes",
+    "disclaimerTitle": "Avertissement",
+    "disclaimerBody": "Cette page est fournie à titre informatif uniquement. Les détails des produits reposent sur des informations publiques et peuvent évoluer. Cette page n’est ni affiliée ni approuvée par {{competitorName}}. Les lecteurs doivent faire leur propre évaluation avant de choisir une solution.",
+    "ctaTitle": "Obtenez une évaluation gratuite de l’eau de votre bâtiment",
+    "ctaSubtitle": "Voyez si Beluga convient à votre propriété — sans engagement.",
+    "ctaButton": "Demander un accès anticipé",
+    "ctaLookingFor": "Vous cherchez {{competitorName}} ?",
+    "visitWebsite": "Visiter leur site web",
+    "relatedHeading": "Questions connexes que les gens posent",
+    "relatedQPrefix": "Q :",
+    "recommendedReading": "Pour aller plus loin",
+    "aboutBelugaTitle": "À propos de Beluga",
+    "aboutStandardP1": "Beluga est une plateforme d’intelligence de l’eau conçue pour aider les bâtiments à mieux comprendre leurs réseaux de plomberie. Grâce à une approche par capteur non invasif, elle offre une visibilité continue sur la consommation, le comportement du système et les inefficiences potentielles — sans modifier l’infrastructure existante.",
+    "aboutStandardP2": "L’objectif n’est pas seulement de détecter les problèmes, mais de rendre tout le système d’eau plus visible, mesurable et gérable dans la durée.",
+    "aboutWintP2": "La plateforme s’adresse aux propriétaires, exploitants et gestionnaires d’immeubles qui veulent aller au-delà de la détection réactive des fuites vers une visibilité proactive sur le système d’eau.",
+    "breadcrumbHome": "Accueil",
+    "breadcrumbHub": "Meilleurs systèmes de surveillance de l’eau",
+    "whenEachTitle": "Quand chaque solution est pertinente",
+    "hubCtaTitle": "Vous ne savez pas quel système choisir ?",
+    "hubCtaSubtitle": "Parlez à notre équipe pour une évaluation gratuite de l’eau de votre bâtiment — sans engagement."
+  }
+}

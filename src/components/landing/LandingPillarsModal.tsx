@@ -1,9 +1,13 @@
+import { useTranslation } from 'react-i18next'
+
 type LandingPillarsModalProps = {
   open: boolean
   onClose: () => void
 }
 
 export function LandingPillarsModal({ open, onClose }: LandingPillarsModalProps) {
+  const { t } = useTranslation('landing')
+
   if (!open) return null
 
   return (
@@ -21,13 +25,13 @@ export function LandingPillarsModal({ open, onClose }: LandingPillarsModalProps)
       >
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-gray-100 px-5 py-4 sm:px-6">
           <h3 id="landing-pillars-modal-title" className="text-[17px] font-semibold text-gray-900">
-            What goes into your score
+            {t('pillarsModal.title')}
           </h3>
           <button
             type="button"
             onClick={onClose}
             className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
-            aria-label="Close"
+            aria-label={t('pillarsModal.close')}
           >
             <svg
               className="h-5 w-5"
@@ -44,35 +48,30 @@ export function LandingPillarsModal({ open, onClose }: LandingPillarsModalProps)
         </div>
         <div className="overflow-y-auto px-5 py-4 text-[13px] leading-relaxed text-gray-600 sm:px-6 sm:py-5">
           <p className="text-[14px] text-gray-700">
-            We learn how water usually behaves in <em>your</em> building, compare new behavior to that
-            history, and to ideal benchmarks for how the whole system should behave. The index blends four
-            kinds of signal—each one uses sensor data you already have on the main line.
+            {t('pillarsModal.introLead')}
+            <em>{t('pillarsModal.introEm')}</em>
+            {t('pillarsModal.introTrail')}
           </p>
           <ul className="mt-5 space-y-4 text-[13px]">
             <li>
-              <strong className="text-gray-900">System stability</strong>{' '}
-              <span className="text-gray-400">(largest share)</span>
-              — whether usage patterns, timing, and flow duration still match what we’ve learned is normal for
-              you—new or drifting behavior gets flagged.
+              <strong className="text-gray-900">{t('pillarsModal.p1.strong')}</strong>{' '}
+              <span className="text-gray-400">{t('pillarsModal.p1.paren')}</span>
+              {t('pillarsModal.p1.rest')}
             </li>
             <li>
-              <strong className="text-gray-900">Hydraulic stress</strong> — how hard and how long the system
-              is working versus its usual load (quick spikes vs sustained strain add up differently).
+              <strong className="text-gray-900">{t('pillarsModal.p2.strong')}</strong>
+              {t('pillarsModal.p2.rest')}
             </li>
             <li>
-              <strong className="text-gray-900">Appliance &amp; fixture health</strong> — whether toilets,
-              dishwashers, and other draws still match their typical “signatures”; drift can mean wear or
-              inefficiency before a obvious failure.
+              <strong className="text-gray-900">{t('pillarsModal.p3.strong')}</strong>
+              {t('pillarsModal.p3.rest')}
             </li>
             <li>
-              <strong className="text-gray-900">Mechanical health</strong> — vibration from the same sensor:
-              turbulence and instability that don’t line up with normal flow can point to strain in the
-              plumbing system.
+              <strong className="text-gray-900">{t('pillarsModal.p4.strong')}</strong>
+              {t('pillarsModal.p4.rest')}
             </li>
           </ul>
-          <p className="mt-5 text-[12px] text-gray-500">
-            Exact weighting stays tuned as we ship; the app will always show what drove a given score.
-          </p>
+          <p className="mt-5 text-[12px] text-gray-500">{t('pillarsModal.footnote')}</p>
         </div>
       </div>
     </div>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 
 import type { LandingShowcaseBuilding } from '@/data/landingShowcaseBuildings'
@@ -11,6 +12,8 @@ export function LandingClientShowcaseSection({
   buildings,
   showViewAll,
 }: LandingClientShowcaseSectionProps) {
+  const { t } = useTranslation('landing')
+
   return (
     <section
       id="clients"
@@ -18,13 +21,13 @@ export function LandingClientShowcaseSection({
     >
       <div className="mx-auto max-w-5xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-semibold tracking-[0.3em] text-indigo-500 uppercase">On site</p>
-          <h2 className="mt-4 text-[26px] leading-tight font-bold tracking-tight text-gray-900 sm:text-[34px] md:text-[40px]">
-            Buildings running Beluga
-          </h2>
-          <p className="mt-3 text-[15px] leading-relaxed text-gray-600">
-            Real installs—see where we monitor water health today.
+          <p className="text-xs font-semibold tracking-[0.3em] text-indigo-500 uppercase">
+            {t('clients.eyebrow')}
           </p>
+          <h2 className="mt-4 text-[26px] leading-tight font-bold tracking-tight text-gray-900 sm:text-[34px] md:text-[40px]">
+            {t('clients.title')}
+          </h2>
+          <p className="mt-3 text-[15px] leading-relaxed text-gray-600">{t('clients.subtitle')}</p>
         </div>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -57,7 +60,7 @@ export function LandingClientShowcaseSection({
               to="/clients"
               className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-6 py-2.5 text-[13px] font-semibold text-gray-800 shadow-sm transition hover:border-indigo-300 hover:text-indigo-700"
             >
-              View all buildings
+              {t('clients.viewAll')}
               <svg
                 className="h-4 w-4"
                 viewBox="0 0 24 24"

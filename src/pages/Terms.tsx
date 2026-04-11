@@ -1,69 +1,60 @@
-import { Link } from 'react-router'
-import { BrandLogoMark } from '@/components/BrandLogoMark'
+import { useTranslation } from 'react-i18next'
+
+import { MarketingSubpageNav } from '@/components/MarketingSubpageNav'
+import { SiteFooter } from '@/components/SiteFooter'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
 import { CONTACT_EMAIL, CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL } from '@/globals/constants'
+import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 
 export default function Terms() {
+  const { t } = useTranslation('landing')
+  useDocumentMeta(t('terms.pageTitle'), t('terms.metaDescription'))
+
   return (
     <div className="min-h-screen bg-white antialiased">
-      <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white">
-        <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-10">
-          <Link to="/" className="flex items-center gap-2">
-            <BrandLogoMark />
-          </Link>
-          <Link to="/" className="text-[13px] text-gray-400 transition hover:text-gray-600">Back to Home</Link>
-        </div>
-      </nav>
+      <MarketingSubpageNav />
 
       <main className="mx-auto max-w-2xl px-4 pt-32 pb-20 sm:px-6">
-        <h1 className="text-[32px] font-bold tracking-tight text-gray-900 sm:text-[40px]">Terms of Service</h1>
-        <p className="mt-2 text-[13px] text-gray-400">Last updated: February 2026</p>
+        <h1 className="text-[32px] font-bold tracking-tight text-gray-900 sm:text-[40px]">{t('terms.h1')}</h1>
+        <p className="mt-2 text-[13px] text-gray-400">{t('terms.lastUpdated')}</p>
 
         <div className="mt-8 space-y-6 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]">
-          <p>
-            By using the Beluga app and services, you agree to the following terms. Please read them carefully.
-          </p>
+          <p>{t('terms.intro')}</p>
 
-          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Use of the service</h2>
-          <p>
-            Beluga provides water flow monitoring, leak detection, and analytics through hardware sensors and a companion app. You agree to use the service for lawful purposes and in accordance with these terms.
-          </p>
+          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">{t('terms.useTitle')}</h2>
+          <p>{t('terms.useBody')}</p>
 
-          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Account responsibility</h2>
-          <p>
-            You are responsible for maintaining the security of your account credentials. Notify us immediately if you suspect unauthorized access to your account.
-          </p>
+          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">{t('terms.accountTitle')}</h2>
+          <p>{t('terms.accountBody')}</p>
 
-          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Hardware & installation</h2>
-          <p>
-            Beluga sensors are designed for non-invasive installation. You are responsible for ensuring proper placement on your pipes. Beluga is not liable for damage resulting from improper installation or use outside recommended conditions.
-          </p>
+          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">{t('terms.hardwareTitle')}</h2>
+          <p>{t('terms.hardwareBody')}</p>
 
-          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Limitation of liability</h2>
-          <p>
-            Beluga provides monitoring and alerts as a supplementary tool. It is not a substitute for professional plumbing inspection or emergency water shutoff systems. We are not liable for water damage, property loss, or any indirect or consequential damages.
-          </p>
+          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">{t('terms.liabilityTitle')}</h2>
+          <p>{t('terms.liabilityBody')}</p>
 
-          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Service availability</h2>
-          <p>
-            We strive to maintain continuous uptime but do not guarantee uninterrupted service. Maintenance, updates, or factors beyond our control may cause temporary interruptions.
-          </p>
+          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">{t('terms.availabilityTitle')}</h2>
+          <p>{t('terms.availabilityBody')}</p>
 
-          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Changes to terms</h2>
-          <p>
-            We may update these terms from time to time. Continued use of the service after changes constitutes acceptance of the updated terms.
-          </p>
+          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">{t('terms.changesTitle')}</h2>
+          <p>{t('terms.changesBody')}</p>
 
-          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Contact</h2>
+          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">{t('terms.contactTitle')}</h2>
           <p>
-            Questions about these terms? Email{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-indigo-600 hover:text-indigo-500">{CONTACT_EMAIL}</a>
-            {' '}or call{' '}
-            <a href={`tel:${CONTACT_PHONE_TEL}`} className="font-medium text-indigo-600 hover:text-indigo-500">{CONTACT_PHONE_DISPLAY}</a>.
+            {t('terms.contactLead')}{' '}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-indigo-600 hover:text-indigo-500">
+              {CONTACT_EMAIL}
+            </a>{' '}
+            {t('terms.contactOrCall')}{' '}
+            <a href={`tel:${CONTACT_PHONE_TEL}`} className="font-medium text-indigo-600 hover:text-indigo-500">
+              {CONTACT_PHONE_DISPLAY}
+            </a>
+            .
           </p>
         </div>
       </main>
 
+      <SiteFooter variant="page" />
       <ScrollToTopButton />
     </div>
   )

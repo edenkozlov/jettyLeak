@@ -1,0 +1,57 @@
+{
+  "waterAlert": {
+    "pageTitle": "Beluga et Water Alert : systèmes de détection de fuites",
+    "metaDescription": "Comparez Beluga et Water Alert. Détection traditionnelle par événements contre intelligence continue de l’eau pour les bâtiments. Comparaison neutre fondée sur des informations publiques.",
+    "heroH1": "Beluga et Water Alert",
+    "heroSubtitle": "Comprendre la différence entre alertes de fuite par événements et intelligence continue de l’eau pour les bâtiments.",
+    "introSubheading": "Alertes de fuite traditionnelles et plateformes d’intelligence de l’eau",
+    "introP1": "Si vous cherchez une alternative à Water Alert ou étudiez les systèmes de détection pour le commercial, il utile de situer le paysage. Pendant longtemps, la surveillance a surtout voulu dire placer des capteurs d’humidité aux endroits à risque et attendre une alarme. C’est simple et efficace pour les fuites actives.",
+    "introP2": "Une catégorie plus récente — les plateformes d’intelligence de l’eau — adopte une autre logique : analyser en continu comment l’eau circule dans le bâtiment, repérer schémas, inefficiences et anomalies avant qu’elles ne coûtent cher.",
+    "introP3": "Cette page compare Water Alert, représentatif de l’approche par capteurs traditionnels, à Beluga, représentatif de l’approche fondée sur l’intelligence — sur la base d’informations publiques.",
+    "competitorLabel": "Water Alert",
+    "disclaimerCompetitorName": "Water Alert",
+    "ctaCompetitorName": "Water Alert",
+    "breadcrumbVs": "Beluga et Water Alert",
+    "tableRows": [
+      { "feature": "Objectif principal", "beluga": "Plateforme d’intelligence de l’eau", "competitor": "Matériel de détection de fuites" },
+      { "feature": "Installation", "beluga": "Non invasive (sans perçage)", "competitor": "Installation par capteurs" },
+      { "feature": "Détection de fuites", "beluga": "Oui (formes et anomalies)", "competitor": "Oui (capteurs d’humidité et alarmes)" },
+      { "feature": "Arrêt automatique", "beluga": "Pas au cœur du produit", "competitor": "Limité / selon configuration" },
+      { "feature": "Analyse de l’usage", "beluga": "Oui — détaillée et continue", "competitor": "Non" },
+      { "feature": "Intelligence du système", "beluga": "Oui — modélisation comportementale", "competitor": "Non" },
+      { "feature": "Environnement cible", "beluga": "Commercial / multilogements", "competitor": "Commercial / industriel" },
+      { "feature": "Type de suivi", "beluga": "Analyse continue et références", "competitor": "Détection et alertes par événement" }
+    ],
+    "midTitle": "Différence clé : alertes par événement et intelligence continue",
+    "midLeftTitle": "Water Alert — détection par matériel",
+    "midLeftP1": "Water Alert repose sur la détection par matériel, surtout l’humidité à des points précis et le déclenchement d’alarmes. Le système est réactif par conception — il signale la présence d’eau là où elle ne devrait pas être.",
+    "midLeftP2": "Cette approche est appréciable pour sa simplicité : peu d’interprétation — si un capteur voit de l’humidité, une alerte part.",
+    "midRightTitle": "Beluga — intelligence du système fondée sur les données",
+    "midRightP1": "Beluga interprète le comportement de l’eau dans le temps. Au-delà des seules fuites, il surveille en continu le réseau, identifie schémas et équipements, et remonte des informations pour aider à prévenir l’aggravation des problèmes.",
+    "midRightP2": "Cette approche offre une vision plus large du système, mais suppose une analyse continue des données plutôt qu’une simple détection binaire.",
+    "whenCompetitorHeading": "Water Alert peut convenir si :",
+    "whenCompetitorBullets": ["Vous avez besoin d’une détection de fuites simple et fiable à des endroits précis", "Votre contexte se contente d’alertes d’humidité de base", "Vous préférez un matériel peu complexe avec peu de configuration", "Votre budget ou vos exigences ciblent la détection ponctuelle"],
+    "whenBelugaHeading": "Beluga peut mieux convenir si :",
+    "whenBelugaBullets": ["Vous gérez des bâtiments complexes à usages d’eau variés", "Vous voulez une intelligence continue du système, pas seulement des alarmes", "Vous cherchez à comprendre les performances du réseau dans le temps", "Vous voulez une approche non invasive et pilotée par logiciel"],
+    "faq": [
+      { "q": "Quelle est la différence entre détection de fuites traditionnelle et intelligence de l’eau ?", "a": "Les systèmes traditionnels comme Water Alert utilisent souvent des capteurs d’humidité pour repérer les fuites actives et déclencher des alarmes. Les plateformes d’intelligence comme Beluga analysent en continu le comportement du débit pour identifier schémas, inefficiences et anomalies — une vision plus large que les seuls événements de fuite." },
+      { "q": "Water Alert équivaut-il à un moniteur d’eau connecté ?", "a": "Water Alert met l’accent sur le matériel et les capteurs d’humidité pour signaler les fuites. Les moniteurs « intelligents » et les plateformes d’intelligence offrent en général une analyse plus riche : suivi de consommation, reconnaissance de formes et informations à l’échelle du système." },
+      { "q": "Peut-on utiliser Water Alert et Beluga ensemble ?", "a": "Selon le bâtiment, certaines équipes combinent capteurs ponctuels et surveillance plus large. Chaque système doit être évalué pour lui-même et pour sa compatibilité avec l’existant." },
+      { "q": "Quel système pour un bâtiment sans surveillance existante ?", "a": "Si l’objectif est une alerte de fuite simple avec peu de mise en place, un matériel de type Water Alert peut suffire au départ. Si l’objectif est une visibilité complète — intelligence de la consommation, anomalies, suivi durable — Beluga peut être un meilleur premier investissement." },
+      { "q": "Beluga remplace-t-il les capteurs de fuite ponctuels ?", "a": "Beluga apporte une intelligence à l’échelle du système, y compris la détection d’anomalies. Le besoin de capteurs ponctuels dépend du bâtiment, du risque et de la configuration. Les deux approches peuvent être complémentaires." },
+      { "q": "Quelles options existent pour le commercial ?", "a": "Le commercial peut aller des réseaux de capteurs d’humidité (type Water Alert) aux systèmes fondés sur le débit (WINT, Flo, etc.) aux plateformes d’intelligence (Beluga). Le bon choix dépend de la complexité du bâtiment, des objectifs de l’équipe et du niveau d’information souhaité." }
+    ],
+    "relatedQuestions": [
+      "Quel est le meilleur système de détection de fuites pour le commercial ?",
+      "Comment la détection traditionnelle se compare-t-elle à l’intelligence de l’eau ?",
+      "Quels sont les systèmes de surveillance les plus courants pour les bâtiments ?",
+      "Existe-t-il mieux que les capteurs d’humidité ?",
+      "Quel système offre le plus d’informations aux gestionnaires de bâtiments ?"
+    ],
+    "recommended": [
+      { "to": "/articles/water-monitoring-vs-leak-detection", "title": "Surveillance de l’eau et détection de fuites", "desc": "La différence entre suivi et détection." },
+      { "to": "/articles/what-happens-after-leak-alert", "title": "Que se passe-t-il après une alerte de fuite ?", "desc": "Pourquoi la détection n’est que la première étape." },
+      { "to": "/articles/why-leak-detection-not-enough-commercial", "title": "Pourquoi la seule détection de fuites ne suffit pas", "desc": "Ce dont les bâtiments commerciaux ont vraiment besoin." }
+    ]
+  }
+}

@@ -1,0 +1,1061 @@
+{
+  "shared": {
+    "navHome": "Home",
+    "navCaseStudy": "Case Study",
+    "navSignIn": "Sign In",
+    "labelArticle": "Article",
+    "labelResources": "Resources",
+    "relatedReading": "Related reading",
+    "hubTitle": "Best Water Monitoring Systems for Buildings",
+    "hubBlurb": "Compare the top water monitoring solutions for commercial and multi-unit buildings."
+  },
+  "index": {
+    "pageTitle": "Articles — Beluga",
+    "metaDescription": "Educational articles about water monitoring systems, leak detection, water intelligence, and choosing the right system for your building.",
+    "eyebrow": "Resources",
+    "title": "Articles",
+    "subtitle": "Educational guides on water monitoring systems, leak detection, water intelligence, and choosing the right approach for your building.",
+    "items": {
+      "whatIs": {
+        "title": "What Is a Water Monitoring System? (And Why Most Are Different)",
+        "description": "The standard definition is misleading. Learn the four types of systems and why the underlying approach matters."
+      },
+      "howToChoose": {
+        "title": "How to Choose a Water Monitoring System for Your Building",
+        "description": "A practical guide based on building type, goals, installation constraints, and operational workflow."
+      },
+      "monitoringVsDetection": {
+        "title": "Water Monitoring vs Leak Detection: What's the Difference?",
+        "description": "They solve different problems. Understanding the distinction is key to choosing the right solution."
+      },
+      "fourTypes": {
+        "title": "There Are 4 Types of Water Monitoring Systems — Here's the Difference",
+        "description": "Leak detection, shutoff, non-invasive monitoring, and water intelligence — each designed for a specific purpose."
+      },
+      "bestCommercial": {
+        "title": "Best Water Monitoring Systems for Commercial Buildings (2026)",
+        "description": "A guide to the categories of systems available for commercial and multi-unit environments."
+      },
+      "nonInvasiveVsInline": {
+        "title": "Non-Invasive vs Inline Water Monitoring: Which One Makes Sense?",
+        "description": "How installation method shapes cost, deployment speed, scalability, and system fit."
+      },
+      "afterLeakAlert": {
+        "title": "What Actually Happens After a Leak Alert in Buildings",
+        "description": "Detection is only the first step. The real outcome depends on what happens next."
+      },
+      "leakDetectionNotEnough": {
+        "title": "Why Leak Detection Alone Isn't Enough for Commercial Buildings",
+        "description": "Most issues develop gradually. Event-based detection misses what continuous monitoring catches."
+      },
+      "propertyManagers": {
+        "title": "How Property Managers Actually Handle Water Issues",
+        "description": "Water issues are operational problems handled by people — not just technical events."
+      },
+      "waterIntelligence": {
+        "title": "What Is a Water Intelligence System? (And Why It's Different)",
+        "description": "A shift from reacting to events to understanding how the entire system behaves over time."
+      }
+    }
+  },
+  "whatIsWaterMonitoring": {
+    "pageTitle": "What Is a Water Monitoring System? (And Why Most Are Different) — Beluga",
+    "metaDescription": "Learn what a water monitoring system really is, the four types of systems, and why understanding the underlying approach matters when choosing one.",
+    "h1": "What Is a Water Monitoring System?",
+    "subtitle": "And why most are different",
+    "intro": [
+      "A water monitoring system is typically described as something that tracks water usage and detects leaks.",
+      "That definition is technically correct.",
+      "But in practice, it's incomplete.",
+      "Because most water monitoring systems are not built the same way — and more importantly, they are not solving the same problem.",
+      "Understanding that difference is what actually matters."
+    ],
+    "basicDefinition": {
+      "heading": "What a water monitoring system does (basic definition)",
+      "introDesigned": "At a high level, a water monitoring system is designed to:",
+      "listDesigned": [
+        "Measure water flow",
+        "Detect abnormal usage",
+        "Identify potential leaks",
+        "Alert users or trigger actions"
+      ],
+      "introFurther": "Some systems go further by:",
+      "listFurther": [
+        "Tracking usage over time",
+        "Identifying patterns",
+        "Providing insight into how water is being used"
+      ],
+      "closing": "This is the standard definition you'll find almost everywhere."
+    },
+    "misleading": {
+      "heading": "Why that definition is misleading",
+      "p1": "The problem is that this definition groups very different systems into one category.",
+      "p2": "In reality, there are multiple approaches:",
+      "list": [
+        "Some systems focus on detecting leaks as they happen",
+        "Some focus on shutting off water immediately",
+        "Some track usage patterns",
+        "Some try to understand the behavior of the entire system"
+      ],
+      "p3": "We explore this distinction in more detail in our guide to <0>water monitoring vs leak detection</0>.",
+      "p4": "From the outside, they all look similar.",
+      "p5": "In practice, they operate very differently."
+    },
+    "fourTypes": {
+      "heading": "The 4 types of water monitoring systems",
+      "intro": "A more useful way to think about the category is to break it into four types.",
+      "type1": {
+        "title": "1. Leak detection systems",
+        "p1": "These systems are designed to identify abnormal flow and alert users.",
+        "p2": "They are typically:",
+        "list": ["Reactive", "Event-driven", "Focused on identifying problems quickly"]
+      },
+      "type2": {
+        "title": "2. Shutoff systems",
+        "p1": "These systems take it a step further by automatically stopping water flow when an issue is detected.",
+        "p2": "They are often used in:",
+        "list": ["Residential environments", "Situations where immediate protection is the priority"],
+        "p3": "Systems like <0>Flo by Moen</0> and <1>Phyn</1> are common examples of this approach."
+      },
+      "type3": {
+        "title": "3. Non-invasive monitoring systems",
+        "p1": "These systems aim to monitor water usage without modifying existing plumbing.",
+        "p2": "They typically:",
+        "list": ["Install externally", "Track flow data", "Provide usage insights"]
+      },
+      "type4": {
+        "title": "4. Water intelligence systems",
+        "p1": "These systems focus on understanding the entire water system over time.",
+        "p2": "They aim to:",
+        "list": [
+          "Model usage patterns",
+          "Identify inefficiencies",
+          "Detect anomalies early",
+          "Provide system-level visibility"
+        ],
+        "p3": "This approach is less about reacting to events, and more about continuously understanding how the system behaves. To learn more, see our article on <0>water intelligence systems</0>."
+      }
+    },
+    "distinctionMatters": {
+      "heading": "Why this distinction matters",
+      "p1": "Choosing a water monitoring system without understanding these differences can lead to problems. Before deciding, it helps to <0>compare the best water monitoring systems</0> side by side.",
+      "comparison1": "A system designed for <strong>immediate leak response</strong> may not provide <strong>long-term visibility</strong>.",
+      "comparison2": "A system designed for <strong>simple usage tracking</strong> may not scale to <strong>complex buildings</strong>.",
+      "p2": "The right choice depends on:",
+      "list": ["The type of building", "The level of visibility required", "How the system will actually be used"]
+    },
+    "closing": {
+      "p1": "Water monitoring systems are often presented as interchangeable. They are not.",
+      "p2": "Understanding the underlying approach is what allows you to choose a system that actually fits the problem you're trying to solve."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "How to Choose a Water Monitoring System",
+          "description": "Matching the system to how your building actually operates."
+        },
+        {
+          "title": "4 Types of Water Monitoring Systems",
+          "description": "Understanding the different approaches in the water monitoring space."
+        },
+        {
+          "title": "Best Water Monitoring Systems for Buildings",
+          "description": "Compare the top water monitoring solutions for commercial and multi-unit buildings."
+        }
+      ]
+    }
+  },
+  "howToChoose": {
+    "pageTitle": "How to Choose a Water Monitoring System for Your Building — Beluga",
+    "metaDescription": "A practical guide to choosing the right water monitoring system based on building type, goals, installation constraints, and operational workflow.",
+    "h1": "How to Choose a Water Monitoring System for Your Building",
+    "subtitle": "It's about matching the system to how your building actually operates.",
+    "intro": [
+      "Choosing a water monitoring system isn't just about features.",
+      "It's about matching the system to how your building actually operates.",
+      "Most comparison pages focus on specs.",
+      "In practice, the decision is driven by something else entirely."
+    ],
+    "sections": {
+      "buildingType": {
+        "heading": "1. Start with the type of building",
+        "p1": "The first question is simple: what type of building are you dealing with?",
+        "listTypes": ["Single-family homes", "Multi-unit residential", "Commercial buildings"],
+        "p2": "Different environments have:",
+        "listEnv": ["Different risks", "Different levels of complexity", "Different operational workflows"],
+        "p3": "A system that works well in a home may not translate to a multi-unit building."
+      },
+      "goal": {
+        "heading": "2. Define the goal",
+        "p1": "Most systems are designed around one of two goals:",
+        "listGoals": ["<strong>Immediate protection</strong>", "<strong>Long-term visibility</strong>"],
+        "p2": "If the priority is stopping leaks instantly, look at shutoff systems.",
+        "p3": "If the priority is understanding usage and inefficiencies, look at monitoring or <0>water intelligence systems</0>.",
+        "p4": "Trying to optimize for both without understanding the tradeoff often leads to confusion."
+      },
+      "installation": {
+        "heading": "3. Consider installation constraints",
+        "p1": "Installation is often overlooked.",
+        "p2": "Some systems require:",
+        "listRequire": ["Cutting into pipes", "Installing inline hardware", "Professional plumbing work"],
+        "p3": "Others:",
+        "listOthers": ["Install externally", "Require minimal setup"],
+        "p4": "This is the core tradeoff between <0>non-invasive and inline water monitoring</0>. In older buildings or large properties, it can be a deciding factor."
+      },
+      "afterDetection": {
+        "heading": "4. Think about what happens after detection",
+        "p1": "This is one of the most important — and most ignored — considerations.",
+        "p2": "When a system detects an issue:",
+        "listWhen": ["Who gets notified?", "How is it handled?", "How quickly does someone act?"],
+        "p3": "In real-world settings, alerts often turn into:",
+        "listAlerts": ["Emails", "Messages", "Manual follow-ups"],
+        "p4": "If the system doesn't integrate into operations, its effectiveness drops significantly. Understanding <0>what actually happens after a leak alert</0> can help set expectations."
+      },
+      "visibility": {
+        "heading": "5. Evaluate system visibility",
+        "p1": "Some systems tell you:",
+        "listTell": ["Something is wrong"],
+        "p2": "Others help you understand:",
+        "listUnderstand": ["What is happening", "Where it's happening", "How it's changing over time"],
+        "p3": "That difference becomes more important as building complexity increases."
+      },
+      "workflow": {
+        "heading": "6. Match the system to your workflow",
+        "p1": "Ultimately, the best system is the one that fits how your team works.",
+        "p2": "Not the most advanced, or the most popular.",
+        "p3": "But the one that aligns with:",
+        "list": ["Your building", "Your constraints", "Your operational reality"]
+      }
+    },
+    "closing": {
+      "p1": "Choosing a water monitoring system is less about comparing features and more about understanding how different approaches fit different environments. Our <0>comparison of the best water monitoring systems</0> can help you start evaluating options.",
+      "p2": "Once that becomes clear, the decision becomes much simpler."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "What Is a Water Monitoring System?",
+          "description": "Understanding the four types of water monitoring systems."
+        },
+        {
+          "title": "Non-Invasive vs Inline Water Monitoring",
+          "description": "Understanding the tradeoffs between installation approaches."
+        },
+        {
+          "title": "Best Water Monitoring Systems for Buildings",
+          "description": "Compare the top water monitoring solutions for commercial and multi-unit buildings."
+        }
+      ]
+    }
+  },
+  "monitoringVsDetection": {
+    "pageTitle": "Water Monitoring vs Leak Detection: What's the Difference? — Beluga",
+    "metaDescription": "Water monitoring and leak detection solve different problems. Learn the key differences, where confusion happens, and how to choose the right approach for your building.",
+    "h1": "Water Monitoring vs Leak Detection",
+    "subtitle": "What's the difference?",
+    "intro": [
+      "Water monitoring and leak detection are often used interchangeably.",
+      "They shouldn't be.",
+      "While both deal with water systems, they are designed to solve different problems — and confusing them can lead to choosing the wrong solution entirely. If you're starting from scratch, it helps to first understand <0>what a water monitoring system actually is</0>."
+    ],
+    "leakDetection": {
+      "heading": "What is leak detection?",
+      "p1": "Leak detection systems are designed to identify abnormal water flow and alert users when something is wrong.",
+      "p2": "They typically:",
+      "list": ["Detect sudden changes in flow", "Trigger alerts", "Sometimes shut off water automatically"],
+      "p3": "Their primary goal is <strong>to react quickly when a leak occurs</strong>.",
+      "p4": "These systems are commonly used in:",
+      "listUsed": ["Residential homes", "Environments where immediate damage prevention is critical"],
+      "p5": "Products like <0>Flo by Moen</0> and <1>Phyn</1> are common examples."
+    },
+    "waterMonitoring": {
+      "heading": "What is water monitoring?",
+      "p1": "Water monitoring systems take a broader approach.",
+      "p2": "Instead of focusing only on leak events, they aim to understand how water is being used over time.",
+      "p3": "They typically:",
+      "list": ["Track usage continuously", "Identify patterns", "Detect anomalies", "Provide insight into system behavior"],
+      "p4": "Their goal is <strong>to understand the system, not just react to problems</strong>."
+    },
+    "keyDifference": {
+      "heading": "The key difference",
+      "p1": "The simplest way to think about it:",
+      "leakLabel": "Leak Detection",
+      "leakMode": "Event-based",
+      "leakQuestion": "Is something wrong right now?",
+      "monitorLabel": "Water Monitoring",
+      "monitorMode": "Continuous",
+      "monitorQuestion": "What is happening in this system over time?"
+    },
+    "confusion": {
+      "heading": "Where confusion happens",
+      "p1": "Many modern systems include elements of both.",
+      "p2": "For example:",
+      "list": [
+        "A monitoring system may also detect anomalies",
+        "A leak detection system may provide basic usage data"
+      ],
+      "p3": "But the core design philosophy still differs.",
+      "p4": "Some systems are built primarily to <strong>react and protect</strong>.",
+      "p5": "Others are built to <strong>observe and understand</strong>."
+    },
+    "realBuildings": {
+      "heading": "Why it matters in real buildings",
+      "p1": "In smaller environments, leak detection may be enough.",
+      "p2": "In larger or more complex buildings, the picture changes.",
+      "p3": "Issues often develop gradually:",
+      "list": ["Inefficient fixtures", "Continuous low-level leaks", "Abnormal usage patterns"],
+      "p4": "These don't always trigger immediate alerts — but they still impact cost and performance.",
+      "p5": "That's where monitoring becomes more valuable. For a deeper look, see <0>why leak detection alone isn't enough for commercial buildings</0>."
+    },
+    "whichChoose": {
+      "heading": "Which one should you choose?",
+      "p1": "It depends on the goal.",
+      "ifLeakHeading": "Choose leak detection if:",
+      "ifLeak": ["Immediate protection is the priority", "You want automatic shutoff", "The environment is simple"],
+      "ifMonitorHeading": "Choose water monitoring if:",
+      "ifMonitor": [
+        "You need visibility over time",
+        "The system is complex",
+        "You want to understand usage and inefficiencies"
+      ],
+      "p2": "In some cases, the two approaches can complement each other. Our <0>guide to the best water monitoring systems</0> covers how different approaches compare."
+    },
+    "closing": {
+      "p1": "Water monitoring and leak detection are not competing ideas — they are different tools.",
+      "p2": "Understanding the difference is what allows you to choose the right approach for your building."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "4 Types of Water Monitoring Systems",
+          "description": "Understanding the different approaches in the water monitoring space."
+        },
+        {
+          "title": "Why Leak Detection Alone Isn't Enough",
+          "description": "Why commercial buildings need more than just leak alerts."
+        },
+        {
+          "title": "Best Water Monitoring Systems for Buildings",
+          "description": "Compare the top water monitoring solutions for commercial and multi-unit buildings."
+        }
+      ]
+    }
+  },
+  "fourTypes": {
+    "pageTitle": "There Are 4 Types of Water Monitoring Systems — Here's the Difference — Beluga",
+    "metaDescription": "Not all water monitoring systems are the same. Learn the 4 types — leak detection, shutoff, non-invasive monitoring, and water intelligence — and how to choose.",
+    "h1": "There Are 4 Types of Water Monitoring Systems",
+    "subtitle": "Here's the difference",
+    "intro": [
+      "Most people assume water monitoring systems are all built the same way.",
+      "They're not.",
+      "What looks like a single category is actually made up of different approaches — each designed for a specific purpose.",
+      "Understanding these types is the fastest way to make sense of the space."
+    ],
+    "type1": {
+      "heading": "Type 1: Leak detection systems",
+      "p1": "Leak detection systems are designed to identify abnormal water flow and alert users.",
+      "p2": "They focus on:",
+      "listFocus": ["Detecting leaks quickly", "Notifying users", "Minimizing damage"],
+      "p3": "They are:",
+      "listAre": ["Reactive", "Event-driven", "Widely used in residential settings"],
+      "p4": "To understand how leak detection differs from broader monitoring, see <0>water monitoring vs leak detection</0>."
+    },
+    "type2": {
+      "heading": "Type 2: Shutoff systems",
+      "p1": "Shutoff systems build on leak detection by automatically stopping water flow when an issue is detected.",
+      "p2": "They:",
+      "listThey": ["Detect abnormal behavior", "Trigger a shutoff valve", "Prevent further damage"],
+      "p3": "These systems are often used where:",
+      "listWhere": ["Risk mitigation is the primary concern"],
+      "p4": "Products like <0>Flo by Moen</0> and <1>Phyn</1> fall into this category."
+    },
+    "type3": {
+      "heading": "Type 3: Non-invasive monitoring systems",
+      "p1": "Non-invasive systems aim to monitor water usage without modifying existing plumbing.",
+      "p2": "They typically:",
+      "listTypical": ["Install externally", "Track water flow", "Provide usage data"],
+      "p3": "They are useful when:",
+      "listUseful": ["Installation constraints exist", "Modifying infrastructure is not practical"],
+      "p4": "For a deeper comparison, see <0>non-invasive vs inline water monitoring</0>."
+    },
+    "type4": {
+      "heading": "Type 4: Water intelligence systems",
+      "p1": "Water intelligence systems take a system-level approach.",
+      "p2": "Instead of focusing on individual events, they aim to understand how the entire water system behaves over time.",
+      "p3": "They:",
+      "listThey": [
+        "Track usage continuously",
+        "Identify patterns",
+        "Detect anomalies early",
+        "Provide insight into system performance"
+      ],
+      "p4": "This approach is designed for:",
+      "listFor": ["More complex buildings", "Environments where visibility matters"],
+      "p5": "Learn more about <0>what a water intelligence system is and why it's different</0>."
+    },
+    "whyMatter": {
+      "heading": "Why these types matter",
+      "p1": "Without this breakdown, it's easy to compare systems incorrectly.",
+      "p2": "For example:",
+      "list": [
+        "Comparing a shutoff system to a monitoring system",
+        "Expecting detailed insights from a system designed only for alerts"
+      ],
+      "p3": "Each type is built with a different goal in mind."
+    },
+    "framework": {
+      "heading": "How to use this framework",
+      "p1": "Instead of asking:",
+      "quote1": "What's the best system?",
+      "p2": "Ask:",
+      "quote2": "What type of system do I actually need?",
+      "p3": "Once that's clear, the options become much easier to evaluate.",
+      "p4": "Our <0>guide to choosing a water monitoring system</0> walks through this process step by step."
+    },
+    "summary": {
+      "heading": "Quick summary",
+      "leakTitle": "Leak detection",
+      "leakDesc": "Alerts when something goes wrong",
+      "shutoffTitle": "Shutoff systems",
+      "shutoffDesc": "Stop water automatically",
+      "nonInvTitle": "Non-invasive monitoring",
+      "nonInvDesc": "Tracks usage without installation complexity",
+      "intelTitle": "Water intelligence",
+      "intelDesc": "Understands the system over time"
+    },
+    "closing": {
+      "p1": "Water monitoring isn't one category — it's a set of different approaches.",
+      "p2": "Understanding the differences is what allows you to choose a system that actually fits your building."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "What Is a Water Monitoring System?",
+          "description": "Understanding the basics before choosing a system."
+        },
+        {
+          "title": "How to Choose a Water Monitoring System",
+          "description": "Matching the system to how your building actually operates."
+        },
+        {
+          "title": "Best Water Monitoring Systems for Buildings",
+          "description": "Compare the top systems side by side."
+        }
+      ]
+    }
+  },
+  "bestCommercial": {
+    "pageTitle": "Best Water Monitoring Systems for Commercial Buildings (2026) — Beluga",
+    "metaDescription": "A guide to the best water monitoring systems for commercial buildings in 2026. Covers leak detection, shutoff, non-invasive monitoring, and water intelligence platforms.",
+    "h1": "Best Water Monitoring Systems for Commercial Buildings",
+    "subtitle": "2026 guide",
+    "intro": {
+      "p1": "When it comes to water monitoring in commercial buildings, there isn't a single \"best\" system.",
+      "p2": "Different solutions are designed for different priorities:",
+      "list": ["Leak prevention", "Automatic shutoff", "Usage tracking", "System-level visibility"],
+      "p3": "Understanding those differences is what actually determines which system makes sense.",
+      "p4": "You can also explore our full <0>comparison of the best water monitoring systems</0>."
+    },
+    "whatMatters": {
+      "heading": "What matters in commercial buildings",
+      "p1": "Commercial and multi-unit buildings introduce complexity that doesn't exist in smaller environments.",
+      "p2": "Key considerations include:",
+      "list": [
+        "Scale of the plumbing system",
+        "Number of fixtures and units",
+        "Installation constraints",
+        "Operational workflows after detection"
+      ],
+      "p3": "Because of this, systems designed for homes don't always translate well."
+    },
+    "categories": {
+      "heading": "Common categories of systems",
+      "intro": "Most commercial solutions fall into a few broad categories.",
+      "cat1": {
+        "title": "1. Leak detection and shutoff systems",
+        "p1": "These systems focus on:",
+        "listFocus": ["Detecting abnormal water flow", "Shutting off water automatically"],
+        "p2": "They are useful when:",
+        "listUseful": ["Immediate protection is the priority", "Preventing damage is critical"],
+        "p3": "Examples include systems like <0>Flo by Moen Smart Water Monitor and Shutoff</0> and <1>Phyn Plus Smart Water Assistant + Shutoff</1>, which are widely used in residential settings and sometimes adapted for larger properties."
+      },
+      "cat2": {
+        "title": "2. Commercial monitoring platforms",
+        "p1": "Some systems are designed specifically for larger environments.",
+        "p2": "They focus on:",
+        "list": ["Monitoring water flow across buildings", "Detecting leaks", "Providing alerts and usage data"],
+        "p3": "Platforms like <0>WINT</0> Water Intelligence and <1>Alert Labs</1> are commonly used in commercial and portfolio-level deployments."
+      },
+      "cat3": {
+        "title": "3. Non-invasive monitoring systems",
+        "p1": "These systems prioritize ease of installation.",
+        "p2": "They:",
+        "list": [
+          "Do not require cutting into pipes",
+          "Monitor water usage externally",
+          "Provide visibility without infrastructure changes"
+        ],
+        "p3": "Solutions like <0>Flume</0> Water Monitor fall into this category, typically for residential use but conceptually relevant in constrained environments. See our comparison of <1>non-invasive vs inline water monitoring</1> for more."
+      },
+      "cat4": {
+        "title": "4. Water intelligence systems",
+        "p1": "A newer category focuses on understanding the entire system over time.",
+        "p2": "These systems aim to:",
+        "list": [
+          "Track usage patterns",
+          "Identify inefficiencies",
+          "Detect anomalies early",
+          "Provide system-level visibility"
+        ],
+        "p3": "Rather than focusing only on events, they emphasize continuous understanding. Learn more about <0>what a water intelligence system is</0>."
+      }
+    },
+    "howToChoose": {
+      "heading": "How to choose the right system",
+      "p1": "Instead of looking for a \"best\" product, focus on fit.",
+      "p2": "Ask:",
+      "list": [
+        "Is the priority leak prevention or system visibility?",
+        "Are plumbing modifications possible?",
+        "How complex is the building?",
+        "How will alerts be handled operationally?"
+      ],
+      "p3": "The answers to these questions usually narrow down the right category quickly.",
+      "p4": "For a detailed walkthrough, see our guide on <0>how to choose a water monitoring system</0>."
+    },
+    "whenMakesSense": {
+      "heading": "When each type makes sense",
+      "leakTitle": "Leak detection / shutoff",
+      "leakDesc": "When immediate protection is critical",
+      "platformTitle": "Commercial platforms",
+      "platformDesc": "When managing multiple buildings or larger systems",
+      "nonInvTitle": "Non-invasive monitoring",
+      "nonInvDesc": "When installation is a constraint",
+      "intelTitle": "Water intelligence",
+      "intelDesc": "When visibility and long-term understanding matter"
+    },
+    "closing": {
+      "p1": "The best water monitoring system for a commercial building isn't universal.",
+      "p2": "It depends on how the building operates, what risks matter most, and how much visibility is needed.",
+      "p3": "Understanding the categories is what makes the decision clearer."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "How to Choose a Water Monitoring System",
+          "description": "Matching the system to how your building actually operates."
+        },
+        {
+          "title": "Non-Invasive vs Inline Water Monitoring",
+          "description": "How installation method shapes everything else about a system."
+        },
+        {
+          "title": "Best Water Monitoring Systems for Buildings",
+          "description": "Compare the top systems side by side."
+        }
+      ]
+    }
+  },
+  "nonInvasiveVsInline": {
+    "pageTitle": "Non-Invasive vs Inline Water Monitoring: Which One Makes Sense? — Beluga",
+    "metaDescription": "Compare non-invasive and inline water monitoring systems. Learn the trade-offs in installation, accuracy, scalability, and when each approach makes sense.",
+    "h1": "Non-Invasive vs Inline Water Monitoring",
+    "subtitle": "Which one makes sense?",
+    "intro": [
+      "One of the biggest differences between water monitoring systems is how they are installed.",
+      "Some require direct integration into plumbing infrastructure.",
+      "Others operate without modifying pipes at all.",
+      "This distinction — non-invasive vs inline — often has a bigger impact than the features themselves.",
+      "It's one of the key factors covered in our breakdown of the <0>4 types of water monitoring systems</0>."
+    ],
+    "inline": {
+      "heading": "What is inline water monitoring?",
+      "p1": "Inline systems are installed directly within the plumbing system.",
+      "p2": "They typically:",
+      "listTypical": ["Sit on the main water line", "Measure flow directly", "Require cutting into pipes"],
+      "p3": "These systems often provide:",
+      "listProvide": ["Highly accurate flow measurements", "Real-time detection", "The ability to trigger shutoff mechanisms"],
+      "p4": "Systems like <0>Flo by Moen</0> and <1>Phyn</1> are inline shutoff examples.",
+      "p5": "However, they also require:",
+      "listRequire": ["Professional installation", "Downtime during setup", "Modifications to existing infrastructure"]
+    },
+    "nonInvasive": {
+      "heading": "What is non-invasive water monitoring?",
+      "p1": "Non-invasive systems monitor water without altering the plumbing.",
+      "p2": "They:",
+      "listThey": ["Install externally", "Detect flow or system behavior indirectly", "Avoid pipe modifications"],
+      "p3": "This approach allows for:",
+      "listAllows": ["Faster deployment", "Minimal disruption", "Easier installation in older buildings"],
+      "p4": "The <0>Flume water monitor</0> is one example of this approach."
+    },
+    "keyDifferences": {
+      "heading": "Key differences",
+      "inlineLabel": "Inline",
+      "nonInvLabel": "Non-invasive",
+      "installRowLabel": "Installation",
+      "inlineInstall": "Requires pipe work",
+      "nonInvInstall": "External installation",
+      "deployLabel": "Deployment speed",
+      "inlineDeploy": "Slower, more involved",
+      "nonInvDeploy": "Faster, simpler",
+      "flexLabel": "Flexibility",
+      "inlineFlex": "Fixed once installed",
+      "nonInvFlex": "Easier to reposition or deploy across buildings"
+    },
+    "accuracy": {
+      "heading": "Accuracy vs interpretation",
+      "p1": "Inline systems measure flow directly.",
+      "p2": "Non-invasive systems often rely on interpreting signals and patterns to understand behavior.",
+      "p3": "Both approaches can be effective, but they operate differently."
+    },
+    "whenInline": {
+      "heading": "When inline makes sense",
+      "p1": "Inline systems are often used when:",
+      "listWhen": ["Direct control is required", "Shutoff capability is needed", "Installation is not a constraint"],
+      "p2": "They are common in:",
+      "listCommon": ["Controlled environments", "New builds", "Systems designed with integration in mind"]
+    },
+    "whenNonInv": {
+      "heading": "When non-invasive makes sense",
+      "p1": "Non-invasive systems are useful when:",
+      "listUseful": [
+        "Modifying infrastructure is difficult",
+        "Buildings are older",
+        "Rapid deployment is needed",
+        "Scalability matters"
+      ],
+      "p2": "They are especially relevant in:",
+      "listRelevant": ["Multi-unit properties", "Commercial environments with constraints"]
+    },
+    "whyMatters": {
+      "heading": "Why this decision matters",
+      "p1": "Choosing between inline and non-invasive isn't just technical.",
+      "p2": "It affects:",
+      "list": ["Installation cost", "Deployment speed", "Scalability across properties"],
+      "p3": "In many cases, this decision determines whether a system is practical at all.",
+      "p4": "For commercial environments, see our guide to the <0>best water monitoring systems for commercial buildings</0>."
+    },
+    "closing": {
+      "p1": "Inline and non-invasive systems represent two fundamentally different approaches.",
+      "p2": "Understanding the trade-offs between them is essential to choosing a system that fits both the building and the operational reality."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "Best Water Monitoring Systems for Commercial Buildings",
+          "description": "A guide to the categories of systems available for commercial environments."
+        },
+        {
+          "title": "What Is a Water Monitoring System?",
+          "description": "Understanding the basics before choosing a system."
+        },
+        {
+          "title": "Best Water Monitoring Systems for Buildings",
+          "description": "Compare the top systems side by side."
+        }
+      ]
+    }
+  },
+  "afterLeakAlert": {
+    "pageTitle": "What Actually Happens After a Leak Alert in Buildings — Beluga",
+    "metaDescription": "Detection is only the first step. Learn what really happens after a leak alert in buildings — and why the workflow after detection determines the outcome.",
+    "h1": "What Actually Happens After a Leak Alert in Buildings",
+    "subtitle": "Detection is only the first step",
+    "intro": [
+      "Most water monitoring systems are evaluated based on one thing: whether they can detect a leak.",
+      "But in real buildings, detection is only the first step.",
+      "What happens after the alert is what actually determines the outcome."
+    ],
+    "steps": [
+      {
+        "title": "The alert is triggered",
+        "p1": "A system detects abnormal water behavior and sends an alert.",
+        "p2": "This might come through:",
+        "listChannels": ["A mobile app", "An email", "A dashboard notification"],
+        "p3": "At this point, the system has done its job."
+      },
+      {
+        "title": "Someone has to see it",
+        "p1": "In theory, alerts are immediate.",
+        "p2": "In practice:",
+        "list": ["Notifications get missed", "Emails get buried", "Dashboards aren't constantly monitored"],
+        "p3": "The first delay often happens here."
+      },
+      {
+        "title": "Someone has to interpret it",
+        "p1": "Even when an alert is seen, it isn't always clear what it means.",
+        "p2": "Questions come up quickly:",
+        "listQuestions": ["Is this a real issue?", "Is it urgent?", "Where is it happening?"],
+        "p3": "Without context, alerts can create uncertainty instead of clarity."
+      },
+      {
+        "title": "It becomes a task",
+        "p1": "Once the alert is understood, it needs to turn into action.",
+        "p2": "This usually means:",
+        "listMeans": ["Creating a work order", "Assigning a technician", "Scheduling a visit"],
+        "p3": "In many buildings, this step is still manual. This is the operational reality described in <0>how property managers actually handle water issues</0>."
+      },
+      {
+        "title": "The issue is investigated",
+        "p1": "Someone physically checks the system.",
+        "p2": "They may:",
+        "listMay": ["Inspect fixtures", "Trace water flow", "Look for visible leaks"],
+        "p3": "Depending on the system, this can take time — especially if the alert doesn't clearly indicate the source."
+      },
+      {
+        "title": "The problem is resolved",
+        "p1": "Once identified, the issue is fixed.",
+        "p2": "But by this point:",
+        "listBut": ["Time has passed", "Water may have been wasted", "Damage may have already occurred"]
+      }
+    ],
+    "breakdown": {
+      "heading": "Where things break down",
+      "p1": "At each step, small delays can add up.",
+      "p2": "The system may detect an issue instantly, but:",
+      "list": ["Response is not instant", "Interpretation is not always clear", "Workflows are not always integrated"],
+      "p3": "This creates a gap between detection and resolution."
+    },
+    "whyMatters": {
+      "heading": "Why this matters",
+      "p1": "Most systems are designed around detection.",
+      "p2": "Fewer are designed around:",
+      "list": ["Clarity of insight", "Ease of action", "Integration into operations"],
+      "p3": "This is where a <0>water intelligence system</0> can add value — by providing context, not just alerts.",
+      "p4": "In larger buildings, that difference becomes critical."
+    },
+    "betterWay": {
+      "heading": "A better way to think about it",
+      "p1": "Instead of asking:",
+      "quote1": "Does this system detect leaks?",
+      "p2": "A more useful question is:",
+      "quote2": "What happens after it detects something?",
+      "p3": "Understanding the difference between <0>water monitoring and leak detection</0> is a good starting point.",
+      "p4": "Because that's where outcomes are actually determined."
+    },
+    "closing": {
+      "p1": "Detection is important.",
+      "p2": "But in real-world environments, the effectiveness of a system depends on everything that happens after the alert.",
+      "p3": "Understanding that workflow is key to choosing the right approach. Explore how different systems compare in our <0>guide to the best water monitoring systems</0>."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "Why Leak Detection Alone Isn't Enough",
+          "description": "Most issues in large buildings develop gradually — and don't trigger alerts."
+        },
+        {
+          "title": "How Property Managers Handle Water Issues",
+          "description": "People, processes, and constraints — the real workflow."
+        },
+        {
+          "title": "Best Water Monitoring Systems for Buildings",
+          "description": "Compare the top systems across categories and building types."
+        }
+      ]
+    }
+  },
+  "leakDetectionNotEnough": {
+    "pageTitle": "Why Leak Detection Alone Isn't Enough for Commercial Buildings — Beluga",
+    "metaDescription": "Leak detection is important but incomplete for commercial buildings. Learn why continuous monitoring, baselines, and operational workflows matter more than alerts alone.",
+    "h1": "Why Leak Detection Alone Isn't Enough for Commercial Buildings",
+    "subtitle": "It's an important tool — but not a complete solution",
+    "intro": [
+      "Leak detection is often seen as the core function of water monitoring systems.",
+      "And for good reason — leaks can cause serious damage.",
+      "But in commercial and multi-unit buildings, leak detection alone is rarely enough. The distinction between <0>water monitoring and leak detection</0> matters here."
+    ],
+    "assumption": {
+      "heading": "The assumption: leaks are the main problem",
+      "p1": "Most systems are built around the idea that water issues equal leaks.",
+      "p2": "So they focus on:",
+      "list": ["Detecting abnormal flow", "Sending alerts", "Triggering shutoff mechanisms"],
+      "p3": "This works well for sudden events."
+    },
+    "reality": {
+      "heading": "The reality: most issues are not sudden",
+      "p1": "In larger buildings, many problems develop gradually.",
+      "p2": "Examples include:",
+      "listExamples": [
+        "Small, continuous leaks",
+        "Inefficient fixtures",
+        "Abnormal usage patterns",
+        "System degradation over time"
+      ],
+      "p3": "These don't always trigger immediate alerts.",
+      "p4": "But they still impact:",
+      "listImpact": ["Water consumption", "Operating costs", "Long-term system performance"]
+    },
+    "visibilityGap": {
+      "heading": "The visibility gap",
+      "p1": "Leak detection systems typically answer one question:",
+      "quote": "Is something wrong right now?",
+      "p2": "But they don't always answer:",
+      "listQuestions": [
+        "What is normal usage?",
+        "How is the system changing over time?",
+        "Where are inefficiencies occurring?"
+      ],
+      "p3": "Without that context, it's difficult to:",
+      "listDifficult": ["Identify trends", "Optimize usage", "Prevent issues before they escalate"],
+      "p4": "This gap is what drives the need for <0>water intelligence systems</0> that go beyond event-based alerts."
+    },
+    "complexity": {
+      "heading": "Complexity changes the problem",
+      "p1": "Commercial buildings are not simple systems.",
+      "p2": "They involve:",
+      "list": ["Multiple units", "Shared infrastructure", "Many fixtures and usage patterns"],
+      "p3": "In this environment, water behavior is more complex — and harder to interpret with event-based detection alone. Commercial-grade platforms like <0>WINT</0> and <1>Alert Labs</1> are designed for these environments."
+    },
+    "whyMonitoring": {
+      "heading": "Why monitoring matters",
+      "p1": "Monitoring systems take a broader approach.",
+      "p2": "They:",
+      "listThey": ["Track usage continuously", "Establish baselines", "Identify deviations early"],
+      "p3": "This allows teams to:",
+      "listAllows": [
+        "Detect issues before they become critical",
+        "Understand how the system behaves",
+        "Make more informed decisions"
+      ]
+    },
+    "stillRole": {
+      "heading": "Leak detection still has a role",
+      "p1": "This doesn't mean leak detection is not useful.",
+      "p2": "It plays an important role in:",
+      "list": ["Immediate protection", "Damage prevention"],
+      "p3": "But it represents only one layer of the problem."
+    },
+    "completeApproach": {
+      "heading": "A more complete approach",
+      "p1": "In practice, effective water management often requires:",
+      "detectionTitle": "Detection",
+      "detectionDesc": "To identify events",
+      "monitoringTitle": "Monitoring",
+      "monitoringDesc": "To understand patterns",
+      "workflowsTitle": "Workflows",
+      "workflowsDesc": "To respond effectively",
+      "p2": "Focusing on only one of these leaves gaps. Our <0>guide to choosing a water monitoring system</0> walks through how to balance these factors."
+    },
+    "closing": {
+      "p1": "Leak detection is an important tool — but not a complete solution for commercial buildings.",
+      "p2": "Understanding how water systems behave over time is what enables better visibility, better decisions, and better outcomes."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "What Happens After a Leak Alert",
+          "description": "Detection is only the first step — here's the full workflow."
+        },
+        {
+          "title": "Best Water Monitoring Systems for Commercial Buildings",
+          "description": "A guide to the categories of systems available for commercial environments."
+        },
+        {
+          "title": "Best Water Monitoring Systems for Buildings",
+          "description": "Compare the top systems across categories and building types."
+        }
+      ]
+    }
+  },
+  "propertyManagers": {
+    "pageTitle": "How Property Managers Actually Handle Water Issues — Beluga",
+    "metaDescription": "Water issues in buildings are handled through people, processes, and constraints. Learn the real workflow — from tenant complaints to resolution — and where systems fit in.",
+    "h1": "How Property Managers Actually Handle Water Issues",
+    "subtitle": "People, processes, and constraints",
+    "intro": [
+      "Water issues in buildings are often discussed in terms of detection.",
+      "But in practice, they're handled through people, processes, and constraints.",
+      "Understanding how property managers actually deal with these situations gives a much clearer picture of what matters — and where systems succeed or fall short."
+    ],
+    "steps": [
+      {
+        "title": "It usually starts with a complaint",
+        "p1": "In many buildings, the first sign of a water issue isn't a system alert. It's a tenant.",
+        "quotes": [
+          "There's water under the sink",
+          "The toilet keeps running",
+          "Something doesn't feel right"
+        ],
+        "p2": "This kicks off the process."
+      },
+      {
+        "title": "The issue is logged",
+        "p1": "The property manager or staff member:",
+        "listDoes": ["Logs the issue", "Creates a work order", "Assigns it to maintenance"],
+        "p2": "Depending on the building, this might happen in:",
+        "listWhere": ["A property management system", "A spreadsheet", "Or even manually"]
+      },
+      {
+        "title": "Initial investigation",
+        "p1": "Maintenance staff check the problem on-site.",
+        "p2": "They may:",
+        "listMay": ["Inspect fixtures", "Look for visible leaks", "Test water flow"],
+        "p3": "At this stage, a lot depends on:",
+        "listDepends": ["Experience", "Available information", "Access to the right areas"]
+      },
+      {
+        "title": "Escalation if needed",
+        "p1": "If the issue isn't obvious or requires more work:",
+        "list": ["A plumber may be called", "Additional inspection is scheduled", "The issue may be deferred"],
+        "p2": "This can introduce delays, especially in larger properties."
+      },
+      {
+        "title": "Resolution",
+        "p1": "Once the problem is identified, it is fixed.",
+        "p2": "But by this point:",
+        "list": ["Time has passed", "Water may have been wasted", "The issue may have affected other parts of the system"]
+      }
+    ],
+    "systemsFit": {
+      "heading": "Where systems fit in",
+      "p1": "Water monitoring systems are often introduced to improve this process.",
+      "p2": "They can:",
+      "list": ["Detect issues earlier", "Provide alerts", "Reduce reliance on tenant reports"],
+      "p3": "But they don't replace the workflow. They become part of it. Understanding <0>what happens after a leak alert</0> shows how detection fits into operations."
+    },
+    "challenge": {
+      "heading": "The real challenge",
+      "p1": "The challenge isn't just detecting problems.",
+      "p2": "It's:",
+      "list": [
+        "Turning signals into clear actions",
+        "Integrating with existing workflows",
+        "Reducing time between detection and resolution"
+      ],
+      "p3": "Without that, even the best detection system has limited impact. This is also <0>why leak detection alone isn't enough for commercial buildings</0>."
+    },
+    "whatHelps": {
+      "heading": "What actually helps",
+      "p1": "From a practical standpoint, useful systems tend to:",
+      "list": [
+        "Provide clear, actionable information",
+        "Reduce ambiguity",
+        "Help prioritize issues",
+        "Fit into existing operational processes"
+      ],
+      "p2": "For guidance on matching systems to workflows, see <0>how to choose a water monitoring system</0>.",
+      "p3": "Because ultimately, property management is operational — not just technical."
+    },
+    "closing": {
+      "p1": "Water issues in buildings are not just technical events. They're operational problems handled by people.",
+      "p2": "Understanding that reality is key to choosing tools that actually make a difference. Explore options in our <0>comparison of the best water monitoring systems</0>."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "What Is a Water Intelligence System?",
+          "description": "From reacting to events to understanding systems."
+        },
+        {
+          "title": "What Happens After a Leak Alert",
+          "description": "Detection is only the first step — here's the full workflow."
+        },
+        {
+          "title": "Best Water Monitoring Systems for Buildings",
+          "description": "Compare the top systems across categories and building types."
+        }
+      ]
+    }
+  },
+  "waterIntelligence": {
+    "pageTitle": "What Is a Water Intelligence System? (And Why It's Different) — Beluga",
+    "metaDescription": "Water intelligence goes beyond leak detection and usage monitoring. Learn what it means, how it differs from traditional approaches, and where it becomes valuable.",
+    "h1": "What Is a Water Intelligence System?",
+    "subtitle": "And why it's different",
+    "intro": [
+      "As water monitoring evolves, a new term is starting to appear: <strong>water intelligence</strong>.",
+      "At first glance, it sounds similar to existing systems.",
+      "But it represents a different way of thinking about how water systems are observed and managed."
+    ],
+    "traditional": {
+      "heading": "Traditional approaches",
+      "p1": "Most traditional systems fall into one of two categories:",
+      "catLeak": "Leak detection",
+      "catUsage": "Usage monitoring",
+      "p2": "They are designed to:",
+      "list": ["Detect events", "Track consumption", "Trigger alerts"],
+      "p3": "These approaches are useful, but they focus on specific aspects of the system. For a full breakdown, see our guide to the <0>4 types of water monitoring systems</0>."
+    },
+    "whatMeans": {
+      "heading": "What water intelligence means",
+      "p1": "A water intelligence system takes a broader view.",
+      "p2": "Instead of focusing only on events or measurements, it aims to understand how the system behaves as a whole.",
+      "p3": "This includes:",
+      "list": [
+        "How water flows through the building",
+        "How different fixtures behave",
+        "How usage patterns evolve over time",
+        "Where anomalies or inefficiencies occur"
+      ]
+    },
+    "dataToUnderstanding": {
+      "heading": "From data to understanding",
+      "p1": "The key difference is not just collecting data — it's interpreting it.",
+      "p2": "A water intelligence system:",
+      "list": ["Builds a model of the system", "Identifies patterns", "Detects deviations from normal behavior"],
+      "rawDataLabel": "Raw data",
+      "insightLabel": "Meaningful insight"
+    },
+    "buildings": {
+      "heading": "Why this matters in buildings",
+      "p1": "In complex environments, issues are not always obvious.",
+      "p2": "They can develop gradually:",
+      "list": ["Small leaks", "Inefficient fixtures", "Unusual usage patterns"],
+      "p3": "Without context, these are hard to detect early. This visibility gap is explored in depth in why leak detection alone isn't enough for commercial buildings.",
+      "p4": "A system that understands normal behavior can identify when something changes — even if it's subtle."
+    },
+    "differsFromMonitoring": {
+      "heading": "How it differs from monitoring",
+      "monitoringLabel": "Monitoring",
+      "monitoringQuestion": "What is happening?",
+      "intelLabel": "Water Intelligence",
+      "intelQuestion": "What does this mean?",
+      "p1": "That shift changes how information is used. We explore this further in <0>water monitoring vs leak detection</0>."
+    },
+    "valuable": {
+      "heading": "Where it becomes valuable",
+      "p1": "Water intelligence becomes more useful as:",
+      "listAs": [
+        "Building complexity increases",
+        "The number of fixtures grows",
+        "The cost of inefficiency rises",
+        "Long-term visibility becomes important"
+      ],
+      "p2": "It is particularly relevant in:",
+      "listIn": ["Commercial buildings", "Multi-unit properties"],
+      "p3": "See our guide to the <0>best water monitoring systems for commercial buildings</0> for system recommendations."
+    },
+    "notReplacement": {
+      "heading": "Not a replacement, but an evolution",
+      "p1": "Water intelligence does not replace existing approaches. It builds on them.",
+      "detectionTitle": "Detection",
+      "detectionDesc": "Still matters",
+      "monitoringTitle": "Monitoring",
+      "monitoringDesc": "Still matters",
+      "intelTitle": "Intelligence",
+      "intelDesc": "Adds another layer"
+    },
+    "closing": {
+      "p1": "Water intelligence represents a shift from reacting to events to understanding systems.",
+      "p2": "As buildings become more complex, that shift becomes increasingly important."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "How Property Managers Handle Water Issues",
+          "description": "People, processes, and constraints — the real workflow."
+        },
+        {
+          "title": "4 Types of Water Monitoring Systems",
+          "description": "Understanding the different approaches in the water monitoring space."
+        },
+        {
+          "title": "Best Water Monitoring Systems for Buildings",
+          "description": "Compare the top systems across categories and building types."
+        }
+      ]
+    }
+  }
+}

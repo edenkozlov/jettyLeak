@@ -1,0 +1,56 @@
+{
+  "wint": {
+    "pageTitle": "Beluga et WINT : surveillance de l’eau en milieu commercial",
+    "metaDescription": "Comparez Beluga et WINT pour les bâtiments commerciaux. Deux approches : arrêt des fuites contre intelligence continue du réseau. Comparaison neutre et factuelle.",
+    "heroH1": "Beluga et WINT",
+    "heroSubtitle": "Une comparaison détaillée et neutre de deux plateformes commerciales — atténuation des fuites contre intelligence du système.",
+    "introP1": "Si vous évaluez une alternative à WINT ou comparez Beluga à WINT, vous gérez probablement un bien commercial où la surveillance de l’eau est une priorité opérationnele. Les deux plateformes évoluent dans ce domaine, mais avec des philosophies différentes sur la façon dont le bâtiment interagit avec son réseau d’eau.",
+    "introP2": "Cette page compare Beluga et WINT à partir d’informations publiques pour aider propriétaires, exploitants et équipes techniques à choisir la bonne approche.",
+    "competitorLabel": "WINT",
+    "disclaimerCompetitorName": "WINT",
+    "ctaCompetitorName": "WINT",
+    "breadcrumbVs": "Beluga et WINT",
+    "tableRows": [
+      { "feature": "Objectif principal", "beluga": "Intelligence de l’eau et visibilité du système", "competitor": "Détection de fuites et gestion de l’eau" },
+      { "feature": "Mode d’installation", "beluga": "Non invasive (sans modifier les conduites)", "competitor": "Installation en ligne généralement requise" },
+      { "feature": "Détection de fuites", "beluga": "Oui (formes et anomalies)", "competitor": "Oui (débit avec arrêt)" },
+      { "feature": "Arrêt automatique", "beluga": "Pas au cœur du produit", "competitor": "Oui" },
+      { "feature": "Intelligence du système", "beluga": "Analyses comportementales poussées à l’échelle du système", "competitor": "Suivi de consommation avec alertes" },
+      { "feature": "Compréhension par équipement", "beluga": "Oui (reconnaissance de formes)", "competitor": "Limitée" },
+      { "feature": "Environnement cible", "beluga": "Commercial / multilogements", "competitor": "Commercial / chantiers" },
+      { "feature": "Complexité de déploiement", "beluga": "Faible (peu de matériel)", "competitor": "Modérée (matériel en ligne)" },
+      { "feature": "Philosophie de suivi", "beluga": "Modélisation comportementale continue", "competitor": "Surveillance du débit en temps réel + alertes" }
+    ],
+    "midTitle": "Différence clé : arrêt automatique et intelligence",
+    "midLeftTitle": "WINT — gestion des fuites en temps réel",
+    "midLeftP1": "WINT se concentre sur le suivi du débit en temps réel, la détection des fuites et les capacités d’arrêt automatique. Il est couramment utilisé en commercial et sur chantier lorsque la prévention des dégâts d’eau est une préoccupation immédiate.",
+    "midLeftP2": "Cette approche convient aux équipes qui ont besoin d’une réponse rapide et automatisée aux fuites actives.",
+    "midRightTitle": "Beluga — intelligence continue du système",
+    "midRightP1": "Beluga met l’accent sur la compréhension du comportement complet du réseau d’eau du bâtiment. Au-delà des seuls événements de débit, il construit un modèle continu de l’usage, ce qui permet une détection précoce des inefficiences, l’identification des équipements et un suivi des performances dans le temps.",
+    "midRightP2": "Cette approche s’adresse aux équipes qui veulent comprendre comment l’eau circule dans le bâtiment — pas seulement réagir lorsqu’un problème survient.",
+    "whenCompetitorHeading": "WINT peut bien convenir si :",
+    "whenCompetitorBullets": ["Vous avez besoin d’un arrêt automatique en temps réel en milieu commercial", "Votre priorité est de limiter le risque de dégâts pendant l’exploitation ou la construction", "Votre infrastructure permet un matériel installé en ligne", "Votre équipe veut des alertes événementielles liées aux anomalies de débit"],
+    "whenBelugaHeading": "Beluga peut mieux convenir si :",
+    "whenBelugaBullets": ["Vous voulez un déploiement non invasif avec peu de perturbation", "Vous visez une intelligence du réseau à long terme, pas seulement des alertes", "Vous voulez comprendre les habitudes de consommation, suivre les équipements et vous comparer à des références", "Vous gérez du multilogement ou un portefeuille et avez besoin d’une visibilité évolutive"],
+    "faq": [
+      { "q": "WINT est-il utilisé en bâtiment commercial ou sur chantier ?", "a": "WINT est souvent associé aux deux contextes, en particulier lorsque la prévention active des fuites et la réduction des dégâts d’eau sont prioritaires." },
+      { "q": "Beluga exige-t-il des modifications de plomberie ?", "a": "Non. Beluga est conçu pour une installation non invasive, sans modifier les conduites. Cela peut réduire nettement le délai et le coût de déploiement." },
+      { "q": "WINT peut-il offrir une intelligence de l’eau à l’échelle du système ?", "a": "WINT propose une surveillance et des alertes fondées sur le débit. Une intelligence plus large — identification des équipements, analyse comportementale — est un autre domaine, central pour Beluga." },
+      { "q": "Quel système est préférable pour une équipe d’exploitation ?", "a": "Cela dépend des priorités. Si l’arrêt en temps réel est indispensable, WINT peut convenir. Si l’objectif est de mieux comprendre l’usage de l’eau dans le bâtiment dans la durée, l’approche « intelligence d’abord » de Beluga peut mieux s’aligner." },
+      { "q": "Comment se comparent les délais de déploiement ?", "a": "L’approche non invasive de Beluga permet généralement un déploiement plus rapide avec peu de perturbation. Les installations WINT peuvent demander plus de coordination à cause du matériel en ligne. Les délais dépendent de la configuration du bâtiment." },
+      { "q": "Beluga et WINT visent-ils les mêmes cas d’usage ?", "a": "Tous deux évoluent dans la surveillance de l’eau en commercial, mais avec des priorités différentes. WINT met l’accent sur la détection et l’arrêt. Beluga sur la visibilité du système, la reconnaissance de formes et l’intelligence de suivi à long terme." }
+    ],
+    "relatedQuestions": [
+      "Quelle est la meilleure alternative à WINT pour le commercial ?",
+      "Comment WINT se compare-t-il aux autres solutions de gestion de l’eau ?",
+      "Quelle est la différence entre arrêt des fuites et intelligence de l’eau ?",
+      "Quel système pour les équipes d’exploitation de bâtiments ?",
+      "La surveillance non invasive est-elle efficace en commercial ?"
+    ],
+    "recommended": [
+      { "to": "/articles/best-water-monitoring-commercial-buildings", "title": "Meilleure surveillance de l’eau pour bâtiments commerciaux", "desc": "Un guide des systèmes pensés pour le commercial." },
+      { "to": "/articles/why-leak-detection-not-enough-commercial", "title": "Pourquoi la seule détection de fuites ne suffit pas", "desc": "Pourquoi le commercial a besoin de plus que des alertes." },
+      { "to": "/articles/what-is-water-intelligence-system", "title": "Qu’est-ce qu’un système d’intelligence de l’eau ?", "desc": "Comment l’intelligence va au-delà de la détection." }
+    ]
+  }
+}

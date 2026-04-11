@@ -1,0 +1,187 @@
+{
+  "pageTitle": "FAQ Beluga : surveillance de l’eau et intelligence des bâtiments",
+  "metaDescription": "Réponses aux questions fréquentes sur Beluga, les systèmes de surveillance de l’eau, la détection de fuites, l’installation et l’intelligence hydraulique des bâtiments.",
+  "eyebrow": "FAQ",
+  "title": "Questions fréquentes",
+  "disclaimerTitle": "Avertissement",
+  "disclaimerBody": "Cette FAQ est fournie à titre informatif seulement. Les fonctionnalités peuvent évoluer dans le temps. Ce contenu ne constitue pas un avis technique ou professionnel.",
+  "sections": [
+    {
+      "heading": "Général",
+      "items": [
+        {
+          "q": "Qu’est-ce que Beluga?",
+          "schemaText": "Beluga est une plateforme d’intelligence hydraulique qui aide les bâtiments à mieux comprendre le comportement de leur plomberie dans le temps. Elle assure une surveillance continue, repère les anomalies et offre une vision des habitudes de consommation d’eau.",
+          "paragraphs": [
+            "Beluga est une plateforme d’intelligence hydraulique qui aide les bâtiments à mieux comprendre le comportement de leur plomberie dans le temps. Elle assure une surveillance continue, repère les anomalies et offre une vision des habitudes de consommation d’eau."
+          ]
+        },
+        {
+          "q": "En quoi Beluga diffère-t-elle des détecteurs de fuites traditionnels?",
+          "schemaText": "Les systèmes traditionnels se concentrent souvent sur la détection de fuites actives et, parfois, sur la coupure de l’eau. Beluga vise une visibilité plus large sur le système. Outre les anomalies pouvant indiquer des fuites, elle cherche à éclairer la consommation, les inefficacités et le comportement du système à long terme.",
+          "paragraphs": [
+            "Les systèmes traditionnels se concentrent souvent sur la détection de fuites actives et, parfois, sur la coupure de l’eau.",
+            "Beluga vise une visibilité plus large sur le système. Outre les anomalies pouvant indiquer des fuites, elle cherche à éclairer la consommation, les inefficacités et le comportement du système à long terme."
+          ]
+        },
+        {
+          "q": "Pour qui Beluga est-elle conçue?",
+          "schemaText": "Beluga s’adresse surtout aux propriétaires d’immeubles commerciaux, aux gestionnaires d’immeuble et aux bâtiments résidentiels multilogements. D’autres contextes peuvent convenir selon la configuration.",
+          "paragraphs": ["Beluga s’adresse surtout à :"],
+          "list": [
+            "Propriétaires d’immeubles commerciaux",
+            "Gestionnaires d’immeuble",
+            "Immeubles résidentiels multilogements"
+          ],
+          "afterList": "D’autres contextes peuvent convenir selon la configuration du système."
+        }
+      ]
+    },
+    {
+      "heading": "Installation",
+      "items": [
+        {
+          "q": "Beluga exige-t-elle des travaux de plomberie?",
+          "schemaText": "Non. Beluga est conçue pour s’installer sans modifier la plomberie existante.",
+          "paragraphs": ["Non. Beluga est conçue pour s’installer sans modifier la plomberie existante."]
+        },
+        {
+          "q": "Où installe-t-on l’appareil?",
+          "schemaText": "En général, le système se place sur ou près de la conduite d’arrivée d’eau principale pour suivre le comportement global du réseau.",
+          "paragraphs": [
+            "En général, le système se place sur ou près de la conduite d’arrivée d’eau principale pour suivre le comportement global du réseau."
+          ]
+        },
+        {
+          "q": "Combien de temps prend l’installation?",
+          "schemaText": "La durée varie selon le bâtiment, mais l’objectif est une mise en service rapide et peu perturbante.",
+          "paragraphs": [
+            "La durée varie selon le bâtiment, mais l’objectif est une mise en service rapide et peu perturbante."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Fonctionnalités",
+      "items": [
+        {
+          "q": "Beluga détecte-t-elle les fuites?",
+          "schemaText": "Beluga peut repérer des anomalies dans les habitudes de consommation pouvant indiquer des fuites. L’approche repose sur la surveillance du comportement du système dans le temps, pas seulement sur les événements brusques.",
+          "paragraphs": [
+            "Beluga peut repérer des anomalies dans les habitudes de consommation pouvant indiquer des fuites. L’approche repose sur la surveillance du comportement du système dans le temps, pas seulement sur les événements brusques."
+          ]
+        },
+        {
+          "q": "Beluga coupe-t-elle l’eau automatiquement?",
+          "schemaText": "L’arrêt automatique n’est pas une fonction centrale. Beluga met l’accent sur la surveillance, la détection et l’analyse plutôt que sur une intervention directe sur le réseau.",
+          "paragraphs": [
+            "L’arrêt automatique n’est pas une fonction centrale. Beluga met l’accent sur la surveillance, la détection et l’analyse plutôt que sur une intervention directe sur le réseau."
+          ]
+        },
+        {
+          "q": "Beluga peut-elle suivre la consommation d’eau?",
+          "schemaText": "Oui. Beluga offre une visibilité sur la consommation dans le temps, ce qui aide à repérer les tendances, les inefficacités et l’activité inhabituelle.",
+          "paragraphs": [
+            "Oui. Beluga offre une visibilité sur la consommation dans le temps, ce qui aide à repérer les tendances, les inefficacités et l’activité inhabituelle."
+          ]
+        },
+        {
+          "q": "Peut-elle identifier des appareils précis (toilettes, lavabos, etc.)?",
+          "schemaText": "Beluga s’appuie sur une analyse par motifs pour interpréter le comportement du système, ce qui peut permettre de distinguer certains types d’usage selon le contexte.",
+          "paragraphs": [
+            "Beluga s’appuie sur une analyse par motifs pour interpréter le comportement du système, ce qui peut permettre de distinguer certains types d’usage selon le contexte."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Cas d’usage",
+      "items": [
+        {
+          "q": "Beluga peut-elle aider à réduire la facture d’eau?",
+          "schemaText": "En mettant en évidence les inefficacités et les habitudes anormales, Beluga peut aider à repérer des leviers pour réduire la consommation.",
+          "paragraphs": [
+            "En mettant en évidence les inefficacités et les habitudes anormales, Beluga peut aider à repérer des leviers pour réduire la consommation."
+          ]
+        },
+        {
+          "q": "Est-ce pertinent pour les grands bâtiments?",
+          "schemaText": "Oui. Beluga est pensée pour les immeubles multilogements et commerciaux, où la visibilité à l’échelle du système est souvent limitée.",
+          "paragraphs": [
+            "Oui. Beluga est pensée pour les immeubles multilogements et commerciaux, où la visibilité à l’échelle du système est souvent limitée."
+          ]
+        },
+        {
+          "q": "Peut-elle limiter les dommages dus aux fuites?",
+          "schemaText": "Une détection précoce de comportements anormaux peut réduire l’impact des fuites en identifiant les problèmes avant qu’ils n’empirent.",
+          "paragraphs": [
+            "Une détection précoce de comportements anormaux peut réduire l’impact des fuites en identifiant les problèmes avant qu’ils n’empirent."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Comparaison",
+      "items": [
+        {
+          "q": "Comment Beluga se compare-t-elle aux systèmes avec arrêt automatique?",
+          "schemaText": "Certains systèmes privilégient une intervention immédiate en coupant l’eau dès qu’une fuite est détectée. Beluga vise une compréhension continue du comportement du système, ce qui peut favoriser une détection plus précoce des inefficacités et des anomalies.",
+          "paragraphs": [
+            "Certains systèmes privilégient une intervention immédiate en coupant l’eau dès qu’une fuite est détectée. Beluga vise une compréhension continue du comportement du système, ce qui peut favoriser une détection plus précoce des inefficacités et des anomalies."
+          ]
+        },
+        {
+          "q": "Beluga remplace-t-elle les systèmes avec arrêt?",
+          "schemaText": "Pas nécessairement. Selon le cas, elle peut compléter d’autres systèmes en ajoutant surveillance et analyse.",
+          "paragraphs": [
+            "Pas nécessairement. Selon le cas, elle peut compléter d’autres systèmes en ajoutant surveillance et analyse."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Données et surveillance",
+      "items": [
+        {
+          "q": "Beluga surveille-t-elle en continu?",
+          "schemaText": "Oui. Le système est conçu pour suivre le comportement de l’eau en continu dans le temps.",
+          "paragraphs": ["Oui. Le système est conçu pour suivre le comportement de l’eau en continu dans le temps."]
+        },
+        {
+          "q": "Les données historiques sont-elles conservées?",
+          "schemaText": "Oui. L’historique sert à établir des références et à repérer les changements ou anomalies.",
+          "paragraphs": ["Oui. L’historique sert à établir des références et à repérer les changements ou anomalies."]
+        },
+        {
+          "q": "Les données sont-elles en temps réel?",
+          "schemaText": "La surveillance est continue ; les indications sont produites à partir du comportement du système et des motifs détectés.",
+          "paragraphs": [
+            "La surveillance est continue ; les indications sont produites à partir du comportement du système et des motifs détectés."
+          ]
+        }
+      ]
+    },
+    {
+      "heading": "Pour commencer",
+      "items": [
+        {
+          "q": "Comment obtenir l’accès à Beluga?",
+          "schemaText": "Vous pouvez demander un accès anticipé ou une évaluation de bâtiment via le site web.",
+          "paragraphs": ["Vous pouvez demander un accès anticipé ou une évaluation de bâtiment via le site web."]
+        },
+        {
+          "q": "Beluga est-elle disponible partout?",
+          "schemaText": "La disponibilité peut varier selon le déploiement et le déploiement progressif.",
+          "paragraphs": ["La disponibilité peut varier selon les régions et le calendrier de déploiement."]
+        },
+        {
+          "q": "Puis-je parler à quelqu’un avant d’installer?",
+          "schemaText": "Oui. Vous pouvez demander un appel ou une consultation pour vérifier si le système convient à vos besoins.",
+          "paragraphs": [
+            "Oui. Vous pouvez demander un appel ou une consultation pour vérifier si le système convient à vos besoins."
+          ]
+        }
+      ]
+    }
+  ]
+}

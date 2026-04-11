@@ -1,0 +1,435 @@
+{
+  "lang": {
+    "en": "EN",
+    "fr": "FR",
+    "groupAria": "Language"
+  },
+  "nav": {
+    "toggleMenu": "Toggle menu",
+    "backHome": "Back to Home",
+    "caseStudy": "Case Study",
+    "investor": "Investor",
+    "signIn": "Sign In",
+    "getQuote": "Get a quote"
+  },
+  "navAnchors": {
+    "product": "Product",
+    "features": "Features",
+    "health": "Health",
+    "howItWorks": "How It Works"
+  },
+  "hero": {
+    "badge": "Water intelligence for buildings",
+    "titleBefore": "Full",
+    "titleHighlight": "water system",
+    "titleAfter": "visibility",
+    "subtitle": "One sensor. Every fixture.",
+    "cta": "Get a quote"
+  },
+  "product": {
+    "titleLine1": "A system that understands",
+    "titleLine2": "your plumbing",
+    "subtitle": "See what's happening immediately, and how it changes over time.",
+    "appAlt": "Beluga mobile app",
+    "features": {
+      "understands": {
+        "title": "Understands every fixture",
+        "desc": "Identifies how toilets, sinks, showers, and appliances behave — even in older buildings with no documentation."
+      },
+      "singleInstall": {
+        "title": "Works from a single install",
+        "desc": "One sensor on the main line gives full visibility across the entire building. No pipe cutting. No specialized labor."
+      },
+      "tracks": {
+        "title": "Tracks performance over time",
+        "desc": "See how fixtures change as they age. Catch inefficiencies early, before they become costly problems."
+      },
+      "liveModel": {
+        "title": "Builds a live model of your system",
+        "desc": "Beluga continuously maps how water flows through your building, creating a dynamic understanding of your plumbing."
+      },
+      "immediate": {
+        "title": "Immediate visibility",
+        "desc": "Right after installation, Beluga surfaces key insights on usage, inefficiencies, and opportunities to improve performance."
+      }
+    }
+  },
+  "features": {
+    "eyebrow": "What Beluga enables",
+    "titleLine1": "Know what's actually happening",
+    "titleLine2": "inside your building",
+    "cards": {
+      "fixturePerformance": {
+        "title": "Fixture Performance & Analysis",
+        "desc": "See how toilets, sinks, and showers actually perform — not how they're supposed to."
+      },
+      "cost": {
+        "title": "Water Cost Reduction",
+        "desc": "Identify where water is being used inefficiently and reduce unnecessary consumption."
+      },
+      "benchmarking": {
+        "title": "Fixture Comparison & Benchmarking",
+        "desc": "Compare fixtures against ideal performance standards to spot underperforming units instantly."
+      },
+      "warranty": {
+        "title": "Warranty & Replacement Opportunities",
+        "desc": "Surface fixtures that may qualify for replacement based on performance patterns."
+      },
+      "leak": {
+        "title": "Leak & Anomaly Detection",
+        "desc": "Detect abnormal usage patterns across the building, including leaks."
+      }
+    }
+  },
+  "dashboard": {
+    "eyebrow": "Dashboard",
+    "title": "Everything in one place",
+    "subtitle": "Full visibility into your building's water system — from high-level usage to individual fixture performance.",
+    "phoneAlt": "Beluga mobile app",
+    "telemetryAlt": "Beluga mobile app telemetry data",
+    "items": {
+      "usage": { "title": "Usage over time", "desc": "Track total water usage with clear, real-time trends." },
+      "breakdown": { "title": "Breakdown by fixture", "desc": "Understand where your water is going." },
+      "flagged": { "title": "Flagged fixtures", "desc": "See which fixtures need attention instantly." },
+      "performance": { "title": "Performance tracking", "desc": "Monitor how fixtures change over time." },
+      "savings": { "title": "Savings insights", "desc": "See how much water and cost can be reduced." },
+      "portfolio": { "title": "Portfolio view", "desc": "Compare buildings from one dashboard." }
+    }
+  },
+  "buildingHealth": {
+    "eyebrow": "Building Health Index",
+    "title": "Your building—and what good looks like",
+    "subtitle": "See how your building compares to its own normal—and to how things should be running.",
+    "exampleAria": "Building Health Index example · {{name}}",
+    "example": {
+      "name": "Lakeview Tower",
+      "city": "Chicago, IL"
+    },
+    "today": "Today",
+    "sampleNote": "Leak repaired—score’s up from last week. Still in watch until the trend holds.",
+    "pillars": {
+      "stability": "Stability",
+      "hydraulic": "Hydraulic stress",
+      "appliance": "Appliance health",
+      "mechanical": "Mechanical"
+    },
+    "scoreHowBuilt": "How the score is built",
+    "scoreHowBuiltAria": "How the Building Health Index is calculated",
+    "chart": {
+      "aria": "Example: 7-day Building Health Index trend",
+      "title7d": "7-day trend",
+      "vsBaseline": "vs your baseline",
+      "was": "was",
+      "range": "range",
+      "tooltipUnit": "BHI",
+      "days": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+      }
+    },
+    "gauge": {
+      "aria": "Health score 78, Watch",
+      "watch": "WATCH"
+    }
+  },
+  "sensor": {
+    "eyebrow": "The sensor",
+    "title": "One install. Full visibility.",
+    "subtitle": "Beluga installs on your building's main water line and observes how water moves through the system — no pipe cutting or specialized labor required.",
+    "points": {
+      "tracking": {
+        "title": "Real usage tracking",
+        "desc": "See how water is used across your building over time, from total consumption to detailed patterns."
+      },
+      "fixture": {
+        "title": "Fixture intelligence",
+        "desc": "Automatically identifies toilets, sinks, showers, and appliances based on how water flows through the system."
+      },
+      "insights": {
+        "title": "Performance insights",
+        "desc": "Understand what's inefficient, what's changing, and where to focus — without guesswork."
+      }
+    }
+  },
+  "howItWorks": {
+    "eyebrow": "Who it's for",
+    "titleLine1": "From single properties",
+    "titleLine2": "to full portfolios",
+    "cards": {
+      "propertyManagers": {
+        "label": "Property managers",
+        "detail": "Understand what's happening across every building and reduce operating costs."
+      },
+      "commercial": {
+        "label": "Commercial buildings",
+        "detail": "Offices, retail, and mixed-use spaces gain visibility into water usage and inefficiencies."
+      },
+      "multifamily": {
+        "label": "Multi-family & condos",
+        "detail": "Track shared systems, compare units, and identify issues early."
+      },
+      "industrial": {
+        "label": "Industrial & facilities",
+        "detail": "Monitor water usage across large systems without adding complexity."
+      }
+    },
+    "caseStudyCta": "View Case Study"
+  },
+  "interest": {
+    "titleLine1": "Understand your building's",
+    "titleLine2": "water system",
+    "subtitle": "Get visibility into every fixture, every pattern, and every inefficiency.",
+    "cta": "Get a quote"
+  },
+  "clients": {
+    "eyebrow": "On site",
+    "title": "Buildings running Beluga",
+    "subtitle": "Real installs—see where we monitor water health today.",
+    "viewAll": "View all buildings"
+  },
+  "pillarsModal": {
+    "title": "What goes into your score",
+    "close": "Close",
+    "introLead": "We learn how water usually behaves in ",
+    "introEm": "your",
+    "introTrail": " building, compare new behavior to that history, and to ideal benchmarks for how the whole system should behave. The index blends four kinds of signal—each one uses sensor data you already have on the main line.",
+    "p1": {
+      "strong": "System stability",
+      "paren": "(largest share)",
+      "rest": " — whether usage patterns, timing, and flow duration still match what we've learned is normal for you—new or drifting behavior gets flagged."
+    },
+    "p2": {
+      "strong": "Hydraulic stress",
+      "rest": " — how hard and how long the system is working versus its usual load (quick spikes vs sustained strain add up differently)."
+    },
+    "p3": {
+      "strong": "Appliance & fixture health",
+      "rest": " — whether toilets, dishwashers, and other draws still match their typical “signatures”; drift can mean wear or inefficiency before an obvious failure."
+    },
+    "p4": {
+      "strong": "Mechanical health",
+      "rest": " — vibration from the same sensor: turbulence and instability that don't line up with normal flow can point to strain in the plumbing system."
+    },
+    "footnote": "Exact weighting stays tuned as we ship; the app will always show what drove a given score."
+  },
+  "footer": {
+    "tagline": "Non-invasive water monitoring and leak intelligence for commercial buildings.",
+    "linkedinAria": "Beluga on LinkedIn",
+    "columns": {
+      "product": "Product",
+      "resources": "Resources",
+      "legal": "Legal"
+    },
+    "links": {
+      "caseStudy": "Case study",
+      "getQuote": "Get a quote",
+      "signIn": "Sign In",
+      "home": "Home",
+      "articles": "Articles",
+      "faq": "FAQ",
+      "support": "Support",
+      "investorDeck": "Investor deck",
+      "privacy": "Privacy policy",
+      "terms": "Terms of service"
+    },
+    "copyright": {
+      "landing": "© {{year}} Beluga — Water intelligence for buildings",
+      "page": "© {{year}} Beluga — Made in Canada"
+    }
+  },
+  "a11y": {
+    "backToTop": "Back to top"
+  },
+  "compare": {
+    "columnTitle": "Compare",
+    "linkFloByMoen": "Beluga vs Flo by Moen",
+    "linkPhyn": "Beluga vs Phyn",
+    "linkWint": "Beluga vs WINT",
+    "linkAlertLabs": "Beluga vs Alert Labs",
+    "linkWaterAlert": "Beluga vs Water Alert",
+    "linkFlume": "Beluga vs Flume",
+    "allComparisons": "All comparisons",
+    "otherSystemsHeading": "Compare other water monitoring systems",
+    "hubLinkText": "Best Water Monitoring Systems for Buildings",
+    "compareVsName": "Compare Beluga vs {{name}}",
+    "learnBeluga": "Learn more about Beluga"
+  },
+  "quote": {
+    "pageTitle": "Get a quote — Beluga",
+    "metaDescription": "Request early access or a free building water assessment. Tell us about your role, portfolio size, and priorities.",
+    "eyebrow": "Quote",
+    "roles": {
+      "residential_homeowner": "Residential homeowner",
+      "residential_building_owner": "Residential building owner",
+      "commercial_building_owner": "Commercial building owner",
+      "property_manager": "Property manager",
+      "real_estate_broker": "Real estate broker",
+      "other": "Other"
+    },
+    "sizes": {
+      "1_10": "1–10",
+      "10_50": "10–50",
+      "50_200": "50–200",
+      "200_plus": "200+"
+    },
+    "priorities": {
+      "preventing_leaks": "Preventing leaks",
+      "reducing_costs": "Reducing water costs",
+      "understanding_usage": "Understanding water usage",
+      "avoiding_surprises": "Avoiding maintenance surprises"
+    },
+    "roleStep": {
+      "title": "What best describes you?",
+      "subtitle": "This helps us tailor the experience to your needs."
+    },
+    "sizeStep": {
+      "title": "Portfolio size",
+      "subtitle": "How many units or properties do you manage?"
+    },
+    "priorityStep": {
+      "title": "What matters most to you?",
+      "subtitle": "Pick the one that best reflects your main goal."
+    },
+    "emailStep": {
+      "titleLine1": "Want early access or a free",
+      "titleLine2": "building water assessment?",
+      "placeholder": "you@email.com",
+      "submit": "Get access",
+      "submitLoading": "Sending..."
+    },
+    "back": "Back",
+    "success": {
+      "title": "You're on the list",
+      "body": "We'll be in touch shortly with next steps. Thanks for your interest in Beluga."
+    },
+    "errorFallback": "Something went wrong. Try again."
+  },
+  "caseStudy": {
+    "pageTitle": "Case Study — Beluga",
+    "metaDescription": "How a pipe burst and a rough prototype led to Beluga — real-time flow data, a 700 L/h anomaly, and why early water detection matters for Canadian buildings.",
+    "eyebrow": "Case Study",
+    "heroTitle": "How a single pipe burst turned into a national problem worth solving",
+    "getStarted": "Get Started",
+    "spark": {
+      "title": "The spark",
+      "p1": "The idea behind our system did not start in a lab or a pitch deck. It started with a phone call.",
+      "p2": "After hearing that our landlord had experienced a pipe burst in one of his buildings, we started asking a simple question: how often does this actually happen? What we found was alarming. In Canada, nearly <strong>48 percent of home insurance claims</strong> are caused by water damage — almost double the rate seen in the United States. Yet most buildings still rely on noticing damage after it has already occurred.",
+      "p3": "We believed this was a problem worth solving."
+    },
+    "prototype": {
+      "title": "The first prototype",
+      "p1": "We moved fast. Within days, we built a rough, clunky first prototype. It was far from pretty, but it worked. The goal was simple: measure flow, establish a baseline, and see if early anomalies could be detected before damage occurred.",
+      "imgAlt": "Initial prototype installed and running",
+      "caption": "Initial prototype installed and running"
+    },
+    "calibration": {
+      "title": "Calibration and the unexpected",
+      "p1": "During the first two hours of testing, we focused on calibration and baseline measurements. Normal building usage - Toilets, sinks, background flow. Everything looked stable.",
+      "p2": "Then something completely unexpected happened.",
+      "highlight": "The system detected a sudden spike in flow: 700 liters per hour.",
+      "p3": "At first, we assumed it was an error.",
+      "p4": "It was not.",
+      "imgAlt": "System alert showing a 700 L/h flow anomaly",
+      "caption": "System alert showing a 700 L/h flow anomaly"
+    },
+    "findingSource": {
+      "title": "Finding the source",
+      "p1": "We searched the entire building, floor by floor, unit by unit. Eventually, we found the culprit. A hose connection had failed, likely due to pressure buildup, causing a massive and continuous leak.",
+      "p2": "Left undetected, this would have resulted in extensive water damage.",
+      "imgAlt": "Physical source of the leak identified on site",
+      "caption": "Physical source of the leak identified on site"
+    },
+    "validation": {
+      "title": "Real world validation",
+      "p1": "Our landlord and two building managers came on site immediately. Seeing the live flow data in real time changed the conversation. At that rate of water loss, the concern was no longer hypothetical. It was urgent.",
+      "p2": "They suspected the hose cap had blown off due to pressure. The main valve was shut off, and a full investigation began.",
+      "imgAlt": "Landlord and building managers inspecting the issue",
+      "caption": "Landlord and building managers inspecting the issue"
+    },
+    "mitigation": {
+      "title": "Mitigation confirmed",
+      "p1": "Once the main valve was closed, the system told the story instantly. Flow dropped to zero.",
+      "p2": "The issue was fully mitigated.",
+      "imgAlt": "Flow rate at zero confirming resolution",
+      "caption": "Flow rate at zero — issue fully resolved"
+    },
+    "whyMattered": {
+      "title": "Why this mattered",
+      "p1": "This felt like more than coincidence.",
+      "p2": "Within hours of installing a rough prototype, it had already prevented what could have been a costly and damaging incident. That moment made something very clear to us: this was not an edge case. This was a <strong>systemic problem across Canadian buildings</strong>.",
+      "p3": "From a founder's perspective, this was the turning point. We were no longer experimenting with an idea. We were staring at a real, measurable problem that affects homeowners, landlords, insurers, and cities across Canada.",
+      "p4": "And it was clear that <strong>early detection, not cleanup, is the solution</strong>.",
+      "p5": "This case study became the foundation for everything we are building next."
+    }
+  },
+  "support": {
+    "pageTitle": "Support — Beluga",
+    "metaDescription": "Contact Beluga for help with your sensor, dashboard, or troubleshooting. Email and phone support.",
+    "title": "Support",
+    "intro": "Need help with Beluga? We're here for you. Whether you have a question about your sensor, need help reading your dashboard, or want to report an issue — our team is happy to assist.",
+    "contactTitle": "Contact us",
+    "contactBody": "The fastest way to reach us is by email. Send us a message and we'll get back to you within one business day. You can also call if you prefer to talk through an issue.",
+    "commonTitle": "Common questions",
+    "q1": "How do I install the sensor?",
+    "a1": "Beluga clamps onto the outside of your pipe — no cutting, no plumber needed. It works on copper, PEX, CPVC, and galvanized pipes.",
+    "q2": "Does it need WiFi?",
+    "a2": "Not at the pipe. The sensor transmits data via LoRa to a hub elsewhere in the building that has connectivity.",
+    "q3": "How do I read my dashboard?",
+    "a3": "The app shows real-time flow in litres per hour, historical usage charts, and alert notifications. If something looks off, the app will tell you what it means and what to do.",
+    "q4": "I think my sensor is offline",
+    "a4": "Check that the hub has power and connectivity. If the issue persists, email us and we'll troubleshoot it with you."
+  },
+  "clientsDirectory": {
+    "pageTitle": "Buildings on Beluga — Beluga",
+    "metaDescription": "A directory of properties where Beluga monitors water health from the main line.",
+    "title": "Buildings on Beluga",
+    "subtitle": "A growing list of properties where we monitor water health from the main line."
+  },
+  "privacy": {
+    "pageTitle": "Privacy Policy — Beluga",
+    "metaDescription": "How Beluga collects, uses, and protects your information when you use our app and services.",
+    "h1": "Privacy Policy",
+    "lastUpdated": "Last updated: February 2026",
+    "intro": "Beluga (\"we\", \"our\", \"us\") is committed to protecting your privacy. This policy explains how we collect, use, and safeguard your information when you use the Beluga app and services.",
+    "collectTitle": "Information we collect",
+    "collectBody": "When you use Beluga, we collect water flow data from the sensors installed in your building. This data includes flow rate, volume, and timing information. We also collect your email address and basic account information when you sign up.",
+    "useTitle": "How we use your data",
+    "useBody": "We use sensor data to provide real-time monitoring, leak detection, appliance classification, and historical usage reports. Your account information is used to deliver the service and communicate with you about your account.",
+    "securityTitle": "Data storage & security",
+    "securityBody": "Your data is stored securely using industry-standard encryption. We do not sell or share your personal information or sensor data with third parties for marketing purposes.",
+    "retentionTitle": "Data retention",
+    "retentionBody": "We retain your sensor data for as long as your account is active. You can request deletion of your data at any time by contacting us.",
+    "thirdPartyTitle": "Third-party services",
+    "thirdPartyBody": "We may use third-party services for hosting, analytics, and push notifications. These services are bound by their own privacy policies and are selected for their commitment to data protection.",
+    "contactTitle": "Contact",
+    "contactBeforeEmail": "If you have questions about this privacy policy or your data, email",
+    "contactOrCall": "or call"
+  },
+  "terms": {
+    "pageTitle": "Terms of Service — Beluga",
+    "metaDescription": "Terms governing use of the Beluga app, hardware, and services.",
+    "h1": "Terms of Service",
+    "lastUpdated": "Last updated: February 2026",
+    "intro": "By using the Beluga app and services, you agree to the following terms. Please read them carefully.",
+    "useTitle": "Use of the service",
+    "useBody": "Beluga provides water flow monitoring, leak detection, and analytics through hardware sensors and a companion app. You agree to use the service for lawful purposes and in accordance with these terms.",
+    "accountTitle": "Account responsibility",
+    "accountBody": "You are responsible for maintaining the security of your account credentials. Notify us immediately if you suspect unauthorized access to your account.",
+    "hardwareTitle": "Hardware & installation",
+    "hardwareBody": "Beluga sensors are designed for non-invasive installation. You are responsible for ensuring proper placement on your pipes. Beluga is not liable for damage resulting from improper installation or use outside recommended conditions.",
+    "liabilityTitle": "Limitation of liability",
+    "liabilityBody": "Beluga provides monitoring and alerts as a supplementary tool. It is not a substitute for professional plumbing inspection or emergency water shutoff systems. We are not liable for water damage, property loss, or any indirect or consequential damages.",
+    "availabilityTitle": "Service availability",
+    "availabilityBody": "We strive to maintain continuous uptime but do not guarantee uninterrupted service. Maintenance, updates, or factors beyond our control may cause temporary interruptions.",
+    "changesTitle": "Changes to terms",
+    "changesBody": "We may update these terms from time to time. Continued use of the service after changes constitutes acceptance of the updated terms.",
+    "contactTitle": "Contact",
+    "contactLead": "Questions about these terms? Email",
+    "contactOrCall": "or call"
+  }
+}

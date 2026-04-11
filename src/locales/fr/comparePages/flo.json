@@ -1,0 +1,54 @@
+{
+  "flo": {
+    "pageTitle": "Beluga et Flo by Moen : comparaison de la surveillance de l’eau",
+    "metaDescription": "Comparez Beluga et Flo by Moen. Comprenez en quoi l’arrêt des fuites résidentiel diffère de l’intelligence de l’eau à l’échelle du bâtiment pour les propriétés commerciales.",
+    "heroH1": "Beluga et Flo by Moen",
+    "heroSubtitle": "Une comparaison claire et neutre de deux approches : arrêt des fuites en milieu résidentiel contre intelligence de l’eau pour bâtiments.",
+    "introP1": "Si vous cherchez une alternative à Flo by Moen ou comparez Beluga à Flo by Moen, il est important de voir que ces deux systèmes visent des objectifs fondamentalement différents. Flo by Moen repose sur la réaction immédiate aux fuites et l’arrêt automatique pour les maisons. Beluga repose sur la compréhension à long terme du réseau et l’intelligence de l’eau pour les bâtiments.",
+    "introP2": "Cette page propose une comparaison côte à côte fondée sur des informations publiques pour vous aider à déterminer quelle approche convient le mieux à votre bâtiment, votre équipe et vos priorités.",
+    "competitorLabel": "Flo by Moen",
+    "disclaimerCompetitorName": "Moen ou Flo by Moen",
+    "ctaCompetitorName": "Flo by Moen",
+    "breadcrumbVs": "Beluga et Flo by Moen",
+    "tableRows": [
+      { "feature": "Objectif principal", "beluga": "Intelligence et surveillance du système d’eau", "competitor": "Détection de fuites et arrêt automatique" },
+      { "feature": "Installation", "beluga": "Non invasive (sans perçage)", "competitor": "Installé sur la conduite principale" },
+      { "feature": "Détection de fuites", "beluga": "Oui (par détection d’anomalies)", "competitor": "Oui (temps réel + arrêt)" },
+      { "feature": "Arrêt automatique", "beluga": "Pas au cœur du produit", "competitor": "Oui" },
+      { "feature": "Analyse de la consommation", "beluga": "Visibilité détaillée à l’échelle du système", "competitor": "Suivi d’usage de base" },
+      { "feature": "Compréhension par équipement", "beluga": "Oui (identification par formes d’usage)", "competitor": "Limitée" },
+      { "feature": "Environnement cible", "beluga": "Commercial / multilogement / infrastructure", "competitor": "Maisons résidentielles" },
+      { "feature": "Profondeur des données", "beluga": "Surveillance continue et références", "competitor": "Historique de consommation" }
+    ],
+    "midTitle": "Protection réactive et intelligence continue de l’eau",
+    "midBottomP": "Ce sont des approches fondamentalement différentes : l’une réagit aux incidents, l’autre cherche à comprendre et optimiser le système en continu. Aucune n’est intrinsèquement meilleure — elles servent des objectifs différents.",
+    "midLeftTitle": "Flo by Moen — protection réactive",
+    "midLeftP": "Flo by Moen surveille le débit en temps réel et peut couper l’eau en cas de fuite probable. C’est particulièrement utile en résidentiel lorsque la priorité est d’agir vite sur les fuites actives.",
+    "midRightTitle": "Beluga — intelligence continue",
+    "midRightP": "Beluga est pensé comme un système d’intelligence de l’eau. Au-delà des seuls événements de fuite, il vise à comprendre le comportement du réseau dans le temps — identifier les équipements, suivre les habitudes de consommation, repérer les inefficiences et signaler les anomalies avant qu’elles ne deviennent critiques.",
+    "whenCompetitorHeading": "Pour qui Flo by Moen convient souvent",
+    "whenCompetitorBullets": ["Propriétaires qui veulent une protection par arrêt automatique", "Foyers qui priorisent une réaction immédiate aux fuites", "Résidences avec une seule arrivée d’eau principale", "Utilisateurs qui préfèrent une expérience grand public centrée sur l’application"],
+    "whenBelugaHeading": "Pour qui Beluga convient le mieux",
+    "whenBelugaBullets": ["Propriétaires ou exploitants qui ont besoin d’une visibilité sur tout le système", "Gestionnaires soucieux de réduire le gaspillage et les inefficiences", "Équipes en charge de bâtiments commerciaux ou multilogements", "Toute personne qui veut comprendre l’usage de l’eau sur l’ensemble du réseau dans le temps"],
+    "faq": [
+      { "q": "Beluga est-il un détecteur de fuites comme Flo by Moen ?", "a": "Beluga inclut la détection de fuites par reconnaissance d’anomalies, mais son objectif principal est plus large : intelligence du système d’eau — suivi de la consommation, identification des équipements et efficacité dans le temps." },
+      { "q": "Flo by Moen convient-il aux bâtiments commerciaux ?", "a": "Flo by Moen est surtout conçu et commercialisé pour le résidentiel. Des usages commerciaux peuvent exister selon la configuration, mais ce n’est pas son marché principal." },
+      { "q": "Beluga coupe-t-il l’eau automatiquement ?", "a": "L’arrêt automatique n’est pas au cœur de Beluga. L’accent est mis sur la surveillance continue, la détection d’anomalies et des informations exploitables plutôt que sur une intervention physique directe." },
+      { "q": "Flo by Moen peut-il suivre la consommation par équipement ?", "a": "Flo by Moen fournit des données de débit et de consommation agrégées. La répartition par équipement n’est pas une capacité centrale d’après les informations publiques sur le produit." },
+      { "q": "Quel système est préférable pour un gestionnaire d’immeuble ?", "a": "Cela dépend de l’objectif. Si la priorité est l’arrêt automatique dans un logement résidentiel, Flo by Moen peut convenir. Si la priorité est la visibilité sur tout le bâtiment, l’intelligence de la consommation et la détection d’anomalies sur un portefeuille, Beluga peut mieux correspondre." },
+      { "q": "Quelle est la principale différence entre Flo by Moen et Beluga ?", "a": "Flo by Moen est un système de protection réactive — il détecte les fuites et coupe l’eau. Beluga est une plateforme d’intelligence de l’eau — elle surveille en continu le comportement du réseau, identifie des schémas et remonte des informations avant que les problèmes ne s’aggravent." }
+    ],
+    "relatedQuestions": [
+      "Quelle est la meilleure alternative à Flo by Moen pour les bâtiments commerciaux ?",
+      "Existe-t-il un moniteur d’eau non invasif adapté aux immeubles à appartements ?",
+      "Comment Flo by Moen se compare-t-il aux autres systèmes de surveillance de l’eau ?",
+      "Quel système de surveillance de l’eau pour les bâtiments multilogements ?",
+      "Flo by Moen offre-t-il une intelligence de l’eau à l’échelle du bâtiment ?"
+    ],
+    "recommended": [
+      { "to": "/articles/what-is-water-monitoring-system", "title": "Qu’est-ce qu’un système de surveillance de l’eau ?", "desc": "Comprendre les différents types de systèmes de surveillance de l’eau." },
+      { "to": "/articles/water-monitoring-vs-leak-detection", "title": "Surveillance de l’eau et détection de fuites", "desc": "En quoi le suivi continu diffère de la détection par événements." },
+      { "to": "/articles/how-to-choose-water-monitoring-system", "title": "Comment choisir un système de surveillance de l’eau", "desc": "Guide pas à pas pour choisir le bon système." }
+    ]
+  }
+}

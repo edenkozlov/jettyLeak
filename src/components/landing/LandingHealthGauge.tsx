@@ -1,4 +1,7 @@
+import { useTranslation } from 'react-i18next'
+
 export function LandingHealthGauge() {
+  const { t } = useTranslation('landing')
   const cx = 150
   const cy = 138
   const r = 108
@@ -48,7 +51,7 @@ export function LandingHealthGauge() {
       viewBox="0 0 300 188"
       className="mx-auto w-full max-w-[192px] sm:max-w-[208px]"
       role="img"
-      aria-label="Health score 78, Watch"
+      aria-label={t('buildingHealth.gauge.aria')}
     >
       <defs>
         <filter id="landing-needle-shadow">
@@ -103,7 +106,7 @@ export function LandingHealthGauge() {
         fill="#d97706"
         style={{ fontSize: 10, fontWeight: 700, fontFamily: 'system-ui, sans-serif', letterSpacing: '0.14em' }}
       >
-        WATCH
+        {t('buildingHealth.gauge.watch')}
       </text>
     </svg>
   )

@@ -1,0 +1,55 @@
+{
+  "flume": {
+    "pageTitle": "Beluga vs Flume: Non-Invasive Water Monitor Comparison",
+    "metaDescription": "Compare Beluga and Flume — two non-invasive water monitors for different environments. Residential usage tracking vs commercial water intelligence. Neutral comparison.",
+    "heroH1": "Beluga vs Flume",
+    "heroSubtitle": "Both are non-invasive water monitors — but they are built for very different environments and levels of depth.",
+    "introP1": "If you are searching for a Flume alternative or comparing non-invasive water monitoring options, it is worth understanding that non-invasive installation does not mean identical capability. Beluga and Flume are both non-invasive, but they are designed for different audiences, different scales, and different levels of system insight.",
+    "introP2": "This page compares the two based on publicly available information to help you determine which fits your situation.",
+    "competitorLabel": "Flume",
+    "disclaimerCompetitorName": "Flume or Flume Water",
+    "ctaCompetitorName": "Flume",
+    "breadcrumbVs": "Beluga vs Flume",
+    "tableRows": [
+      { "feature": "Core purpose", "beluga": "Water intelligence for buildings", "competitor": "Water usage tracking for homes" },
+      { "feature": "Installation", "beluga": "Non-invasive", "competitor": "Non-invasive" },
+      { "feature": "Leak detection", "beluga": "Yes (anomaly and pattern-based)", "competitor": "Yes (usage anomaly-based)" },
+      { "feature": "Automatic shutoff", "beluga": "Not core feature", "competitor": "No" },
+      { "feature": "Usage insights", "beluga": "Advanced, system-level intelligence", "competitor": "Basic usage tracking and alerts" },
+      { "feature": "Fixture-level understanding", "beluga": "Yes (pattern recognition)", "competitor": "No" },
+      { "feature": "Target environment", "beluga": "Commercial / multi-unit buildings", "competitor": "Residential / single-family homes" },
+      { "feature": "Monitoring depth", "beluga": "High — behavioral modeling and benchmarking", "competitor": "Moderate — aggregate flow and usage" }
+    ],
+    "midTitle": "Non-invasive, but built for different environments",
+    "midSubtitle": "The shared non-invasive approach may suggest these products are interchangeable, but the target environment and analytical depth are quite different.",
+    "midLeftTitle": "Flume — homeowner-friendly tracking",
+    "midLeftP": "Flume provides non-invasive water monitoring for homeowners, focusing on tracking daily usage, setting budgets, and detecting unusual activity. It is designed to clamp onto a residential water meter and deliver clear, simple insights through a consumer-friendly app.",
+    "midRightTitle": "Beluga — building-grade intelligence",
+    "midRightP": "Beluga extends the non-invasive concept into commercial-grade system intelligence. It monitors entire building water systems, identifies individual fixtures through pattern recognition, detects inefficiencies, and provides long-term behavioral analysis beyond aggregate usage tracking.",
+    "whenCompetitorHeading": "Flume may be a strong fit if:",
+    "whenCompetitorBullets": ["You are a homeowner who wants simple usage tracking", "You want a non-invasive install on a residential water meter", "Your primary concern is monitoring household water use and catching leaks", "You prefer a consumer-friendly, app-based experience"],
+    "whenBelugaHeading": "Beluga may be a better fit if:",
+    "whenBelugaBullets": ["You operate at commercial scale or manage multi-unit properties", "You need deeper insights into system behavior, fixtures, and efficiency", "You want infrastructure-level visibility and long-term benchmarking", "You need non-invasive monitoring designed for complex plumbing systems"],
+    "similarTitle": "Evaluating similar products?",
+    "similarBody": "If you are comparing non-invasive water monitors, you may also want to review our comparisons with <0>Flo by Moen</0> and <1>Phyn</1>, which are also commonly considered in the residential water monitoring space.",
+    "faq": [
+      { "q": "Are Beluga and Flume installed the same way?", "a": "Both emphasize non-invasive installation. Specific hardware placement and sensor type may differ. Beluga is designed for commercial plumbing systems, while Flume is designed for residential water meters." },
+      { "q": "Is Flume good for commercial buildings?", "a": "Flume is primarily designed and marketed for residential, single-family homes. Commercial and multi-unit applications are not its core focus based on publicly available information." },
+      { "q": "Is Beluga intended for homeowners?", "a": "Beluga is primarily oriented toward commercial buildings, multi-unit properties, and building operators. Homeowners looking for simple usage tracking may find Flume or similar residential products more relevant." },
+      { "q": "What makes Beluga different from Flume if both are non-invasive?", "a": "While both are non-invasive, they serve different markets and offer different depth. Flume tracks household water usage and alerts to anomalies. Beluga builds a behavioral model of an entire building's water system, identifies individual fixtures, and provides intelligence beyond aggregate usage." },
+      { "q": "Can I use Flume to monitor a multi-unit building?", "a": "Flume is designed for individual residential water meters. Multi-unit or commercial water systems are outside its typical deployment scope. Beluga is built for these types of environments." }
+    ],
+    "relatedQuestions": [
+      "What is the best alternative to Flume for commercial buildings?",
+      "How do non-invasive water monitors compare for homes vs buildings?",
+      "Is Flume or Beluga better for a property manager?",
+      "What water monitoring system works for apartments and condos?",
+      "How does Flume compare to other non-invasive water monitors?"
+    ],
+    "recommended": [
+      { "to": "/articles/non-invasive-vs-inline-water-monitoring", "title": "Non-Invasive vs Inline Water Monitoring", "desc": "Comparing installation approaches and their trade-offs." },
+      { "to": "/articles/what-is-water-monitoring-system", "title": "What Is a Water Monitoring System?", "desc": "Understanding the different categories of water monitoring." },
+      { "to": "/articles/how-to-choose-water-monitoring-system", "title": "How to Choose a Water Monitoring System", "desc": "A practical guide to selecting the right system." }
+    ]
+  }
+}

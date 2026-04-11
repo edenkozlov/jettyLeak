@@ -1,265 +1,212 @@
-import { useEffect } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
 import { Link } from 'react-router'
 
-import { BrandLogoMark } from '@/components/BrandLogoMark'
+import { ArticleHero } from '@/components/articles/ArticleHero'
+import { ArticleRelatedReading } from '@/components/articles/ArticleRelatedReading'
+import { ArticleTopNav } from '@/components/articles/ArticleTopNav'
+import { h2Cls, inlineLinkCls, listCls, pCls, sectionCls } from '@/components/articles/articleClasses'
 import { SiteFooter } from '@/components/SiteFooter'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
+import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 
-const PAGE_TITLE =
-  "There Are 4 Types of Water Monitoring Systems — Here's the Difference — Beluga"
-const META_DESCRIPTION =
-  'Not all water monitoring systems are the same. Learn the 4 types — leak detection, shutoff, non-invasive monitoring, and water intelligence — and how to choose.'
-
-const sectionCls = 'mb-10 sm:mb-12'
-const h2Cls =
-  'text-[20px] font-semibold tracking-tight text-gray-900 sm:text-[22px]'
-const pCls = 'text-[15px] leading-relaxed text-gray-600 sm:text-[16px]'
-const listCls =
-  'list-disc space-y-1 pl-5 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]'
-const inlineLinkCls = 'text-indigo-600 underline decoration-indigo-600/30 underline-offset-2 hover:decoration-indigo-600'
+const P = 'fourTypes'
 
 export default function ArticleFourTypes() {
-  useEffect(() => {
-    document.title = PAGE_TITLE
-    const meta = document.querySelector('meta[name="description"]')
-    if (meta) {
-      meta.setAttribute('content', META_DESCRIPTION)
-    } else {
-      const el = document.createElement('meta')
-      el.name = 'description'
-      el.content = META_DESCRIPTION
-      document.head.appendChild(el)
-    }
-  }, [])
+  const { t } = useTranslation('articles')
+  useDocumentMeta(t(`${P}.pageTitle`), t(`${P}.metaDescription`))
+
+  const intro = t(`${P}.intro`, { returnObjects: true }) as string[]
 
   return (
     <div className="min-h-screen bg-white antialiased">
-      <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-xl">
-        <div className="flex h-14 items-center justify-between px-4 sm:h-16 sm:px-6 lg:px-10">
-          <Link to="/" className="flex items-center gap-2">
-            <BrandLogoMark />
-          </Link>
-          <div className="flex items-center gap-4 sm:gap-8">
-            <Link to="/" className="text-[13px] text-gray-400 transition hover:text-gray-700">Home</Link>
-            <Link to="/case-study" className="text-[13px] text-gray-400 transition hover:text-gray-700">Case Study</Link>
-            <Link
-              to="/login"
-              className="rounded-full bg-indigo-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-600 sm:px-5 sm:text-[13px]"
-            >
-              Sign In
-            </Link>
-          </div>
-        </div>
-      </nav>
+      <ArticleTopNav />
 
-      <header className="relative overflow-hidden bg-gradient-to-br from-indigo-50 via-white to-cyan-50 pt-28 pb-12 sm:pt-36 sm:pb-16">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(68,87,194,0.10),transparent_50%),radial-gradient(ellipse_at_bottom_right,rgba(6,182,212,0.08),transparent_50%)]" />
-        <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <p className="text-xs font-semibold tracking-[0.3em] text-indigo-600 uppercase">Article</p>
-          <h1 className="mt-5 text-[26px] leading-[1.15] font-bold tracking-tight text-gray-900 sm:text-4xl md:text-[42px]">
-            There Are 4 Types of Water Monitoring Systems
-          </h1>
-          <p className="mt-3 text-[15px] text-gray-500 sm:text-[16px]">Here's the difference</p>
-        </div>
-      </header>
+      <ArticleHero eyebrow={t('shared.labelArticle')} h1={t(`${P}.h1`)} subtitle={t(`${P}.subtitle`)} />
 
       <article className="mx-auto max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
-        {/* Intro */}
         <section className={sectionCls}>
-          <p className={pCls}>
-            Most people assume water monitoring systems are all built the same way.
-          </p>
-          <p className={`${pCls} mt-4`}>They're not.</p>
-          <p className={`${pCls} mt-4`}>
-            What looks like a single category is actually made up of different approaches — each designed for a specific purpose.
-          </p>
-          <p className={`${pCls} mt-4`}>
-            Understanding these types is the fastest way to make sense of the space.
-          </p>
+          {intro.map((para, i) => (
+            <p key={i} className={i === 0 ? pCls : `${pCls} mt-4`}>
+              {para}
+            </p>
+          ))}
         </section>
 
-        {/* The 4 types */}
         <section className={sectionCls}>
           <div className="space-y-6">
             <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:p-6">
-              <h2 className={h2Cls}>Type 1: Leak detection systems</h2>
-              <p className={`${pCls} mt-4`}>
-                Leak detection systems are designed to identify abnormal water flow and alert users.
-              </p>
-              <p className={`${pCls} mt-4`}>They focus on:</p>
+              <h2 className={h2Cls}>{t(`${P}.type1.heading`)}</h2>
+              <p className={`${pCls} mt-4`}>{t(`${P}.type1.p1`)}</p>
+              <p className={`${pCls} mt-4`}>{t(`${P}.type1.p2`)}</p>
               <ul className={`${listCls} mt-3`}>
-                <li>Detecting leaks quickly</li>
-                <li>Notifying users</li>
-                <li>Minimizing damage</li>
+                {(t(`${P}.type1.listFocus`, { returnObjects: true }) as string[]).map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
               </ul>
-              <p className={`${pCls} mt-4`}>They are:</p>
+              <p className={`${pCls} mt-4`}>{t(`${P}.type1.p3`)}</p>
               <ul className={`${listCls} mt-3`}>
-                <li>Reactive</li>
-                <li>Event-driven</li>
-                <li>Widely used in residential settings</li>
+                {(t(`${P}.type1.listAre`, { returnObjects: true }) as string[]).map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
               </ul>
               <p className={`${pCls} mt-4`}>
-                To understand how leak detection differs from broader monitoring, see <Link to="/articles/water-monitoring-vs-leak-detection" className={inlineLinkCls}>water monitoring vs leak detection</Link>.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:p-6">
-              <h2 className={h2Cls}>Type 2: Shutoff systems</h2>
-              <p className={`${pCls} mt-4`}>
-                Shutoff systems build on leak detection by automatically stopping water flow when an issue is detected.
-              </p>
-              <p className={`${pCls} mt-4`}>They:</p>
-              <ul className={`${listCls} mt-3`}>
-                <li>Detect abnormal behavior</li>
-                <li>Trigger a shutoff valve</li>
-                <li>Prevent further damage</li>
-              </ul>
-              <p className={`${pCls} mt-4`}>These systems are often used where:</p>
-              <ul className={`${listCls} mt-3`}>
-                <li>Risk mitigation is the primary concern</li>
-              </ul>
-              <p className={`${pCls} mt-4`}>
-                Products like <Link to="/flo-by-moen-alternative" className={inlineLinkCls}>Flo by Moen</Link> and <Link to="/phyn-alternative" className={inlineLinkCls}>Phyn</Link> fall into this category.
+                <Trans
+                  ns="articles"
+                  i18nKey={`${P}.type1.p4`}
+                  components={[
+                    <Link key="0" to="/articles/water-monitoring-vs-leak-detection" className={inlineLinkCls} />,
+                  ]}
+                />
               </p>
             </div>
 
             <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:p-6">
-              <h2 className={h2Cls}>Type 3: Non-invasive monitoring systems</h2>
-              <p className={`${pCls} mt-4`}>
-                Non-invasive systems aim to monitor water usage without modifying existing plumbing.
-              </p>
-              <p className={`${pCls} mt-4`}>They typically:</p>
+              <h2 className={h2Cls}>{t(`${P}.type2.heading`)}</h2>
+              <p className={`${pCls} mt-4`}>{t(`${P}.type2.p1`)}</p>
+              <p className={`${pCls} mt-4`}>{t(`${P}.type2.p2`)}</p>
               <ul className={`${listCls} mt-3`}>
-                <li>Install externally</li>
-                <li>Track water flow</li>
-                <li>Provide usage data</li>
+                {(t(`${P}.type2.listThey`, { returnObjects: true }) as string[]).map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
               </ul>
-              <p className={`${pCls} mt-4`}>They are useful when:</p>
+              <p className={`${pCls} mt-4`}>{t(`${P}.type2.p3`)}</p>
               <ul className={`${listCls} mt-3`}>
-                <li>Installation constraints exist</li>
-                <li>Modifying infrastructure is not practical</li>
+                {(t(`${P}.type2.listWhere`, { returnObjects: true }) as string[]).map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
               </ul>
               <p className={`${pCls} mt-4`}>
-                For a deeper comparison, see <Link to="/articles/non-invasive-vs-inline-water-monitoring" className={inlineLinkCls}>non-invasive vs inline water monitoring</Link>.
+                <Trans
+                  ns="articles"
+                  i18nKey={`${P}.type2.p4`}
+                  components={[
+                    <Link key="0" to="/flo-by-moen-alternative" className={inlineLinkCls} />,
+                    <Link key="1" to="/phyn-alternative" className={inlineLinkCls} />,
+                  ]}
+                />
               </p>
             </div>
 
             <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:p-6">
-              <h2 className={h2Cls}>Type 4: Water intelligence systems</h2>
-              <p className={`${pCls} mt-4`}>
-                Water intelligence systems take a system-level approach.
-              </p>
-              <p className={`${pCls} mt-4`}>
-                Instead of focusing on individual events, they aim to understand how the entire water system behaves over time.
-              </p>
-              <p className={`${pCls} mt-4`}>They:</p>
+              <h2 className={h2Cls}>{t(`${P}.type3.heading`)}</h2>
+              <p className={`${pCls} mt-4`}>{t(`${P}.type3.p1`)}</p>
+              <p className={`${pCls} mt-4`}>{t(`${P}.type3.p2`)}</p>
               <ul className={`${listCls} mt-3`}>
-                <li>Track usage continuously</li>
-                <li>Identify patterns</li>
-                <li>Detect anomalies early</li>
-                <li>Provide insight into system performance</li>
+                {(t(`${P}.type3.listTypical`, { returnObjects: true }) as string[]).map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
               </ul>
-              <p className={`${pCls} mt-4`}>This approach is designed for:</p>
+              <p className={`${pCls} mt-4`}>{t(`${P}.type3.p3`)}</p>
               <ul className={`${listCls} mt-3`}>
-                <li>More complex buildings</li>
-                <li>Environments where visibility matters</li>
+                {(t(`${P}.type3.listUseful`, { returnObjects: true }) as string[]).map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
               </ul>
               <p className={`${pCls} mt-4`}>
-                Learn more about <Link to="/articles/what-is-water-intelligence-system" className={inlineLinkCls}>what a water intelligence system is and why it's different</Link>.
+                <Trans
+                  ns="articles"
+                  i18nKey={`${P}.type3.p4`}
+                  components={[
+                    <Link key="0" to="/articles/non-invasive-vs-inline-water-monitoring" className={inlineLinkCls} />,
+                  ]}
+                />
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-5 sm:p-6">
+              <h2 className={h2Cls}>{t(`${P}.type4.heading`)}</h2>
+              <p className={`${pCls} mt-4`}>{t(`${P}.type4.p1`)}</p>
+              <p className={`${pCls} mt-4`}>{t(`${P}.type4.p2`)}</p>
+              <p className={`${pCls} mt-4`}>{t(`${P}.type4.p3`)}</p>
+              <ul className={`${listCls} mt-3`}>
+                {(t(`${P}.type4.listThey`, { returnObjects: true }) as string[]).map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
+              </ul>
+              <p className={`${pCls} mt-4`}>{t(`${P}.type4.p4`)}</p>
+              <ul className={`${listCls} mt-3`}>
+                {(t(`${P}.type4.listFor`, { returnObjects: true }) as string[]).map((x) => (
+                  <li key={x}>{x}</li>
+                ))}
+              </ul>
+              <p className={`${pCls} mt-4`}>
+                <Trans
+                  ns="articles"
+                  i18nKey={`${P}.type4.p5`}
+                  components={[
+                    <Link key="0" to="/articles/what-is-water-intelligence-system" className={inlineLinkCls} />,
+                  ]}
+                />
               </p>
             </div>
           </div>
         </section>
 
-        {/* Why these types matter */}
         <section className={sectionCls}>
-          <h2 className={h2Cls}>Why these types matter</h2>
-          <p className={`${pCls} mt-4`}>
-            Without this breakdown, it's easy to compare systems incorrectly.
-          </p>
-          <p className={`${pCls} mt-4`}>For example:</p>
+          <h2 className={h2Cls}>{t(`${P}.whyMatter.heading`)}</h2>
+          <p className={`${pCls} mt-4`}>{t(`${P}.whyMatter.p1`)}</p>
+          <p className={`${pCls} mt-4`}>{t(`${P}.whyMatter.p2`)}</p>
           <ul className={`${listCls} mt-3`}>
-            <li>Comparing a shutoff system to a monitoring system</li>
-            <li>Expecting detailed insights from a system designed only for alerts</li>
+            {(t(`${P}.whyMatter.list`, { returnObjects: true }) as string[]).map((x) => (
+              <li key={x}>{x}</li>
+            ))}
           </ul>
-          <p className={`${pCls} mt-4`}>Each type is built with a different goal in mind.</p>
+          <p className={`${pCls} mt-4`}>{t(`${P}.whyMatter.p3`)}</p>
         </section>
 
-        {/* How to use this framework */}
         <section className={sectionCls}>
-          <h2 className={h2Cls}>How to use this framework</h2>
-          <p className={`${pCls} mt-4`}>Instead of asking:</p>
-          <p className={`${pCls} mt-2 italic`}>"What's the best system?"</p>
-          <p className={`${pCls} mt-4`}>Ask:</p>
-          <p className={`${pCls} mt-2 italic`}>"What type of system do I actually need?"</p>
+          <h2 className={h2Cls}>{t(`${P}.framework.heading`)}</h2>
+          <p className={`${pCls} mt-4`}>{t(`${P}.framework.p1`)}</p>
+          <p className={`${pCls} mt-2 italic`}>&ldquo;{t(`${P}.framework.quote1`)}&rdquo;</p>
+          <p className={`${pCls} mt-4`}>{t(`${P}.framework.p2`)}</p>
+          <p className={`${pCls} mt-2 italic`}>&ldquo;{t(`${P}.framework.quote2`)}&rdquo;</p>
+          <p className={`${pCls} mt-4`}>{t(`${P}.framework.p3`)}</p>
           <p className={`${pCls} mt-4`}>
-            Once that's clear, the options become much easier to evaluate.
-          </p>
-          <p className={`${pCls} mt-4`}>
-            Our <Link to="/articles/how-to-choose-water-monitoring-system" className={inlineLinkCls}>guide to choosing a water monitoring system</Link> walks through this process step by step.
+            <Trans
+              ns="articles"
+              i18nKey={`${P}.framework.p4`}
+              components={[
+                <Link key="0" to="/articles/how-to-choose-water-monitoring-system" className={inlineLinkCls} />,
+              ]}
+            />
           </p>
         </section>
 
-        {/* Quick summary */}
         <section className={sectionCls}>
-          <h2 className={h2Cls}>Quick summary</h2>
+          <h2 className={h2Cls}>{t(`${P}.summary.heading`)}</h2>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-4">
-              <p className="text-[14px] font-semibold text-gray-900">Leak detection</p>
-              <p className={`${pCls} mt-1`}>Alerts when something goes wrong</p>
+              <p className="text-[14px] font-semibold text-gray-900">{t(`${P}.summary.leakTitle`)}</p>
+              <p className={`${pCls} mt-1`}>{t(`${P}.summary.leakDesc`)}</p>
             </div>
             <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-4">
-              <p className="text-[14px] font-semibold text-gray-900">Shutoff systems</p>
-              <p className={`${pCls} mt-1`}>Stop water automatically</p>
+              <p className="text-[14px] font-semibold text-gray-900">{t(`${P}.summary.shutoffTitle`)}</p>
+              <p className={`${pCls} mt-1`}>{t(`${P}.summary.shutoffDesc`)}</p>
             </div>
             <div className="rounded-xl border border-gray-200 bg-gray-50/60 p-4">
-              <p className="text-[14px] font-semibold text-gray-900">Non-invasive monitoring</p>
-              <p className={`${pCls} mt-1`}>Tracks usage without installation complexity</p>
+              <p className="text-[14px] font-semibold text-gray-900">{t(`${P}.summary.nonInvTitle`)}</p>
+              <p className={`${pCls} mt-1`}>{t(`${P}.summary.nonInvDesc`)}</p>
             </div>
             <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-4">
-              <p className="text-[14px] font-semibold text-gray-900">Water intelligence</p>
-              <p className={`${pCls} mt-1`}>Understands the system over time</p>
+              <p className="text-[14px] font-semibold text-gray-900">{t(`${P}.summary.intelTitle`)}</p>
+              <p className={`${pCls} mt-1`}>{t(`${P}.summary.intelDesc`)}</p>
             </div>
           </div>
         </section>
 
-        {/* Closing */}
         <section className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-5 sm:p-6">
-          <p className={`${pCls} font-medium text-gray-700`}>
-            Water monitoring isn't one category — it's a set of different approaches.
-          </p>
-          <p className={`${pCls} mt-3`}>
-            Understanding the differences is what allows you to choose a system that actually fits your building.
-          </p>
+          <p className={`${pCls} font-medium text-gray-700`}>{t(`${P}.closing.p1`)}</p>
+          <p className={`${pCls} mt-3`}>{t(`${P}.closing.p2`)}</p>
         </section>
 
-        {/* Related reading */}
-        <div className="mt-12 border-t border-gray-100 pt-8">
-          <p className="text-[11px] font-semibold tracking-[0.3em] text-gray-400 uppercase">Related reading</p>
-          <div className="mt-3 space-y-3">
-            <Link
-              to="/articles/what-is-water-monitoring-system"
-              className="block rounded-xl border border-gray-200 p-5 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-6"
-            >
-              <p className="text-[17px] font-semibold text-gray-900">What Is a Water Monitoring System?</p>
-              <p className="mt-1 text-[14px] text-gray-500">Understanding the basics before choosing a system.</p>
-            </Link>
-            <Link
-              to="/articles/how-to-choose-water-monitoring-system"
-              className="block rounded-xl border border-gray-200 p-5 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-6"
-            >
-              <p className="text-[17px] font-semibold text-gray-900">How to Choose a Water Monitoring System</p>
-              <p className="mt-1 text-[14px] text-gray-500">Matching the system to how your building actually operates.</p>
-            </Link>
-            <Link
-              to="/best-water-monitoring-systems"
-              className="block rounded-xl border border-gray-200 p-5 transition hover:border-indigo-200 hover:bg-indigo-50/30 sm:p-6"
-            >
-              <p className="text-[17px] font-semibold text-gray-900">Best Water Monitoring Systems for Buildings</p>
-              <p className="mt-1 text-[14px] text-gray-500">Compare the top systems side by side.</p>
-            </Link>
-          </div>
-        </div>
+        <ArticleRelatedReading
+          translationBase={`${P}.related`}
+          paths={[
+            '/articles/what-is-water-monitoring-system',
+            '/articles/how-to-choose-water-monitoring-system',
+            '/best-water-monitoring-systems',
+          ]}
+        />
       </article>
 
       <SiteFooter variant="page" />

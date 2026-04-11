@@ -1,0 +1,1066 @@
+{
+  "shared": {
+    "navHome": "Accueil",
+    "navCaseStudy": "Étude de cas",
+    "navSignIn": "Connexion",
+    "labelArticle": "Article",
+    "labelResources": "Ressources",
+    "relatedReading": "Lectures connexes",
+    "hubTitle": "Meilleurs systèmes de surveillance de l’eau pour les bâtiments",
+    "hubBlurb": "Comparez les principales solutions de surveillance de l’eau pour les immeubles commerciaux et multilogements."
+  },
+  "index": {
+    "pageTitle": "Articles — Beluga",
+    "metaDescription": "Articles éducatifs sur les systèmes de surveillance de l’eau, la détection de fuites, l’intelligence hydraulique et le choix du bon système pour votre bâtiment.",
+    "eyebrow": "Ressources",
+    "title": "Articles",
+    "subtitle": "Guides sur les systèmes de surveillance de l’eau, la détection de fuites, l’intelligence hydraulique et le choix de la bonne approche pour votre bâtiment.",
+    "items": {
+      "whatIs": {
+        "title": "Qu’est-ce qu’un système de surveillance de l’eau? (Et pourquoi la plupart sont différents)",
+        "description": "La définition courante est trompeuse. Découvrez les quatre types de systèmes et pourquoi l’approche sous-jacente compte."
+      },
+      "howToChoose": {
+        "title": "Comment choisir un système de surveillance de l’eau pour votre bâtiment",
+        "description": "Guide pratique selon le type de bâtiment, les objectifs, les contraintes d’installation et le fonctionnement opérationnel."
+      },
+      "monitoringVsDetection": {
+        "title": "Surveillance de l’eau et détection de fuites : quelle différence?",
+        "description": "Ils répondent à des problèmes différents. Bien distinguer les deux est essentiel pour choisir la bonne solution."
+      },
+      "fourTypes": {
+        "title": "Il existe 4 types de systèmes de surveillance de l’eau — voici la différence",
+        "description": "Détection de fuites, arrêt d’alimentation, surveillance non invasive et intelligence hydraulique — chacun conçu pour un objectif précis."
+      },
+      "bestCommercial": {
+        "title": "Meilleurs systèmes de surveillance de l’eau pour les immeubles commerciaux (2026)",
+        "description": "Guide des catégories de systèmes disponibles pour les environnements commerciaux et multilogements."
+      },
+      "nonInvasiveVsInline": {
+        "title": "Surveillance de l’eau non invasive ou en ligne : laquelle est pertinente?",
+        "description": "Comment le mode d’installation influence le coût, la rapidité de déploiement, la scalabilité et l’adéquation du système."
+      },
+      "afterLeakAlert": {
+        "title": "Que se passe-t-il vraiment après une alerte de fuite dans les bâtiments",
+        "description": "La détection n’est que la première étape. Le résultat dépend surtout de ce qui suit."
+      },
+      "leakDetectionNotEnough": {
+        "title": "Pourquoi la seule détection de fuites ne suffit pas dans les immeubles commerciaux",
+        "description": "La plupart des problèmes évoluent lentement. Une détection fondée sur les événements laisse passer ce que la surveillance continue révèle."
+      },
+      "propertyManagers": {
+        "title": "Comment les gestionnaires d’immeubles gèrent réellement les problèmes d’eau",
+        "description": "Les problèmes d’eau sont des enjeux opérationnels gérés par des personnes — pas de simples événements techniques."
+      },
+      "waterIntelligence": {
+        "title": "Qu’est-ce qu’un système d’intelligence hydraulique? (Et en quoi est-ce différent)",
+        "description": "Passer de la réaction aux événements à la compréhension du comportement de l’ensemble du système dans le temps."
+      }
+    }
+  },
+  "whatIsWaterMonitoring": {
+    "pageTitle": "Qu’est-ce qu’un système de surveillance de l’eau? (Et pourquoi la plupart sont différents) — Beluga",
+    "metaDescription": "Comprenez ce qu’est vraiment un système de surveillance de l’eau, les quatre types de systèmes et pourquoi l’approche sous-jacente compte lors du choix.",
+    "h1": "Qu’est-ce qu’un système de surveillance de l’eau?",
+    "subtitle": "Et pourquoi la plupart sont différents",
+    "intro": [
+      "Un système de surveillance de l’eau est souvent décrit comme quelque chose qui suit la consommation d’eau et détecte les fuites.",
+      "Cette définition est techniquement correcte.",
+      "Mais dans la pratique, elle est incomplète.",
+      "Parce que la plupart des systèmes de surveillance de l’eau ne sont pas conçus de la même façon — et surtout, ils ne visent pas le même problème.",
+      "C’est cette différence qui compte vraiment."
+    ],
+    "basicDefinition": {
+      "heading": "Ce que fait un système de surveillance de l’eau (définition de base)",
+      "introDesigned": "À un niveau élevé, un système de surveillance de l’eau est conçu pour :",
+      "listDesigned": [
+        "Mesurer le débit d’eau",
+        "Détecter une utilisation anormale",
+        "Repérer d’éventuelles fuites",
+        "Alerter les utilisateurs ou déclencher des actions"
+      ],
+      "introFurther": "Certains systèmes vont plus loin en :",
+      "listFurther": [
+        "Faisant le suivi de la consommation dans le temps",
+        "Repérant des tendances",
+        "Fournissant des indications sur la façon dont l’eau est utilisée"
+      ],
+      "closing": "C’est la définition standard que l’on retrouve presque partout."
+    },
+    "misleading": {
+      "heading": "Pourquoi cette définition est trompeuse",
+      "p1": "Le problème, c’est que cette définition regroupe des systèmes très différents dans une seule catégorie.",
+      "p2": "En réalité, il existe plusieurs approches :",
+      "list": [
+        "Certains systèmes visent à détecter les fuites au moment où elles surviennent",
+        "D’autres visent à couper l’eau immédiatement",
+        "D’autres suivent les habitudes de consommation",
+        "D’autres cherchent à comprendre le comportement de l’ensemble du système"
+      ],
+      "p3": "Nous explorons cette distinction plus en détail dans notre guide sur <0>la surveillance de l’eau et la détection de fuites</0>.",
+      "p4": "Vu de l’extérieur, ils se ressemblent tous.",
+      "p5": "En pratique, ils fonctionnent très différemment."
+    },
+    "fourTypes": {
+      "heading": "Les 4 types de systèmes de surveillance de l’eau",
+      "intro": "Une façon plus utile d’aborder la catégorie est de la diviser en quatre types.",
+      "type1": {
+        "title": "1. Systèmes de détection de fuites",
+        "p1": "Ces systèmes sont conçus pour repérer un débit anormal et alerter les utilisateurs.",
+        "p2": "Ils sont généralement :",
+        "list": ["Réactifs", "Fondés sur les événements", "Axés sur l’identification rapide des problèmes"]
+      },
+      "type2": {
+        "title": "2. Systèmes avec arrêt d’alimentation",
+        "p1": "Ces systèmes vont plus loin en coupant automatiquement l’alimentation en eau lorsqu’un problème est détecté.",
+        "p2": "On les utilise souvent dans :",
+        "list": ["Les milieux résidentiels", "Les situations où la protection immédiate est la priorité"],
+        "p3": "Des systèmes comme <0>Flo by Moen</0> et <1>Phyn</1> illustrent bien cette approche."
+      },
+      "type3": {
+        "title": "3. Systèmes de surveillance non invasifs",
+        "p1": "Ces systèmes visent à surveiller la consommation d’eau sans modifier la plomberie existante.",
+        "p2": "En général, ils :",
+        "list": ["S’installent à l’extérieur", "Recueillent des données de débit", "Fournissent des indications sur la consommation"]
+      },
+      "type4": {
+        "title": "4. Systèmes d’intelligence hydraulique",
+        "p1": "Ces systèmes visent à comprendre l’ensemble du réseau hydraulique dans le temps.",
+        "p2": "Ils cherchent à :",
+        "list": [
+          "Modéliser les habitudes de consommation",
+          "Repérer les inefficacités",
+          "Détecter les anomalies tôt",
+          "Offrir une visibilité à l’échelle du système"
+        ],
+        "p3": "Cette approche est moins axée sur la réaction aux événements que sur la compréhension continue du comportement du système. Pour en savoir plus, consultez notre article sur les <0>systèmes d’intelligence hydraulique</0>."
+      }
+    },
+    "distinctionMatters": {
+      "heading": "Pourquoi cette distinction compte",
+      "p1": "Choisir un système de surveillance de l’eau sans comprendre ces différences peut poser problème. Avant de décider, il est utile de <0>comparer côte à côte les meilleurs systèmes de surveillance de l’eau</0>.",
+      "comparison1": "Un système conçu pour une <strong>réaction immédiate en cas de fuite</strong> peut ne pas offrir une <strong>visibilité à long terme</strong>.",
+      "comparison2": "Un système conçu pour un <strong>suivi simple de la consommation</strong> peut ne pas évoluer avec des <strong>bâtiments complexes</strong>.",
+      "p2": "Le bon choix dépend de :",
+      "list": ["Le type de bâtiment", "Le niveau de visibilité requis", "La façon dont le système sera réellement utilisé"]
+    },
+    "closing": {
+      "p1": "Les systèmes de surveillance de l’eau sont souvent présentés comme interchangeables. Ce n’est pas le cas.",
+      "p2": "Comprendre l’approche sous-jacente permet de choisir un système qui correspond vraiment au problème que vous cherchez à résoudre."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "Comment choisir un système de surveillance de l’eau",
+          "description": "Faire correspondre le système au fonctionnement réel de votre bâtiment."
+        },
+        {
+          "title": "4 types de systèmes de surveillance de l’eau",
+          "description": "Comprendre les différentes approches dans l’univers de la surveillance de l’eau."
+        },
+        {
+          "title": "Meilleurs systèmes de surveillance de l’eau pour les bâtiments",
+          "description": "Comparez les principales solutions de surveillance de l’eau pour les immeubles commerciaux et multilogements."
+        }
+      ]
+    }
+  },
+  "howToChoose": {
+    "pageTitle": "Comment choisir un système de surveillance de l’eau pour votre bâtiment — Beluga",
+    "metaDescription": "Guide pratique pour choisir le bon système de surveillance de l’eau selon le type de bâtiment, les objectifs, les contraintes d’installation et le fonctionnement opérationnel.",
+    "h1": "Comment choisir un système de surveillance de l’eau pour votre bâtiment",
+    "subtitle": "Il s’agit d’aligner le système sur le fonctionnement réel de votre bâtiment.",
+    "intro": [
+      "Choisir un système de surveillance de l’eau, ce n’est pas seulement une question de fonctionnalités.",
+      "Il s’agit d’aligner le système sur le fonctionnement réel de votre bâtiment.",
+      "La plupart des pages de comparaison mettent l’accent sur les fiches techniques.",
+      "En pratique, la décision repose sur tout autre chose."
+    ],
+    "sections": {
+      "buildingType": {
+        "heading": "1. Commencez par le type de bâtiment",
+        "p1": "La première question est simple : quel type de bâtiment concerne-t-il?",
+        "listTypes": ["Maisons unifamiliales", "Immeubles résidentiels multilogements", "Immeubles commerciaux"],
+        "p2": "Selon les milieux, on retrouve :",
+        "listEnv": ["Des risques différents", "Des niveaux de complexité différents", "Des processus opérationnels différents"],
+        "p3": "Un système qui convient à une maison ne se transpose pas toujours à un immeuble multilogement."
+      },
+      "goal": {
+        "heading": "2. Définissez l’objectif",
+        "p1": "La plupart des systèmes sont conçus autour de l’un de ces deux objectifs :",
+        "listGoals": ["<strong>Protection immédiate</strong>", "<strong>Visibilité à long terme</strong>"],
+        "p2": "Si la priorité est d’arrêter les fuites sur-le-champ, regardez les systèmes avec arrêt d’alimentation.",
+        "p3": "Si la priorité est de comprendre la consommation et les inefficacités, regardez la surveillance ou les <0>systèmes d’intelligence hydraulique</0>.",
+        "p4": "Tenter d’optimiser les deux sans comprendre le compromis mène souvent à la confusion."
+      },
+      "installation": {
+        "heading": "3. Tenez compte des contraintes d’installation",
+        "p1": "L’installation est souvent négligée.",
+        "p2": "Certains systèmes exigent :",
+        "listRequire": ["De percer les conduites", "D’installer du matériel en ligne", "Des travaux de plomberie par des professionnels"],
+        "p3": "D’autres :",
+        "listOthers": ["S’installent à l’extérieur", "Nécessitent une mise en service minimale"],
+        "p4": "C’est le compromis central entre la <0>surveillance non invasive et la surveillance en ligne</0>. Dans les bâtiments anciens ou les grandes propriétés, cela peut être un facteur décisif."
+      },
+      "afterDetection": {
+        "heading": "4. Pensez à ce qui se passe après la détection",
+        "p1": "C’est l’une des considérations les plus importantes — et les plus ignorées.",
+        "p2": "Lorsqu’un système détecte un problème :",
+        "listWhen": ["Qui est avisé?", "Comment le problème est-il traité?", "À quelle vitesse quelqu’un intervient-il?"],
+        "p3": "Dans le monde réel, les alertes deviennent souvent :",
+        "listAlerts": ["Des courriels", "Des messages", "Des suivis manuels"],
+        "p4": "Si le système ne s’intègre pas aux opérations, son efficacité chute beaucoup. Comprendre <0>ce qui se passe vraiment après une alerte de fuite</0> aide à calibrer les attentes."
+      },
+      "visibility": {
+        "heading": "5. Évaluez la visibilité offerte par le système",
+        "p1": "Certains systèmes indiquent :",
+        "listTell": ["Quelque chose ne va pas"],
+        "p2": "D’autres aident à comprendre :",
+        "listUnderstand": ["Ce qui se passe", "Où cela se passe", "Comment cela évolue dans le temps"],
+        "p3": "Cette différence prend de l’importance à mesure que la complexité du bâtiment augmente."
+      },
+      "workflow": {
+        "heading": "6. Assortissez le système à votre façon de travailler",
+        "p1": "En fin de compte, le meilleur système est celui qui correspond à la façon dont votre équipe travaille.",
+        "p2": "Pas le plus avancé ni le plus populaire.",
+        "p3": "Mais celui qui s’aligne sur :",
+        "list": ["Votre bâtiment", "Vos contraintes", "Votre réalité opérationnelle"]
+      }
+    },
+    "closing": {
+      "p1": "Choisir un système de surveillance de l’eau, c’est moins comparer des fonctionnalités que comprendre comment différentes approches conviennent à différents environnements. Notre <0>comparaison des meilleurs systèmes de surveillance de l’eau</0> peut vous aider à commencer à évaluer les options.",
+      "p2": "Une fois que c’est clair, la décision devient beaucoup plus simple."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "Qu’est-ce qu’un système de surveillance de l’eau?",
+          "description": "Comprendre les quatre types de systèmes de surveillance de l’eau."
+        },
+        {
+          "title": "Surveillance non invasive ou en ligne",
+          "description": "Comprendre les compromis entre les modes d’installation."
+        },
+        {
+          "title": "Meilleurs systèmes de surveillance de l’eau pour les bâtiments",
+          "description": "Comparez les principales solutions de surveillance de l’eau pour les immeubles commerciaux et multilogements."
+        }
+      ]
+    }
+  },
+  "monitoringVsDetection": {
+    "pageTitle": "Surveillance de l’eau et détection de fuites : quelle différence? — Beluga",
+    "metaDescription": "La surveillance de l’eau et la détection de fuites répondent à des problèmes différents. Découvrez les écarts clés, les sources de confusion et comment choisir la bonne approche pour votre bâtiment.",
+    "h1": "Surveillance de l’eau et détection de fuites",
+    "subtitle": "Quelle différence?",
+    "intro": [
+      "On emploie souvent « surveillance de l’eau » et « détection de fuites » comme des synonymes.",
+      "Ce n’est pas une bonne idée.",
+      "Même si les deux portent sur les réseaux d’eau, ils visent des problèmes différents — les confondre peut mener à choisir la mauvaise solution. Si vous partez de zéro, il est utile de comprendre d’abord <0>ce qu’est réellement un système de surveillance de l’eau</0>."
+    ],
+    "leakDetection": {
+      "heading": "Qu’est-ce que la détection de fuites?",
+      "p1": "Les systèmes de détection de fuites sont conçus pour repérer un débit d’eau anormal et alerter les utilisateurs lorsqu’il y a un problème.",
+      "p2": "En général, ils :",
+      "list": ["Détectent des changements brusques de débit", "Déclenchent des alertes", "Coupent parfois l’eau automatiquement"],
+      "p3": "Leur objectif principal est <strong>de réagir rapidement lorsqu’une fuite survient</strong>.",
+      "p4": "On les utilise couramment dans :",
+      "listUsed": ["Les maisons", "Les milieux où la prévention immédiate des dommages est critique"],
+      "p5": "Des produits comme <0>Flo by Moen</0> et <1>Phyn</1> en sont des exemples fréquents."
+    },
+    "waterMonitoring": {
+      "heading": "Qu’est-ce que la surveillance de l’eau?",
+      "p1": "Les systèmes de surveillance de l’eau adoptent une approche plus large.",
+      "p2": "Au lieu de se limiter aux seuls événements de fuite, ils cherchent à comprendre comment l’eau est utilisée dans le temps.",
+      "p3": "En général, ils :",
+      "list": [
+        "Suivent la consommation en continu",
+        "Repèrent des tendances",
+        "Détectent des anomalies",
+        "Fournissent des indications sur le comportement du système"
+      ],
+      "p4": "Leur objectif est <strong>de comprendre le système, pas seulement de réagir aux problèmes</strong>."
+    },
+    "keyDifference": {
+      "heading": "La différence clé",
+      "p1": "La façon la plus simple de l’envisager :",
+      "leakLabel": "Détection de fuites",
+      "leakMode": "Fondée sur les événements",
+      "leakQuestion": "Y a-t-il un problème en ce moment?",
+      "monitorLabel": "Surveillance de l’eau",
+      "monitorMode": "Continue",
+      "monitorQuestion": "Que se passe-t-il dans ce système au fil du temps?"
+    },
+    "confusion": {
+      "heading": "Où naît la confusion",
+      "p1": "De nombreux systèmes modernes combinent des éléments des deux.",
+      "p2": "Par exemple :",
+      "list": [
+        "Un système de surveillance peut aussi détecter des anomalies",
+        "Un système de détection de fuites peut fournir des données de consommation de base"
+      ],
+      "p3": "Mais la philosophie de conception demeure différente.",
+      "p4": "Certains systèmes visent surtout à <strong>réagir et à protéger</strong>.",
+      "p5": "D’autres visent à <strong>observer et à comprendre</strong>."
+    },
+    "realBuildings": {
+      "heading": "Pourquoi c’est important dans les vrais bâtiments",
+      "p1": "Dans les petits milieux, la détection de fuites peut suffire.",
+      "p2": "Dans les bâtiments plus grands ou plus complexes, la donne change.",
+      "p3": "Les problèmes évoluent souvent lentement :",
+      "list": ["Appareils peu efficaces", "Fuites de faible intensité mais continues", "Habitudes de consommation anormales"],
+      "p4": "Cela ne déclenche pas toujours d’alerte immédiate — mais cela n’en affecte pas moins les coûts et la performance.",
+      "p5": "C’est là que la surveillance prend plus de valeur. Pour aller plus loin, voyez <0>pourquoi la seule détection de fuites ne suffit pas dans les immeubles commerciaux</0>."
+    },
+    "whichChoose": {
+      "heading": "Lequel choisir?",
+      "p1": "Cela dépend de l’objectif.",
+      "ifLeakHeading": "Choisissez la détection de fuites si :",
+      "ifLeak": ["La protection immédiate est la priorité", "Vous voulez un arrêt automatique", "Le milieu est simple"],
+      "ifMonitorHeading": "Choisissez la surveillance de l’eau si :",
+      "ifMonitor": [
+        "Vous avez besoin de visibilité dans le temps",
+        "Le système est complexe",
+        "Vous voulez comprendre la consommation et les inefficacités"
+      ],
+      "p2": "Dans certains cas, les deux approches peuvent se compléter. Notre <0>guide sur les meilleurs systèmes de surveillance de l’eau</0> explique comment les différentes approches se comparent."
+    },
+    "closing": {
+      "p1": "La surveillance de l’eau et la détection de fuites ne s’opposent pas — ce sont des outils différents.",
+      "p2": "Comprendre la différence permet de choisir la bonne approche pour votre bâtiment."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "4 types de systèmes de surveillance de l’eau",
+          "description": "Comprendre les différentes approches dans l’univers de la surveillance de l’eau."
+        },
+        {
+          "title": "Pourquoi la seule détection de fuites ne suffit pas",
+          "description": "Pourquoi les immeubles commerciaux ont besoin de plus que des simples alertes."
+        },
+        {
+          "title": "Meilleurs systèmes de surveillance de l’eau pour les bâtiments",
+          "description": "Comparez les principales solutions de surveillance de l’eau pour les immeubles commerciaux et multilogements."
+        }
+      ]
+    }
+  },
+  "fourTypes": {
+    "pageTitle": "Il existe 4 types de systèmes de surveillance de l’eau — voici la différence — Beluga",
+    "metaDescription": "Tous les systèmes de surveillance de l’eau ne se valent pas. Découvrez les 4 types — détection de fuites, arrêt d’alimentation, surveillance non invasive et intelligence hydraulique — et comment choisir.",
+    "h1": "Il existe 4 types de systèmes de surveillance de l’eau",
+    "subtitle": "Voici la différence",
+    "intro": [
+      "Beaucoup de gens pensent que tous les systèmes de surveillance de l’eau sont conçus de la même façon.",
+      "Ce n’est pas le cas.",
+      "Ce qui ressemble à une seule catégorie regroupe en réalité des approches différentes — chacune pensée pour un objectif précis.",
+      "Comprendre ces types est le moyen le plus rapide de s’y retrouver."
+    ],
+    "type1": {
+      "heading": "Type 1 : systèmes de détection de fuites",
+      "p1": "Les systèmes de détection de fuites sont conçus pour repérer un débit d’eau anormal et alerter les utilisateurs.",
+      "p2": "Ils visent :",
+      "listFocus": ["À détecter les fuites rapidement", "À aviser les utilisateurs", "À limiter les dommages"],
+      "p3": "Ils sont :",
+      "listAre": ["Réactifs", "Fondés sur les événements", "Très répandus en milieu résidentiel"],
+      "p4": "Pour comprendre comment la détection de fuites diffère d’une surveillance plus large, voyez <0>la surveillance de l’eau et la détection de fuites</0>."
+    },
+    "type2": {
+      "heading": "Type 2 : systèmes avec arrêt d’alimentation",
+      "p1": "Les systèmes avec arrêt d’alimentation s’appuient sur la détection de fuites pour couper automatiquement l’eau lorsqu’un problème est détecté.",
+      "p2": "Ils :",
+      "listThey": ["Détectent un comportement anormal", "Actionnent une vanne d’arrêt", "Empêchent l’aggravation des dommages"],
+      "p3": "On les utilise souvent lorsque :",
+      "listWhere": ["L’atténuation du risque est la priorité"],
+      "p4": "Des produits comme <0>Flo by Moen</0> et <1>Phyn</1> relèvent de cette catégorie."
+    },
+    "type3": {
+      "heading": "Type 3 : systèmes de surveillance non invasifs",
+      "p1": "Les systèmes non invasifs visent à surveiller la consommation d’eau sans modifier la plomberie existante.",
+      "p2": "En général, ils :",
+      "listTypical": ["S’installent à l’extérieur", "Mesurent le débit d’eau", "Fournissent des données de consommation"],
+      "p3": "Ils sont utiles lorsque :",
+      "listUseful": ["Il y a des contraintes d’installation", "Modifier l’infrastructure n’est pas réaliste"],
+      "p4": "Pour une comparaison plus poussée, voyez <0>la surveillance non invasive et la surveillance en ligne</0>."
+    },
+    "type4": {
+      "heading": "Type 4 : systèmes d’intelligence hydraulique",
+      "p1": "Les systèmes d’intelligence hydraulique adoptent une approche à l’échelle du système.",
+      "p2": "Au lieu de se concentrer sur des événements isolés, ils cherchent à comprendre le comportement de l’ensemble du réseau d’eau dans le temps.",
+      "p3": "Ils :",
+      "listThey": [
+        "Suivent la consommation en continu",
+        "Repèrent des tendances",
+        "Détectent les anomalies tôt",
+        "Fournissent des indications sur la performance du système"
+      ],
+      "p4": "Cette approche s’adresse :",
+      "listFor": ["Aux bâtiments plus complexes", "Aux milieux où la visibilité compte"],
+      "p5": "Pour en savoir plus, voyez <0>ce qu’est un système d’intelligence hydraulique et en quoi il diffère</0>."
+    },
+    "whyMatter": {
+      "heading": "Pourquoi ces types comptent",
+      "p1": "Sans cette décomposition, il est facile de comparer les systèmes de travers.",
+      "p2": "Par exemple :",
+      "list": [
+        "Comparer un système avec arrêt à un système de surveillance",
+        "Attendre des analyses détaillées d’un système conçu seulement pour alerter"
+      ],
+      "p3": "Chaque type est bâti avec un objectif différent."
+    },
+    "framework": {
+      "heading": "Comment utiliser ce cadre",
+      "p1": "Au lieu de demander :",
+      "quote1": "Quel est le meilleur système?",
+      "p2": "Demandez :",
+      "quote2": "De quel type de système ai-je réellement besoin?",
+      "p3": "Une fois que c’est clair, les options deviennent beaucoup plus faciles à évaluer.",
+      "p4": "Notre <0>guide sur le choix d’un système de surveillance de l’eau</0> décrit ce processus étape par étape."
+    },
+    "summary": {
+      "heading": "Résumé rapide",
+      "leakTitle": "Détection de fuites",
+      "leakDesc": "Alerte lorsque quelque chose ne va pas",
+      "shutoffTitle": "Systèmes avec arrêt",
+      "shutoffDesc": "Coupent l’eau automatiquement",
+      "nonInvTitle": "Surveillance non invasive",
+      "nonInvDesc": "Suit la consommation sans complexité d’installation majeure",
+      "intelTitle": "Intelligence hydraulique",
+      "intelDesc": "Comprend le système dans le temps"
+    },
+    "closing": {
+      "p1": "La surveillance de l’eau n’est pas une seule catégorie — c’est un ensemble d’approches différentes.",
+      "p2": "Comprendre les différences permet de choisir un système qui convient vraiment à votre bâtiment."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "Qu’est-ce qu’un système de surveillance de l’eau?",
+          "description": "Comprendre l’essentiel avant de choisir un système."
+        },
+        {
+          "title": "Comment choisir un système de surveillance de l’eau",
+          "description": "Faire correspondre le système au fonctionnement réel de votre bâtiment."
+        },
+        {
+          "title": "Meilleurs systèmes de surveillance de l’eau pour les bâtiments",
+          "description": "Comparez les principaux systèmes côte à côte."
+        }
+      ]
+    }
+  },
+  "bestCommercial": {
+    "pageTitle": "Meilleurs systèmes de surveillance de l’eau pour les immeubles commerciaux (2026) — Beluga",
+    "metaDescription": "Guide sur les meilleurs systèmes de surveillance de l’eau pour les immeubles commerciaux en 2026. Couvre la détection de fuites, l’arrêt d’alimentation, la surveillance non invasive et les plateformes d’intelligence hydraulique.",
+    "h1": "Meilleurs systèmes de surveillance de l’eau pour les immeubles commerciaux",
+    "subtitle": "Guide 2026",
+    "intro": {
+      "p1": "Pour la surveillance de l’eau dans les immeubles commerciaux, il n’existe pas un seul système « le meilleur ».",
+      "p2": "Différentes solutions répondent à des priorités différentes :",
+      "list": ["Prévention des fuites", "Arrêt automatique de l’alimentation", "Suivi de la consommation", "Visibilité à l’échelle du système"],
+      "p3": "C’est la compréhension de ces différences qui détermine réellement quel système est pertinent.",
+      "p4": "Vous pouvez aussi consulter notre <0>comparaison complète des meilleurs systèmes de surveillance de l’eau</0>."
+    },
+    "whatMatters": {
+      "heading": "Ce qui compte dans les immeubles commerciaux",
+      "p1": "Les immeubles commerciaux et multilogements ajoutent une complexité absente des petits milieux.",
+      "p2": "Parmi les facteurs clés :",
+      "list": [
+        "L’échelle du réseau de plomberie",
+        "Le nombre d’appareils et d’unités",
+        "Les contraintes d’installation",
+        "Les processus opérationnels après la détection"
+      ],
+      "p3": "Pour cette raison, les systèmes conçus pour les maisons ne se transposent pas toujours bien."
+    },
+    "categories": {
+      "heading": "Catégories courantes de systèmes",
+      "intro": "La plupart des solutions commerciales relèvent de quelques grandes catégories.",
+      "cat1": {
+        "title": "1. Détection de fuites et systèmes avec arrêt d’alimentation",
+        "p1": "Ces systèmes visent :",
+        "listFocus": ["À détecter un débit d’eau anormal", "À couper l’eau automatiquement"],
+        "p2": "Ils sont utiles lorsque :",
+        "listUseful": ["La protection immédiate est la priorité", "La prévention des dommages est critique"],
+        "p3": "On compte notamment des systèmes comme <0>Flo by Moen Smart Water Monitor and Shutoff</0> et <1>Phyn Plus Smart Water Assistant + Shutoff</1>, très répandus en résidentiel et parfois adaptés aux grandes propriétés."
+      },
+      "cat2": {
+        "title": "2. Plateformes de surveillance commerciales",
+        "p1": "Certains systèmes sont conçus spécifiquement pour les grands milieux.",
+        "p2": "Ils visent :",
+        "list": ["À surveiller le débit dans plusieurs bâtiments", "À détecter les fuites", "À fournir des alertes et des données de consommation"],
+        "p3": "Des plateformes comme <0>WINT</0> Water Intelligence et <1>Alert Labs</1> sont couramment utilisées en milieu commercial et pour des portefeuilles de bâtiments."
+      },
+      "cat3": {
+        "title": "3. Systèmes de surveillance non invasifs",
+        "p1": "Ces systèmes privilégient la facilité d’installation.",
+        "p2": "Ils :",
+        "list": [
+          "Ne nécessitent pas de percer les conduites",
+          "Surveillent la consommation à l’extérieur",
+          "Offrent de la visibilité sans modifier l’infrastructure"
+        ],
+        "p3": "Des solutions comme <0>Flume</0> Water Monitor relèvent de cette catégorie, en général pour la résidence mais conceptuellement pertinentes lorsque les contraintes sont fortes. Voyez notre comparaison entre <1>surveillance non invasive et surveillance en ligne</1> pour en savoir plus."
+      },
+      "cat4": {
+        "title": "4. Systèmes d’intelligence hydraulique",
+        "p1": "Une catégorie plus récente vise à comprendre l’ensemble du système dans le temps.",
+        "p2": "Ces systèmes cherchent à :",
+        "list": [
+          "Suivre les habitudes de consommation",
+          "Repérer les inefficacités",
+          "Détecter les anomalies tôt",
+          "Offrir une visibilité à l’échelle du système"
+        ],
+        "p3": "Plutôt que de se limiter aux événements, ils mettent l’accent sur une compréhension continue. Pour en savoir plus, voyez <0>ce qu’est un système d’intelligence hydraulique</0>."
+      }
+    },
+    "howToChoose": {
+      "heading": "Comment choisir le bon système",
+      "p1": "Au lieu de chercher le « meilleur » produit, concentrez-vous sur l’adéquation.",
+      "p2": "Posez-vous ces questions :",
+      "list": [
+        "La priorité est-elle la prévention des fuites ou la visibilité sur le système?",
+        "Des modifications de plomberie sont-elles possibles?",
+        "Quelle est la complexité du bâtiment?",
+        "Comment les alertes seront-elles gérées sur le plan opérationnel?"
+      ],
+      "p3": "Les réponses réduisent en général rapidement le choix à la bonne catégorie.",
+      "p4": "Pour une démarche détaillée, consultez notre guide sur <0>le choix d’un système de surveillance de l’eau</0>."
+    },
+    "whenMakesSense": {
+      "heading": "Quand chaque type est pertinent",
+      "leakTitle": "Détection de fuites / arrêt",
+      "leakDesc": "Lorsque la protection immédiate est critique",
+      "platformTitle": "Plateformes commerciales",
+      "platformDesc": "Lorsque vous gérez plusieurs bâtiments ou de grands systèmes",
+      "nonInvTitle": "Surveillance non invasive",
+      "nonInvDesc": "Lorsque l’installation est une contrainte",
+      "intelTitle": "Intelligence hydraulique",
+      "intelDesc": "Lorsque la visibilité et la compréhension à long terme comptent"
+    },
+    "closing": {
+      "p1": "Le meilleur système de surveillance de l’eau pour un immeuble commercial n’est pas universel.",
+      "p2": "Cela dépend du fonctionnement du bâtiment, des risques qui comptent le plus et du niveau de visibilité requis.",
+      "p3": "Comprendre les catégories clarifie la décision."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "Comment choisir un système de surveillance de l’eau",
+          "description": "Faire correspondre le système au fonctionnement réel de votre bâtiment."
+        },
+        {
+          "title": "Surveillance non invasive ou en ligne",
+          "description": "Comment le mode d’installation façonne tout le reste d’un système."
+        },
+        {
+          "title": "Meilleurs systèmes de surveillance de l’eau pour les bâtiments",
+          "description": "Comparez les principaux systèmes côte à côte."
+        }
+      ]
+    }
+  },
+  "nonInvasiveVsInline": {
+    "pageTitle": "Surveillance de l’eau non invasive ou en ligne : laquelle est pertinente? — Beluga",
+    "metaDescription": "Comparez les systèmes de surveillance de l’eau non invasifs et en ligne. Découvrez les compromis en matière d’installation, de précision, de scalabilité et quand chaque approche convient.",
+    "h1": "Surveillance de l’eau non invasive ou en ligne",
+    "subtitle": "Laquelle est pertinente?",
+    "intro": [
+      "L’une des plus grandes différences entre les systèmes de surveillance de l’eau tient à leur installation.",
+      "Certains exigent une intégration directe à la plomberie.",
+      "D’autres fonctionnent sans modifier les conduites.",
+      "Cette distinction — non invasive ou en ligne — a souvent plus d’impact que les fonctionnalités elles-mêmes.",
+      "C’est l’un des facteurs clés de notre décryptage des <0>4 types de systèmes de surveillance de l’eau</0>."
+    ],
+    "inline": {
+      "heading": "Qu’est-ce que la surveillance en ligne?",
+      "p1": "Les systèmes en ligne s’installent directement dans le réseau de plomberie.",
+      "p2": "En général, ils :",
+      "listTypical": ["Sont placés sur la conduite d’arrivée principale", "Mesurent le débit directement", "Exigent de percer les conduites"],
+      "p3": "Ces systèmes offrent souvent :",
+      "listProvide": ["Des mesures de débit très précises", "Une détection en temps réel", "La possibilité d’actionner des mécanismes d’arrêt"],
+      "p4": "Des systèmes comme <0>Flo by Moen</0> et <1>Phyn</1> illustrent l’approche en ligne avec arrêt.",
+      "p5": "Toutefois, ils exigent aussi :",
+      "listRequire": ["Une installation par des professionnels", "Des temps d’arrêt pendant la mise en service", "Des modifications à l’infrastructure existante"]
+    },
+    "nonInvasive": {
+      "heading": "Qu’est-ce que la surveillance non invasive?",
+      "p1": "Les systèmes non invasifs surveillent l’eau sans modifier la plomberie.",
+      "p2": "Ils :",
+      "listThey": ["S’installent à l’extérieur", "Détectent le débit ou le comportement du système indirectement", "Évitent les modifications aux conduites"],
+      "p3": "Cette approche permet :",
+      "listAllows": ["Un déploiement plus rapide", "Une perturbation minimale", "Une installation plus aisée dans les bâtiments anciens"],
+      "p4": "Le <0>moniteur d’eau Flume</0> en est un exemple."
+    },
+    "keyDifferences": {
+      "heading": "Différences clés",
+      "inlineLabel": "En ligne",
+      "nonInvLabel": "Non invasive",
+      "installRowLabel": "Installation",
+      "inlineInstall": "Exige des travaux sur les conduites",
+      "nonInvInstall": "Installation externe",
+      "deployLabel": "Rapidité de déploiement",
+      "inlineDeploy": "Plus lent, plus exigeant",
+      "nonInvDeploy": "Plus rapide, plus simple",
+      "flexLabel": "Souplesse",
+      "inlineFlex": "Fixe une fois installé",
+      "nonInvFlex": "Plus facile à repositionner ou à déployer sur plusieurs bâtiments"
+    },
+    "accuracy": {
+      "heading": "Précision et interprétation",
+      "p1": "Les systèmes en ligne mesurent le débit directement.",
+      "p2": "Les systèmes non invasifs s’appuient souvent sur l’interprétation de signaux et de tendances pour comprendre le comportement.",
+      "p3": "Les deux approches peuvent être efficaces, mais elles fonctionnent différemment."
+    },
+    "whenInline": {
+      "heading": "Quand l’approche en ligne convient",
+      "p1": "Les systèmes en ligne sont souvent utilisés lorsque :",
+      "listWhen": ["Un contrôle direct est requis", "Une capacité d’arrêt est nécessaire", "L’installation n’est pas une contrainte"],
+      "p2": "Ils sont courants dans :",
+      "listCommon": ["Les milieux maîtrisés", "Les constructions neuves", "Les systèmes pensés pour l’intégration"]
+    },
+    "whenNonInv": {
+      "heading": "Quand la non-invasive convient",
+      "p1": "Les systèmes non invasifs sont utiles lorsque :",
+      "listUseful": [
+        "Modifier l’infrastructure est difficile",
+        "Les bâtiments sont anciens",
+        "Un déploiement rapide est nécessaire",
+        "La scalabilité compte"
+      ],
+      "p2": "Ils sont particulièrement pertinents pour :",
+      "listRelevant": ["Les propriétés multilogements", "Les milieux commerciaux avec contraintes"]
+    },
+    "whyMatters": {
+      "heading": "Pourquoi cette décision compte",
+      "p1": "Choisir entre en ligne et non invasive n’est pas qu’une question technique.",
+      "p2": "Cela influe sur :",
+      "list": ["Le coût d’installation", "La rapidité de déploiement", "La scalabilité sur plusieurs propriétés"],
+      "p3": "Souvent, cette décision détermine si un système est réaliste ou non.",
+      "p4": "Pour les milieux commerciaux, consultez notre guide sur les <0>meilleurs systèmes de surveillance de l’eau pour les immeubles commerciaux</0>."
+    },
+    "closing": {
+      "p1": "Les systèmes en ligne et non invasifs représentent deux approches fondamentalement différentes.",
+      "p2": "Comprendre les compromis entre les deux est essentiel pour choisir un système qui convient au bâtiment et à la réalité opérationnelle."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "Meilleurs systèmes de surveillance de l’eau pour les immeubles commerciaux",
+          "description": "Guide des catégories de systèmes disponibles pour les milieux commerciaux."
+        },
+        {
+          "title": "Qu’est-ce qu’un système de surveillance de l’eau?",
+          "description": "Comprendre l’essentiel avant de choisir un système."
+        },
+        {
+          "title": "Meilleurs systèmes de surveillance de l’eau pour les bâtiments",
+          "description": "Comparez les principaux systèmes côte à côte."
+        }
+      ]
+    }
+  },
+  "afterLeakAlert": {
+    "pageTitle": "Que se passe-t-il vraiment après une alerte de fuite dans les bâtiments — Beluga",
+    "metaDescription": "La détection n’est que la première étape. Découvrez ce qui se passe réellement après une alerte de fuite dans les bâtiments — et pourquoi le processus après la détection détermine le résultat.",
+    "h1": "Que se passe-t-il vraiment après une alerte de fuite dans les bâtiments",
+    "subtitle": "La détection n’est que la première étape",
+    "intro": [
+      "On évalue souvent les systèmes de surveillance de l’eau sur un seul critère : savent-ils détecter une fuite?",
+      "Mais dans les vrais bâtiments, la détection n’est que la première étape.",
+      "Ce qui se passe après l’alerte détermine en réalité le résultat."
+    ],
+    "steps": [
+      {
+        "title": "L’alerte est déclenchée",
+        "p1": "Un système détecte un comportement anormal de l’eau et envoie une alerte.",
+        "p2": "Elle peut arriver par :",
+        "listChannels": ["Une application mobile", "Un courriel", "Une notification dans un tableau de bord"],
+        "p3": "À ce stade, le système a fait son travail."
+      },
+      {
+        "title": "Quelqu’un doit la voir",
+        "p1": "En théorie, les alertes sont immédiates.",
+        "p2": "En pratique :",
+        "list": ["Les notifications passent inaperçues", "Les courriels s’accumulent", "Les tableaux de bord ne sont pas surveillés en continu"],
+        "p3": "Le premier délai survient souvent ici."
+      },
+      {
+        "title": "Quelqu’un doit l’interpréter",
+        "p1": "Même lorsque l’alerte est vue, sa signification n’est pas toujours claire.",
+        "p2": "Des questions surgissent vite :",
+        "listQuestions": ["S’agit-il d’un vrai problème?", "Est-ce urgent?", "Où cela se produit-il?"],
+        "p3": "Sans contexte, les alertes créent parfois de l’incertitude plutôt que de la clarté."
+      },
+      {
+        "title": "Cela devient une tâche",
+        "p1": "Une fois l’alerte comprise, il faut passer à l’action.",
+        "p2": "Cela signifie habituellement :",
+        "listMeans": ["Créer un bon de travail", "Assigner un technicien", "Planifier une visite"],
+        "p3": "Dans plusieurs bâtiments, cette étape reste manuelle. C’est la réalité opérationnelle décrite dans <0>comment les gestionnaires d’immeubles gèrent réellement les problèmes d’eau</0>."
+      },
+      {
+        "title": "Le problème est examiné",
+        "p1": "Quelqu’un vérifie le système sur place.",
+        "p2": "Il peut :",
+        "listMay": ["Inspecter les appareils", "Tracer le parcours de l’eau", "Chercher des fuites visibles"],
+        "p3": "Selon le système, cela peut prendre du temps — surtout si l’alerte n’indique pas clairement la source."
+      },
+      {
+        "title": "Le problème est résolu",
+        "p1": "Une fois identifié, le problème est corrigé.",
+        "p2": "Mais à ce stade :",
+        "listBut": ["Du temps s’est écoulé", "De l’eau a pu être gaspillée", "Des dommages ont pu survenir"]
+      }
+    ],
+    "breakdown": {
+      "heading": "Où ça coince",
+      "p1": "À chaque étape, de petits délais peuvent s’accumuler.",
+      "p2": "Le système peut détecter un problème instantanément, mais :",
+      "list": ["La réponse n’est pas instantanée", "L’interprétation n’est pas toujours claire", "Les processus ne sont pas toujours intégrés"],
+      "p3": "Il en résulte un écart entre la détection et la résolution."
+    },
+    "whyMatters": {
+      "heading": "Pourquoi c’est important",
+      "p1": "La plupart des systèmes sont conçus autour de la détection.",
+      "p2": "Moins nombreux sont ceux conçus pour :",
+      "list": ["La clarté des indications", "La facilité d’action", "L’intégration aux opérations"],
+      "p3": "C’est là qu’un <0>système d’intelligence hydraulique</0> peut apporter de la valeur — en fournissant du contexte, pas seulement des alertes.",
+      "p4": "Dans les grands bâtiments, cette différence devient critique."
+    },
+    "betterWay": {
+      "heading": "Une meilleure façon d’y penser",
+      "p1": "Au lieu de demander :",
+      "quote1": "Ce système détecte-t-il les fuites?",
+      "p2": "Une question plus utile est :",
+      "quote2": "Que se passe-t-il après qu’il a détecté quelque chose?",
+      "p3": "Comprendre la différence entre <0>la surveillance de l’eau et la détection de fuites</0> est un bon point de départ.",
+      "p4": "Car c’est là que se jouent réellement les résultats."
+    },
+    "closing": {
+      "p1": "La détection est importante.",
+      "p2": "Mais dans le monde réel, l’efficacité d’un système dépend de tout ce qui se passe après l’alerte.",
+      "p3": "Comprendre ce processus est essentiel pour choisir la bonne approche. Voyez comment les différents systèmes se comparent dans notre <0>guide sur les meilleurs systèmes de surveillance de l’eau</0>."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "Pourquoi la seule détection de fuites ne suffit pas",
+          "description": "Dans les grands bâtiments, la plupart des problèmes évoluent lentement — sans déclencher d’alertes."
+        },
+        {
+          "title": "Comment les gestionnaires d’immeubles gèrent les problèmes d’eau",
+          "description": "Personnes, processus et contraintes — le vrai processus."
+        },
+        {
+          "title": "Meilleurs systèmes de surveillance de l’eau pour les bâtiments",
+          "description": "Comparez les principaux systèmes selon les catégories et les types de bâtiments."
+        }
+      ]
+    }
+  },
+  "leakDetectionNotEnough": {
+    "pageTitle": "Pourquoi la seule détection de fuites ne suffit pas dans les immeubles commerciaux — Beluga",
+    "metaDescription": "La détection de fuites est importante mais insuffisante dans les immeubles commerciaux. Découvrez pourquoi la surveillance continue, les références de consommation et les processus opérationnels comptent plus que les alertes seules.",
+    "h1": "Pourquoi la seule détection de fuites ne suffit pas dans les immeubles commerciaux",
+    "subtitle": "C’est un outil important — mais pas une solution complète",
+    "intro": [
+      "On considère souvent la détection de fuites comme la fonction centrale des systèmes de surveillance de l’eau.",
+      "Et pour cause — les fuites peuvent causer des dommages graves.",
+      "Mais dans les immeubles commerciaux et multilogements, la seule détection de fuites suffit rarement. La distinction entre <0>surveillance de l’eau et détection de fuites</0> compte ici."
+    ],
+    "assumption": {
+      "heading": "L’hypothèse : les fuites sont le principal problème",
+      "p1": "La plupart des systèmes partent du principe que les problèmes d’eau se résument aux fuites.",
+      "p2": "Ils se concentrent donc sur :",
+      "list": ["La détection d’un débit anormal", "L’envoi d’alertes", "Le déclenchement de mécanismes d’arrêt"],
+      "p3": "Cela fonctionne bien pour les événements soudains."
+    },
+    "reality": {
+      "heading": "La réalité : la plupart des problèmes ne sont pas soudains",
+      "p1": "Dans les grands bâtiments, plusieurs problèmes évoluent lentement.",
+      "p2": "Parmi les exemples :",
+      "listExamples": [
+        "Petites fuites continues",
+        "Appareils peu efficaces",
+        "Habitudes de consommation anormales",
+        "Dégradation du système dans le temps"
+      ],
+      "p3": "Cela ne déclenche pas toujours d’alerte immédiate.",
+      "p4": "Mais cela n’en affecte pas moins :",
+      "listImpact": ["La consommation d’eau", "Les coûts d’exploitation", "La performance du système à long terme"]
+    },
+    "visibilityGap": {
+      "heading": "Le déficit de visibilité",
+      "p1": "Les systèmes de détection de fuites répondent en général à une question :",
+      "quote": "Y a-t-il un problème en ce moment?",
+      "p2": "Mais ils ne répondent pas toujours à :",
+      "listQuestions": [
+        "Qu’est-ce qu’une consommation normale?",
+        "Comment le système évolue-t-il dans le temps?",
+        "Où se situent les inefficacités?"
+      ],
+      "p3": "Sans ce contexte, il est difficile de :",
+      "listDifficult": ["Repérer les tendances", "Optimiser la consommation", "Prévenir l’aggravation des problèmes"],
+      "p4": "Ce déficit explique le besoin de <0>systèmes d’intelligence hydraulique</0> qui vont au-delà des alertes fondées sur les seuls événements."
+    },
+    "complexity": {
+      "heading": "La complexité change la nature du problème",
+      "p1": "Les immeubles commerciaux ne sont pas des systèmes simples.",
+      "p2": "Ils impliquent :",
+      "list": ["Plusieurs unités", "Une infrastructure partagée", "De nombreux appareils et habitudes de consommation"],
+      "p3": "Dans ce milieu, le comportement de l’eau est plus complexe — et plus difficile à interpréter avec la seule détection fondée sur les événements. Des plateformes de calibre commercial comme <0>WINT</0> et <1>Alert Labs</1> sont conçues pour ces environnements."
+    },
+    "whyMonitoring": {
+      "heading": "Pourquoi la surveillance compte",
+      "p1": "Les systèmes de surveillance adoptent une approche plus large.",
+      "p2": "Ils :",
+      "listThey": ["Suivent la consommation en continu", "Établissent des références", "Repèrent les écarts tôt"],
+      "p3": "Cela permet aux équipes de :",
+      "listAllows": [
+        "Détecter les problèmes avant qu’ils deviennent critiques",
+        "Comprendre le comportement du système",
+        "Prendre des décisions plus éclairées"
+      ]
+    },
+    "stillRole": {
+      "heading": "La détection de fuites garde un rôle",
+      "p1": "Cela ne veut pas dire que la détection de fuites est inutile.",
+      "p2": "Elle joue un rôle important pour :",
+      "list": ["La protection immédiate", "La prévention des dommages"],
+      "p3": "Mais elle ne représente qu’une couche du problème."
+    },
+    "completeApproach": {
+      "heading": "Une approche plus complète",
+      "p1": "En pratique, une gestion efficace de l’eau exige souvent :",
+      "detectionTitle": "Détection",
+      "detectionDesc": "Pour repérer les événements",
+      "monitoringTitle": "Surveillance",
+      "monitoringDesc": "Pour comprendre les tendances",
+      "workflowsTitle": "Processus",
+      "workflowsDesc": "Pour réagir efficacement",
+      "p2": "Ne viser qu’un de ces volets laisse des lacunes. Notre <0>guide sur le choix d’un système de surveillance de l’eau</0> explique comment équiliser ces facteurs."
+    },
+    "closing": {
+      "p1": "La détection de fuites est un outil important — mais pas une solution complète pour les immeubles commerciaux.",
+      "p2": "Comprendre le comportement des réseaux d’eau dans le temps, c’est ce qui permet une meilleure visibilité, de meilleures décisions et de meilleurs résultats."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "Que se passe-t-il après une alerte de fuite",
+          "description": "La détection n’est que la première étape — voici le processus complet."
+        },
+        {
+          "title": "Meilleurs systèmes de surveillance de l’eau pour les immeubles commerciaux",
+          "description": "Guide des catégories de systèmes disponibles pour les milieux commerciaux."
+        },
+        {
+          "title": "Meilleurs systèmes de surveillance de l’eau pour les bâtiments",
+          "description": "Comparez les principaux systèmes selon les catégories et les types de bâtiments."
+        }
+      ]
+    }
+  },
+  "propertyManagers": {
+    "pageTitle": "Comment les gestionnaires d’immeubles gèrent réellement les problèmes d’eau — Beluga",
+    "metaDescription": "Les problèmes d’eau dans les bâtiments se règlent par des personnes, des processus et des contraintes. Découvrez le véritable processus — de la plainte du locataire à la résolution — et la place des systèmes.",
+    "h1": "Comment les gestionnaires d’immeubles gèrent réellement les problèmes d’eau",
+    "subtitle": "Personnes, processus et contraintes",
+    "intro": [
+      "On parle souvent des problèmes d’eau dans les bâtiments en termes de détection.",
+      "Mais dans la pratique, ils se traitent par des personnes, des processus et des contraintes.",
+      "Comprendre comment les gestionnaires d’immeubles gèrent réellement ces situations donne une vision beaucoup plus claire de ce qui compte — et des forces et limites des systèmes."
+    ],
+    "steps": [
+      {
+        "title": "Ça commence souvent par une plainte",
+        "p1": "Dans plusieurs bâtiments, le premier signe d’un problème d’eau n’est pas une alerte système. C’est un locataire.",
+        "quotes": [
+          "Il y a de l’eau sous l’évier",
+          "La toilette coule sans arrêt",
+          "Quelque chose ne semble pas normal"
+        ],
+        "p2": "C’est ce qui déclenche le processus."
+      },
+      {
+        "title": "Le problème est consigné",
+        "p1": "Le gestionnaire d’immeuble ou un membre du personnel :",
+        "listDoes": ["Consigne le problème", "Crée un bon de travail", "L’assigne à l’entretien"],
+        "p2": "Selon le bâtiment, cela peut se faire dans :",
+        "listWhere": ["Un logiciel de gestion immobilière", "Une feuille de calcul", "Ou même manuellement"]
+      },
+      {
+        "title": "Première enquête",
+        "p1": "Le personnel d’entretien vérifie le problème sur place.",
+        "p2": "Il peut :",
+        "listMay": ["Inspecter les appareils", "Chercher des fuites visibles", "Tester le débit d’eau"],
+        "p3": "À ce stade, beaucoup dépend de :",
+        "listDepends": ["L’expérience", "L’information disponible", "L’accès aux bons secteurs"]
+      },
+      {
+        "title": "Escalade au besoin",
+        "p1": "Si le problème n’est pas évident ou exige plus de travail :",
+        "list": ["Un plombier peut être appelé", "Une inspection supplémentaire est planifiée", "Le problème peut être reporté"],
+        "p2": "Cela peut introduire des délais, surtout dans les grandes propriétés."
+      },
+      {
+        "title": "Résolution",
+        "p1": "Une fois le problème identifié, il est corrigé.",
+        "p2": "Mais à ce stade :",
+        "list": ["Du temps s’est écoulé", "De l’eau a pu être gaspillée", "Le problème a pu toucher d’autres parties du système"]
+      }
+    ],
+    "systemsFit": {
+      "heading": "Où s’insèrent les systèmes",
+      "p1": "On introduit souvent des systèmes de surveillance de l’eau pour améliorer ce processus.",
+      "p2": "Ils peuvent :",
+      "list": ["Détecter les problèmes plus tôt", "Fournir des alertes", "Réduire la dépendance aux signalements des locataires"],
+      "p3": "Mais ils ne remplacent pas le processus. Ils en font partie. Comprendre <0>ce qui se passe après une alerte de fuite</0> montre comment la détection s’inscrit dans les opérations."
+    },
+    "challenge": {
+      "heading": "Le véritable défi",
+      "p1": "Le défi n’est pas seulement de détecter les problèmes.",
+      "p2": "Il consiste à :",
+      "list": [
+        "Transformer les signaux en actions claires",
+        "S’intégrer aux processus existants",
+        "Réduire le délai entre la détection et la résolution"
+      ],
+      "p3": "Sans cela, même le meilleur système de détection a un impact limité. C’est aussi <0>pourquoi la seule détection de fuites ne suffit pas dans les immeubles commerciaux</0>."
+    },
+    "whatHelps": {
+      "heading": "Ce qui aide vraiment",
+      "p1": "Sur le plan pratique, les systèmes utiles tendent à :",
+      "list": [
+        "Fournir des renseignements clairs et exploitables",
+        "Réduire l’ambiguïté",
+        "Aider à prioriser les problèmes",
+        "S’intégrer aux processus opérationnels existants"
+      ],
+      "p2": "Pour des conseils sur l’alignement des systèmes et des processus, voyez <0>comment choisir un système de surveillance de l’eau</0>.",
+      "p3": "Parce qu’en définitive, la gestion immobilière relève des opérations — pas seulement de la technique."
+    },
+    "closing": {
+      "p1": "Les problèmes d’eau dans les bâtiments ne sont pas de simples événements techniques. Ce sont des problèmes opérationnels gérés par des personnes.",
+      "p2": "Comprendre cette réalité est essentiel pour choisir des outils qui font vraiment une différence. Explorez les options dans notre <0>comparaison des meilleurs systèmes de surveillance de l’eau</0>."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "Qu’est-ce qu’un système d’intelligence hydraulique?",
+          "description": "Passer de la réaction aux événements à la compréhension des systèmes."
+        },
+        {
+          "title": "Que se passe-t-il après une alerte de fuite",
+          "description": "La détection n’est que la première étape — voici le processus complet."
+        },
+        {
+          "title": "Meilleurs systèmes de surveillance de l’eau pour les bâtiments",
+          "description": "Comparez les principaux systèmes selon les catégories et les types de bâtiments."
+        }
+      ]
+    }
+  },
+  "waterIntelligence": {
+    "pageTitle": "Qu’est-ce qu’un système d’intelligence hydraulique? (Et en quoi est-ce différent) — Beluga",
+    "metaDescription": "L’intelligence hydraulique va au-delà de la détection de fuites et du suivi de la consommation. Découvrez ce que cela signifie, en quoi cela diffère des approches traditionnelles et où cela prend de la valeur.",
+    "h1": "Qu’est-ce qu’un système d’intelligence hydraulique?",
+    "subtitle": "Et en quoi est-ce différent",
+    "intro": [
+      "À mesure que la surveillance de l’eau évolue, un nouveau terme apparaît : <strong>intelligence hydraulique</strong>.",
+      "À première vue, cela ressemble aux systèmes existants.",
+      "Mais cela reflète une autre façon de penser l’observation et la gestion des réseaux d’eau."
+    ],
+    "traditional": {
+      "heading": "Approches traditionnelles",
+      "p1": "La plupart des systèmes traditionnels relèvent de l’une ou l’autre de ces catégories :",
+      "catLeak": "Détection de fuites",
+      "catUsage": "Surveillance de la consommation",
+      "p2": "Ils sont conçus pour :",
+      "list": ["Détecter les événements", "Suivre la consommation", "Déclencher des alertes"],
+      "p3": "Ces approches sont utiles, mais elles ciblent des aspects précis du système. Pour une vue d’ensemble, voyez notre guide sur les <0>4 types de systèmes de surveillance de l’eau</0>."
+    },
+    "whatMeans": {
+      "heading": "Ce que signifie l’intelligence hydraulique",
+      "p1": "Un système d’intelligence hydraulique adopte une vision plus large.",
+      "p2": "Au lieu de se limiter aux événements ou aux mesures ponctuelles, il cherche à comprendre le comportement du système dans son ensemble.",
+      "p3": "Cela comprend :",
+      "list": [
+        "Comment l’eau circule dans le bâtiment",
+        "Comment se comportent les différents appareils",
+        "Comment les habitudes de consommation évoluent dans le temps",
+        "Où surviennent les anomalies ou les inefficacités"
+      ]
+    },
+    "dataToUnderstanding": {
+      "heading": "Des données à la compréhension",
+      "p1": "La différence clé n’est pas seulement de collecter des données — c’est de les interpréter.",
+      "p2": "Un système d’intelligence hydraulique :",
+      "list": ["Construit un modèle du système", "Repère des tendances", "Détecte les écarts par rapport au comportement normal"],
+      "rawDataLabel": "Données brutes",
+      "insightLabel": "Indication utile"
+    },
+    "buildings": {
+      "heading": "Pourquoi c’est important dans les bâtiments",
+      "p1": "Dans les milieux complexes, les problèmes ne sont pas toujours évidents.",
+      "p2": "Ils peuvent évoluer lentement :",
+      "list": ["Petites fuites", "Appareils peu efficaces", "Habitudes de consommation inhabituelles"],
+      "p3": "Sans contexte, il est difficile de les détecter tôt. Ce déficit de visibilité est exploré en profondeur dans <0>pourquoi la seule détection de fuites ne suffit pas dans les immeubles commerciaux</0>.",
+      "p4": "Un système qui comprend le comportement normal peut repérer quand quelque chose change — même si le changement est subtil."
+    },
+    "differsFromMonitoring": {
+      "heading": "En quoi cela diffère de la surveillance",
+      "monitoringLabel": "Surveillance",
+      "monitoringQuestion": "Que se passe-t-il?",
+      "intelLabel": "Intelligence hydraulique",
+      "intelQuestion": "Qu’est-ce que cela signifie?",
+      "p1": "Ce glissement change l’usage de l’information. Nous y revenons dans <0>surveillance de l’eau et détection de fuites</0>."
+    },
+    "valuable": {
+      "heading": "Où cela prend de la valeur",
+      "p1": "L’intelligence hydraulique devient plus utile lorsque :",
+      "listAs": [
+        "La complexité du bâtiment augmente",
+        "Le nombre d’appareils croît",
+        "Le coût des inefficacités monte",
+        "La visibilité à long terme devient importante"
+      ],
+      "p2": "C’est particulièrement pertinent pour :",
+      "listIn": ["Les immeubles commerciaux", "Les propriétés multilogements"],
+      "p3": "Consultez notre guide sur les <0>meilleurs systèmes de surveillance de l’eau pour les immeubles commerciaux</0> pour des pistes de choix."
+    },
+    "notReplacement": {
+      "heading": "Pas un remplacement, mais une évolution",
+      "p1": "L’intelligence hydraulique ne remplace pas les approches existantes. Elle s’y greffe.",
+      "detectionTitle": "Détection",
+      "detectionDesc": "Reste importante",
+      "monitoringTitle": "Surveillance",
+      "monitoringDesc": "Reste importante",
+      "intelTitle": "Intelligence",
+      "intelDesc": "Ajoute une couche supplémentaire"
+    },
+    "closing": {
+      "p1": "L’intelligence hydraulique marque un passage de la réaction aux événements à la compréhension des systèmes.",
+      "p2": "À mesure que les bâtiments se complexifient, ce passage gagne en importance."
+    },
+    "related": {
+      "cards": [
+        {
+          "title": "Comment les gestionnaires d’immeubles gèrent les problèmes d’eau",
+          "description": "Personnes, processus et contraintes — le vrai processus."
+        },
+        {
+          "title": "4 types de systèmes de surveillance de l’eau",
+          "description": "Comprendre les différentes approches dans l’univers de la surveillance de l’eau."
+        },
+        {
+          "title": "Meilleurs systèmes de surveillance de l’eau pour les bâtiments",
+          "description": "Comparez les principaux systèmes selon les catégories et les types de bâtiments."
+        }
+      ]
+    }
+  }
+}

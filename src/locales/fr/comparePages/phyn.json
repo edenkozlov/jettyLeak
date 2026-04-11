@@ -1,0 +1,51 @@
+{
+  "phyn": {
+    "pageTitle": "Beluga et Phyn : comparaison pour les bâtiments",
+    "metaDescription": "Comparez Beluga et Phyn. Détection résidentielle par pression contre intelligence de l’eau à l’échelle du bâtiment. Comparaison neutre fondée sur des informations publiques.",
+    "heroH1": "Beluga et Phyn",
+    "heroSubtitle": "Une comparaison neutre entre arrêt des fuites par pression et intelligence de l’eau pour bâtiments.",
+    "introP1": "Si vous cherchez une alternative à Phyn ou comparez Beluga à Phyn, vous évaluez probablement des moniteurs d’eau connectés et hésitez entre protection résidentielle contre les fuites et intelligence plus large du bâtiment. Ces deux produits ciblent des environnements et des résultats différents.",
+    "introP2": "Cette page compare Beluga et Phyn à partir d’informations publiques pour clarifier ces différences et vous aider à choisir la solution adaptée.",
+    "competitorLabel": "Phyn",
+    "disclaimerCompetitorName": "Phyn",
+    "ctaCompetitorName": "Phyn",
+    "breadcrumbVs": "Beluga et Phyn",
+    "tableRows": [
+      { "feature": "Objectif principal", "beluga": "Intelligence et surveillance du système d’eau", "competitor": "Détection de fuites et arrêt automatique" },
+      { "feature": "Installation", "beluga": "Non invasive (sans perçage)", "competitor": "Installé sur la conduite principale" },
+      { "feature": "Méthode de détection", "beluga": "Basée sur les formes et anomalies", "competitor": "Capteurs de pression et apprentissage automatique" },
+      { "feature": "Arrêt automatique", "beluga": "Pas au cœur du produit", "competitor": "Oui" },
+      { "feature": "Analyse de l’usage", "beluga": "Visibilité à l’échelle du système et références", "competitor": "Informations d’usage de base" },
+      { "feature": "Compréhension par équipement", "beluga": "Oui (reconnaissance de formes)", "competitor": "Limitée" },
+      { "feature": "Environnement cible", "beluga": "Bâtiments commerciaux / multilogements", "competitor": "Maisons résidentielles" },
+      { "feature": "Suivi dans le temps", "beluga": "Références continues et tendances", "competitor": "Alertes par événement" }
+    ],
+    "midTitle": "Différence clé : pression contre intelligence du système",
+    "midLeftTitle": "Phyn — détection par pression",
+    "midLeftP": "Phyn repose sur la détection des fuites par analyse haute résolution de la pression et l’apprentissage automatique. Il est surtout pensé pour la protection résidentielle, avec l’objectif d’identifier un débit anormal et de le stopper vite grâce à l’arrêt automatique.",
+    "midRightTitle": "Beluga — intelligence comportementale de l’eau",
+    "midRightP": "Beluga vise à comprendre le comportement du réseau d’eau dans le temps. Il suit les habitudes de consommation, identifie les équipements, repère les inefficiences et construit un modèle à l’échelle du système qui produit des informations en continu — pas seulement en cas d’incident.",
+    "whenCompetitorHeading": "Phyn peut convenir si :",
+    "whenCompetitorBullets": ["Vous voulez une protection par arrêt automatique pour une maison", "Vous priorisez la prévention des fuites en résidentiel", "Vous préférez une technologie fondée sur la pression", "Votre priorité est d’arrêter rapidement les fuites actives"],
+    "whenBelugaHeading": "Beluga peut mieux convenir si :",
+    "whenBelugaBullets": ["Vous gérez des propriétés plus grandes ou multilogements", "Vous voulez comprendre le comportement du système, pas seulement les fuites", "Vous optimisez consommation, infrastructure et efficacité", "Vous avez besoin d’une installation non invasive sans modifier la plomberie"],
+    "faq": [
+      { "q": "Phyn détecte-t-il les petites fuites ?", "a": "Phyn est conçu pour repérer des schémas de pression anormaux, ce qui peut inclure de petites fuites selon les conditions. La méthode principale reste l’analyse de la pression." },
+      { "q": "Beluga sert-il uniquement à détecter les fuites ?", "a": "Non. La détection de fuites en fait partie, mais l’objectif principal est l’intelligence du système — comprendre la circulation de l’eau, identifier les équipements et suivre l’efficacité dans le temps." },
+      { "q": "Phyn peut-il être utilisé en bâtiment commercial ?", "a": "Phyn est surtout conçu et commercialisé pour le résidentiel. Les usages commerciaux varient et doivent être confirmés avec le fabricant." },
+      { "q": "Comment Phyn se compare-t-il à Beluga pour un gestionnaire d’immeuble ?", "a": "Phyn vise la protection d’un logement individuel. Beluga est pensé pour la visibilité à l’échelle du bâtiment et du portefeuille, ce qui peut mieux correspondre aux gestionnaires de plusieurs unités ou bâtiments." },
+      { "q": "Quelle est la différence clé entre Phyn et Beluga ?", "a": "Phyn met l’accent sur la détection par pression et l’arrêt automatique pour les maisons. Beluga met l’accent sur l’intelligence continue du réseau d’eau pour le commercial et le multilogement, avec une installation non invasive." }
+    ],
+    "relatedQuestions": [
+      "Quelle bonne alternative à Phyn pour les bâtiments commerciaux ?",
+      "Comment Phyn se compare-t-il aux autres moniteurs d’eau connectés ?",
+      "Existe-t-il un moniteur d’eau non invasif pour immeubles à appartements ?",
+      "Quel est le meilleur système de surveillance pour les gestionnaires d’immeuble ?"
+    ],
+    "recommended": [
+      { "to": "/articles/what-is-water-monitoring-system", "title": "Qu’est-ce qu’un système de surveillance de l’eau ?", "desc": "Comprendre les différents types de systèmes." },
+      { "to": "/articles/4-types-of-water-monitoring-systems", "title": "4 types de systèmes de surveillance de l’eau", "desc": "Détection, arrêt, surveillance et intelligence comparés." },
+      { "to": "/articles/water-monitoring-vs-leak-detection", "title": "Surveillance de l’eau et détection de fuites", "desc": "La distinction que beaucoup d’acheteurs négligent." }
+    ]
+  }
+}

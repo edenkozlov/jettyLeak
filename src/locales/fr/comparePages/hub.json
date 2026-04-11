@@ -1,0 +1,133 @@
+{
+  "hub": {
+    "pageTitle": "Meilleurs systèmes de surveillance de l’eau pour les bâtiments (2026)",
+    "metaDescription": "Comparez les principaux systèmes de surveillance de l’eau pour bâtiments commerciaux : Beluga, Flo by Moen, Phyn, WINT, Alert Labs, Flume et Water Alert, côte à côte.",
+    "heroEyebrow": "Guide",
+    "heroTitle": "Meilleurs systèmes de surveillance de l’eau pour les bâtiments",
+    "heroSubtitle": "Un aperçu neutre des solutions de surveillance de l’eau les plus souvent envisagées pour les propriétés résidentielles et commerciales.",
+    "introP1": "Choisir le meilleur système dépend du type de bâtiment, de vos priorités opérationnelles et du niveau d’information souhaité. Certains systèmes privilégient la réaction immédiate aux fuites avec arrêt automatique. D’autres visent l’intelligence continue du réseau et une visibilité à long terme.",
+    "introP2": "Cette page présente de façon neutre sept produits souvent comparés, explique les grandes familles de surveillance et renvoie vers des pages de comparaison détaillées pour vous aider à évaluer vos options.",
+    "categoriesTitle": "Types de systèmes de surveillance de l’eau",
+    "categoriesSubtitle": "Les produits se classent dans plusieurs catégories qui se chevauchent. Les comprendre facilite le choix de l’approche adaptée à vos besoins.",
+    "categories": [
+      {
+        "title": "Systèmes de détection de fuites",
+        "description": "Ils visent à repérer les fuites actives, souvent via capteurs d’humidité, l’analyse du débit ou la pression. Leur valeur principale est d’alerter lorsque l’eau est là où elle ne devrait pas être. Water Alert en est un exemple ; la plupart des autres solutions combinent aussi cet aspect."
+      },
+      {
+        "title": "Systèmes à arrêt automatique",
+        "description": "Ils vont plus loin que la détection en coupant automatiquement l’arrivée d’eau lorsqu’une fuite est identifiée. Utile en résidentiel et en commercial lorsque la priorité est d’éviter les dégâts. Flo by Moen, Phyn et WINT offrent cette capacité."
+      },
+      {
+        "title": "Surveillance non invasive",
+        "description": "Ces systèmes s’installent sans percer les conduites ni modifier la plomberie, ce qui réduit coût, délai et perturbation. Beluga et Flume sont tous deux non invasifs, mais pour des contextes et des niveaux d’analyse différents."
+      },
+      {
+        "title": "Plateformes d’intelligence de l’eau",
+        "description": "L’intelligence de l’eau dépasse la détection de fuites : analyse continue de la circulation, des schémas d’usage, des inefficiences et des équipements. L’objectif est une visibilité à l’échelle du système et une optimisation durable, pas seulement des alertes ponctuelles. Beluga se positionne dans cette catégorie."
+      }
+    ],
+    "systemsTitle": "Les systèmes en un coup d’œil",
+    "systems": [
+      {
+        "name": "Beluga",
+        "summary": "Plateforme d’intelligence de l’eau axée sur la visibilité du système, l’analyse de la consommation et la détection d’anomalies pour bâtiments commerciaux et multilogements. Installation non invasive et reconnaissance de formes pour identifier les équipements et suivre le comportement du réseau dans le temps.",
+        "tags": ["Intelligence de l’eau", "Non invasif", "Commercial", "Résidentiel"],
+        "path": "/"
+      },
+      {
+        "name": "Flo by Moen",
+        "summary": "Moniteur d’eau connecté avec arrêt automatique, conçu surtout pour les maisons. Détecte les fuites en temps réel et peut couper l’alimentation pour limiter les dégâts.",
+        "tags": ["Arrêt fuite", "Résidentiel"],
+        "path": "/flo-by-moen-alternative"
+      },
+      {
+        "name": "Phyn",
+        "summary": "Moniteur d’eau intelligent basé sur la pression, avec arrêt automatique pour la maison. S’appuie sur l’apprentissage automatique pour analyser la pression et repérer les fuites potentielles.",
+        "tags": ["Mesure de pression", "Arrêt fuite", "Résidentiel"],
+        "path": "/phyn-alternative"
+      },
+      {
+        "name": "WINT",
+        "summary": "Solution de gestion de l’eau pour le commercial, centrée sur la détection de fuites et l’arrêt automatique. Souvent associée aux bâtiments commerciaux et aux chantiers.",
+        "tags": ["Arrêt fuite", "Commercial", "Construction"],
+        "path": "/wint-alternative"
+      },
+      {
+        "name": "Alert Labs",
+        "summary": "Surveillance par capteurs répartis pour le commercial et les portefeuilles d’actifs. Plusieurs capteurs dans le bâtiment pour une détection localisée et le suivi du débit.",
+        "tags": ["Capteurs répartis", "Commercial", "Portefeuille"],
+        "path": "/alert-labs-alternative"
+      },
+      {
+        "name": "Flume",
+        "summary": "Moniteur non invasif pour les particuliers. Se fixe sur le compteur d’eau résidentiel pour suivre la consommation, fixer des budgets et repérer les anomalies.",
+        "tags": ["Non invasif", "Résidentiel", "Suivi conso"],
+        "path": "/flume-alternative"
+      },
+      {
+        "name": "Water Alert",
+        "summary": "Détection de fuites par matériel, capteurs d’humidité et alarmes. Alertes événementielles à des emplacements précis en milieu commercial et industriel.",
+        "tags": ["Capteurs d’humidité", "Par événement", "Commercial"],
+        "path": "/water-alert-alternative"
+      }
+    ],
+    "detailedTitle": "Comparaisons détaillées",
+    "detailedSubtitle": "Chaque page propose un tableau des fonctionnalités, les différences d’approche, des repères pour savoir quand chaque système est pertinent, et une FAQ.",
+    "articlesTitle": "En savoir plus sur la surveillance de l’eau",
+    "articlesSubtitle": "Parcourez nos articles pour mieux comprendre les systèmes de surveillance, leurs différences et comment choisir la bonne approche pour votre bâtiment.",
+    "articles": [
+      {
+        "to": "/articles/what-is-water-monitoring-system",
+        "title": "Qu’est-ce qu’un système de surveillance de l’eau ?",
+        "desc": "Ce que font ces systèmes et pourquoi la plupart sont fondamentalement différents."
+      },
+      {
+        "to": "/articles/4-types-of-water-monitoring-systems",
+        "title": "4 types de systèmes de surveillance de l’eau",
+        "desc": "Un cadre pour les quatre grandes approches de la surveillance de l’eau."
+      },
+      {
+        "to": "/articles/water-monitoring-vs-leak-detection",
+        "title": "Surveillance de l’eau et détection de fuites",
+        "desc": "La différence entre suivi continu et détection par événements."
+      },
+      {
+        "to": "/articles/how-to-choose-water-monitoring-system",
+        "title": "Comment choisir un système de surveillance de l’eau",
+        "desc": "Guide pas à pas pour assortir un système à votre bâtiment."
+      },
+      {
+        "to": "/articles/what-is-water-intelligence-system",
+        "title": "Qu’est-ce qu’un système d’intelligence de l’eau ?",
+        "desc": "Comment l’intelligence va au-delà de la détection et du simple suivi."
+      }
+    ],
+    "faq": [
+      {
+        "q": "Quel est le meilleur système de surveillance de l’eau pour les bâtiments commerciaux ?",
+        "a": "Cela dépend des priorités. Pour l’arrêt automatique en commercial, WINT est souvent cité. Pour l’intelligence non invasive du système, Beluga se présente comme une plateforme d’intelligence de l’eau. Pour une couverture par capteurs multiples, Alert Labs propose une surveillance multipoints."
+      },
+      {
+        "q": "Quelle est la différence entre détection de fuites et intelligence de l’eau ?",
+        "a": "La détection de fuites signale la présence d’eau là où elle ne devrait pas être — souvent via humidité, débit ou pression. L’intelligence de l’eau est plus large : suivi continu, analyse du comportement, identification des équipements et informations à l’échelle du système dans le temps."
+      },
+      {
+        "q": "Quels moniteurs sont non invasifs ?",
+        "a": "Beluga et Flume mettent l’accent sur une installation non invasive. Flume cible les compteurs résidentiels ; Beluga, les réseaux commerciaux. Les exigences d’installation varient selon le produit."
+      },
+      {
+        "q": "Ai-je besoin d’un arrêt automatique pour mon bâtiment ?",
+        "a": "L’arrêt automatique est utile lorsque la prévention immédiate des dégâts est critique — surtout dans les espaces inoccupés ou à risque. Ce n’est pas indispensable partout : certaines équipes privilégient la surveillance continue et la visibilité plutôt qu’une coupure automatique."
+      },
+      {
+        "q": "Peut-on combiner plusieurs approches ?",
+        "a": "Oui. Certains bâtiments utilisent des capteurs ponctuels dans les zones à risque avec, en parallèle, une plateforme d’intelligence pour la visibilité globale. Le bon mix dépend de la complexité du bâtiment, du profil de risque et des objectifs."
+      },
+      {
+        "q": "Comment choisir le bon système ?",
+        "a": "Tenez compte du type de bâtiment (résidentiel ou commercial), de l’objectif principal (arrêt des fuites ou visibilité du système), des contraintes d’installation (invasive ou non) et du besoin d’alertes ponctuelles ou d’intelligence continue. Cette page et les comparaisons liées vous aident à comparer chaque option."
+      }
+    ]
+  }
+}

@@ -1,64 +1,57 @@
-import { Link } from 'react-router'
-import { BrandLogoMark } from '@/components/BrandLogoMark'
+import { useTranslation } from 'react-i18next'
+
+import { MarketingSubpageNav } from '@/components/MarketingSubpageNav'
+import { SiteFooter } from '@/components/SiteFooter'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
 import { CONTACT_EMAIL, CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL } from '@/globals/constants'
+import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 
 export default function Privacy() {
+  const { t } = useTranslation('landing')
+  useDocumentMeta(t('privacy.pageTitle'), t('privacy.metaDescription'))
+
   return (
     <div className="min-h-screen bg-white antialiased">
-      <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white">
-        <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-10">
-          <Link to="/" className="flex items-center gap-2">
-            <BrandLogoMark />
-          </Link>
-          <Link to="/" className="text-[13px] text-gray-400 transition hover:text-gray-600">Back to Home</Link>
-        </div>
-      </nav>
+      <MarketingSubpageNav />
 
       <main className="mx-auto max-w-2xl px-4 pt-32 pb-20 sm:px-6">
-        <h1 className="text-[32px] font-bold tracking-tight text-gray-900 sm:text-[40px]">Privacy Policy</h1>
-        <p className="mt-2 text-[13px] text-gray-400">Last updated: February 2026</p>
+        <h1 className="text-[32px] font-bold tracking-tight text-gray-900 sm:text-[40px]">{t('privacy.h1')}</h1>
+        <p className="mt-2 text-[13px] text-gray-400">{t('privacy.lastUpdated')}</p>
 
         <div className="mt-8 space-y-6 text-[15px] leading-relaxed text-gray-600 sm:text-[16px]">
-          <p>
-            Beluga ("we", "our", "us") is committed to protecting your privacy. This policy explains how we collect, use, and safeguard your information when you use the Beluga app and services.
-          </p>
+          <p>{t('privacy.intro')}</p>
 
-          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Information we collect</h2>
-          <p>
-            When you use Beluga, we collect water flow data from the sensors installed in your building. This data includes flow rate, volume, and timing information. We also collect your email address and basic account information when you sign up.
-          </p>
+          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">{t('privacy.collectTitle')}</h2>
+          <p>{t('privacy.collectBody')}</p>
 
-          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">How we use your data</h2>
-          <p>
-            We use sensor data to provide real-time monitoring, leak detection, appliance classification, and historical usage reports. Your account information is used to deliver the service and communicate with you about your account.
-          </p>
+          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">{t('privacy.useTitle')}</h2>
+          <p>{t('privacy.useBody')}</p>
 
-          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Data storage & security</h2>
-          <p>
-            Your data is stored securely using industry-standard encryption. We do not sell or share your personal information or sensor data with third parties for marketing purposes.
-          </p>
+          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">{t('privacy.securityTitle')}</h2>
+          <p>{t('privacy.securityBody')}</p>
 
-          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Data retention</h2>
-          <p>
-            We retain your sensor data for as long as your account is active. You can request deletion of your data at any time by contacting us.
-          </p>
+          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">{t('privacy.retentionTitle')}</h2>
+          <p>{t('privacy.retentionBody')}</p>
 
-          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Third-party services</h2>
-          <p>
-            We may use third-party services for hosting, analytics, and push notifications. These services are bound by their own privacy policies and are selected for their commitment to data protection.
-          </p>
+          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">{t('privacy.thirdPartyTitle')}</h2>
+          <p>{t('privacy.thirdPartyBody')}</p>
 
-          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Contact</h2>
+          <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">{t('privacy.contactTitle')}</h2>
           <p>
-            If you have questions about this privacy policy or your data, email{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-indigo-600 hover:text-indigo-500">{CONTACT_EMAIL}</a>
-            {' '}or call{' '}
-            <a href={`tel:${CONTACT_PHONE_TEL}`} className="font-medium text-indigo-600 hover:text-indigo-500">{CONTACT_PHONE_DISPLAY}</a>.
+            {t('privacy.contactBeforeEmail')}{' '}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-indigo-600 hover:text-indigo-500">
+              {CONTACT_EMAIL}
+            </a>{' '}
+            {t('privacy.contactOrCall')}{' '}
+            <a href={`tel:${CONTACT_PHONE_TEL}`} className="font-medium text-indigo-600 hover:text-indigo-500">
+              {CONTACT_PHONE_DISPLAY}
+            </a>
+            .
           </p>
         </div>
       </main>
 
+      <SiteFooter variant="page" />
       <ScrollToTopButton />
     </div>
   )

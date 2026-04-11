@@ -1,27 +1,22 @@
-import { Link } from 'react-router'
+import { useTranslation } from 'react-i18next'
 
-import { BrandLogoMark } from '@/components/BrandLogoMark'
+import { MarketingSubpageNav } from '@/components/MarketingSubpageNav'
+import { SiteFooter } from '@/components/SiteFooter'
+import ScrollToTopButton from '@/components/ScrollToTopButton'
 import { LANDING_SHOWCASE_BUILDINGS } from '@/data/landingShowcaseBuildings'
+import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 
 export default function ClientsDirectoryPage() {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4 sm:h-16 sm:px-6">
-          <Link to="/" className="flex items-center gap-2">
-            <BrandLogoMark />
-          </Link>
-          <Link to="/" className="text-[13px] font-medium text-indigo-600 hover:text-indigo-800">
-            Back to home
-          </Link>
-        </div>
-      </header>
+  const { t } = useTranslation('landing')
+  useDocumentMeta(t('clientsDirectory.pageTitle'), t('clientsDirectory.metaDescription'))
 
-      <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 sm:py-16">
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">Buildings on Beluga</h1>
-        <p className="mt-2 max-w-xl text-[15px] text-gray-600">
-          A growing list of properties where we monitor water health from the main line.
-        </p>
+  return (
+    <div className="min-h-screen bg-gray-50 antialiased">
+      <MarketingSubpageNav />
+
+      <main className="mx-auto max-w-5xl px-4 pb-12 pt-24 sm:px-6 sm:pb-16 sm:pt-28">
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">{t('clientsDirectory.title')}</h1>
+        <p className="mt-2 max-w-xl text-[15px] text-gray-600">{t('clientsDirectory.subtitle')}</p>
 
         <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {LANDING_SHOWCASE_BUILDINGS.map((b) => (
@@ -48,6 +43,9 @@ export default function ClientsDirectoryPage() {
           ))}
         </ul>
       </main>
+
+      <SiteFooter variant="page" />
+      <ScrollToTopButton />
     </div>
   )
 }

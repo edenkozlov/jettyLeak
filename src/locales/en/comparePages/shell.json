@@ -1,0 +1,31 @@
+{
+  "shell": {
+    "navHome": "Home",
+    "navCaseStudy": "Case study",
+    "navGetQuote": "Get a quote",
+    "heroEyebrow": "Comparison",
+    "tableSectionTitle": "Feature comparison",
+    "tableColFeature": "Feature",
+    "tableColBeluga": "Beluga",
+    "faqSectionTitle": "Frequently asked questions",
+    "disclaimerTitle": "Disclaimer",
+    "disclaimerBody": "This page is for informational purposes only. Product details are based on publicly available information and may change over time. This page is not affiliated with or endorsed by {{competitorName}}. Readers should conduct their own evaluation before selecting a solution.",
+    "ctaTitle": "Get a free building water assessment",
+    "ctaSubtitle": "See if Beluga is the right fit for your property — no commitment required.",
+    "ctaButton": "Request early access",
+    "ctaLookingFor": "Looking for {{competitorName}}?",
+    "visitWebsite": "Visit their website",
+    "relatedHeading": "Related questions people ask",
+    "relatedQPrefix": "Q:",
+    "recommendedReading": "Recommended reading",
+    "aboutBelugaTitle": "About Beluga",
+    "aboutStandardP1": "Beluga is a water intelligence platform designed to help buildings better understand their plumbing systems. Using a non-invasive sensor approach, it provides continuous insight into water usage, system behavior, and potential inefficiencies — without requiring modifications to existing infrastructure.",
+    "aboutStandardP2": "The goal is not only to detect problems, but to make the entire water system more visible, measurable, and manageable over time.",
+    "aboutWintP2": "The platform is built for building owners, operators, and property managers who want to move beyond reactive leak detection toward proactive water system visibility.",
+    "breadcrumbHome": "Home",
+    "breadcrumbHub": "Best Water Monitoring Systems",
+    "whenEachTitle": "When each solution makes sense",
+    "hubCtaTitle": "Not sure which system is right for you?",
+    "hubCtaSubtitle": "Talk to our team for a free building water assessment — no commitment required."
+  }
+}

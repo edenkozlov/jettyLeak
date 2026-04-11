@@ -1,0 +1,133 @@
+{
+  "hub": {
+    "pageTitle": "Best Water Monitoring Systems for Buildings (2026)",
+    "metaDescription": "Compare the top water monitoring systems for commercial buildings. Beluga, Flo by Moen, Phyn, WINT, Alert Labs, Flume, and Water Alert reviewed side by side.",
+    "heroEyebrow": "Guide",
+    "heroTitle": "Best Water Monitoring Systems for Buildings",
+    "heroSubtitle": "A neutral overview of the most commonly considered water monitoring solutions for residential and commercial properties.",
+    "introP1": "Choosing the best water monitoring system depends on your building type, your operational priorities, and the level of insight you need. Some systems focus on immediate leak response with automatic shutoff. Others are built for continuous system intelligence and long-term visibility.",
+    "introP2": "This page provides a neutral overview of seven commonly considered water monitoring products, explains the different categories of monitoring, and links to detailed comparison pages to help you evaluate your options.",
+    "categoriesTitle": "Types of water monitoring systems",
+    "categoriesSubtitle": "Water monitoring products fall into several overlapping categories. Understanding these categories makes it easier to evaluate which approach fits your needs.",
+    "categories": [
+      {
+        "title": "Leak detection systems",
+        "description": "These systems are designed to identify active leaks, typically using moisture sensors, flow analysis, or pressure monitoring. Their primary value is alerting you when water is where it should not be. Examples include Water Alert and aspects of most other systems on this list."
+      },
+      {
+        "title": "Automatic shutoff systems",
+        "description": "Shutoff systems go a step further than detection by automatically stopping the flow of water when a leak is identified. This is valuable in residential and commercial settings where preventing water damage is the top priority. Flo by Moen, Phyn, and WINT offer this capability."
+      },
+      {
+        "title": "Non-invasive monitoring",
+        "description": "Non-invasive systems are installed without cutting into pipes or modifying plumbing. This reduces installation cost, time, and disruption. Beluga and Flume both use non-invasive approaches, though they target different environments and offer different levels of insight."
+      },
+      {
+        "title": "Water intelligence platforms",
+        "description": "Water intelligence goes beyond leak detection. These platforms continuously analyze how water moves through a building, identifying patterns, inefficiencies, and individual fixtures. The goal is system-level visibility and long-term optimization, not just event-based alerting. Beluga is positioned in this category."
+      }
+    ],
+    "systemsTitle": "Water monitoring systems at a glance",
+    "systems": [
+      {
+        "name": "Beluga",
+        "summary": "A water intelligence platform focused on system visibility, usage insights, and anomaly detection for commercial and multi-unit buildings. Uses non-invasive installation and pattern recognition to identify fixtures and track system behavior over time.",
+        "tags": ["Water intelligence", "Non-invasive", "Commercial", "Residential"],
+        "path": "/"
+      },
+      {
+        "name": "Flo by Moen",
+        "summary": "A smart water monitor with automatic shutoff designed primarily for residential homes. Detects leaks in real time and can shut off the water supply to prevent damage.",
+        "tags": ["Leak shutoff", "Residential"],
+        "path": "/flo-by-moen-alternative"
+      },
+      {
+        "name": "Phyn",
+        "summary": "A pressure-based smart water monitor with automatic shutoff for homes. Uses machine learning to analyze water pressure patterns and identify potential leaks.",
+        "tags": ["Pressure sensing", "Leak shutoff", "Residential"],
+        "path": "/phyn-alternative"
+      },
+      {
+        "name": "WINT",
+        "summary": "A commercial water management system focused on leak detection and automatic shutoff. Commonly associated with commercial buildings and construction site environments.",
+        "tags": ["Leak shutoff", "Commercial", "Construction"],
+        "path": "/wint-alternative"
+      },
+      {
+        "name": "Alert Labs",
+        "summary": "A distributed sensor-based water monitoring system for commercial and portfolio properties. Uses multiple sensors across a building for location-specific leak detection and flow tracking.",
+        "tags": ["Distributed sensors", "Commercial", "Portfolio"],
+        "path": "/alert-labs-alternative"
+      },
+      {
+        "name": "Flume",
+        "summary": "A non-invasive water monitor designed for homeowners. Clamps onto the residential water meter to track usage, set budgets, and detect unusual activity.",
+        "tags": ["Non-invasive", "Residential", "Usage tracking"],
+        "path": "/flume-alternative"
+      },
+      {
+        "name": "Water Alert",
+        "summary": "A hardware-based leak detection system using moisture sensors and alarms. Focused on event-based alerting at specific locations within commercial and industrial buildings.",
+        "tags": ["Moisture sensors", "Event-based", "Commercial"],
+        "path": "/water-alert-alternative"
+      }
+    ],
+    "detailedTitle": "Detailed comparisons",
+    "detailedSubtitle": "Each comparison page provides a feature table, key differences in approach, guidance on when each system makes sense, and an FAQ section.",
+    "articlesTitle": "Learn more about water monitoring",
+    "articlesSubtitle": "Explore our educational articles to better understand water monitoring systems, how they differ, and how to choose the right approach for your building.",
+    "articles": [
+      {
+        "to": "/articles/what-is-water-monitoring-system",
+        "title": "What Is a Water Monitoring System?",
+        "desc": "Understand what water monitoring systems do and why most are different."
+      },
+      {
+        "to": "/articles/4-types-of-water-monitoring-systems",
+        "title": "4 Types of Water Monitoring Systems",
+        "desc": "A framework for understanding the four main approaches to water monitoring."
+      },
+      {
+        "to": "/articles/water-monitoring-vs-leak-detection",
+        "title": "Water Monitoring vs Leak Detection",
+        "desc": "The key distinction between continuous monitoring and event-based detection."
+      },
+      {
+        "to": "/articles/how-to-choose-water-monitoring-system",
+        "title": "How to Choose a Water Monitoring System",
+        "desc": "A step-by-step guide to matching a system to your building."
+      },
+      {
+        "to": "/articles/what-is-water-intelligence-system",
+        "title": "What Is a Water Intelligence System?",
+        "desc": "How intelligence systems go beyond detection and monitoring."
+      }
+    ],
+    "faq": [
+      {
+        "q": "What is the best water monitoring system for commercial buildings?",
+        "a": "It depends on priorities. For automatic shutoff in commercial settings, WINT is commonly considered. For non-invasive system intelligence, Beluga is positioned as a water intelligence platform. For distributed sensor coverage, Alert Labs offers multi-point monitoring."
+      },
+      {
+        "q": "What is the difference between leak detection and water intelligence?",
+        "a": "Leak detection identifies when water is present where it should not be — typically through moisture sensors, flow analysis, or pressure changes. Water intelligence is a broader concept that includes continuous monitoring, behavioral analysis, fixture identification, and system-level insights over time."
+      },
+      {
+        "q": "Which water monitors are non-invasive?",
+        "a": "Beluga and Flume both emphasize non-invasive installation. Flume is designed for residential water meters, while Beluga is designed for commercial plumbing systems. Specific installation requirements vary by product."
+      },
+      {
+        "q": "Do I need automatic shutoff for my building?",
+        "a": "Automatic shutoff is valuable when immediate damage prevention is critical — especially in unoccupied spaces or high-risk areas. However, not all buildings require it. Some teams prioritize continuous monitoring and visibility over automated intervention."
+      },
+      {
+        "q": "Can I combine multiple water monitoring approaches?",
+        "a": "Yes. Some buildings use point sensors for specific high-risk areas alongside a broader intelligence platform for system-level visibility. The right combination depends on building complexity, risk profile, and team goals."
+      },
+      {
+        "q": "How do I choose the right water monitoring system?",
+        "a": "Consider your building type (residential vs commercial), your primary goal (leak shutoff vs system visibility), installation constraints (invasive vs non-invasive), and whether you need event-based alerting or continuous intelligence. This page and the linked comparison pages can help you evaluate each option."
+      }
+    ]
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "alertLabs": {
+    "pageTitle": "Beluga et Alert Labs : surveillance de l’eau en bâtiment",
+    "metaDescription": "Comparez Beluga et Alert Labs pour la surveillance de l’eau. Intelligence à point unique contre couverture par capteurs répartis. Comparaison neutre fondée sur des informations publiques.",
+    "heroH1": "Beluga et Alert Labs",
+    "heroSubtitle": "Comparer l’intelligence de l’eau à un point de mesure et la surveillance par capteurs répartis.",
+    "introP1": "Si vous cherchez une alternative à Alert Labs ou comparez Beluga à Alert Labs, vous évaluez probablement des stratégies de déploiement pour le commercial. Ces deux systèmes illustrent des approches différentes : capteurs répartis contre intelligence à point unique.",
+    "introP2": "Cette page compare Beluga et Alert Labs à partir d’informations publiques pour clarifier ces différences de conception et déterminer quelle approche correspond le mieux à vos besoins.",
+    "competitorLabel": "Alert Labs",
+    "disclaimerCompetitorName": "Alert Labs",
+    "ctaCompetitorName": "Alert Labs",
+    "breadcrumbVs": "Beluga et Alert Labs",
+    "tableRows": [
+      { "feature": "Objectif principal", "beluga": "Intelligence de l’eau et visibilité du système", "competitor": "Détection de fuites et gestion de l’eau" },
+      { "feature": "Installation", "beluga": "Non invasive (capteur unique)", "competitor": "Plusieurs capteurs dans le bâtiment" },
+      { "feature": "Détection de fuites", "beluga": "Oui (formes et anomalies)", "competitor": "Oui (capteurs + alertes de débit)" },
+      { "feature": "Arrêt automatique", "beluga": "Pas au cœur du produit", "competitor": "Disponible" },
+      { "feature": "Analyse de l’usage", "beluga": "Intelligence à l’échelle du système", "competitor": "Suivi du débit quasi minute par minute" },
+      { "feature": "Complexité de déploiement", "beluga": "Faible (peu de matériel)", "competitor": "Modérée (réseau de capteurs)" },
+      { "feature": "Environnement cible", "beluga": "Commercial / multilogements", "competitor": "Commercial / portefeuilles multi-bâtiments" },
+      { "feature": "Approche de suivi", "beluga": "Apprentissage de formes comportementales", "competitor": "Détection par capteurs + alertes" }
+    ],
+    "midTitle": "Intelligence à point unique et couverture par capteurs répartis",
+    "midSubtitle": "C’est l’une des différences les plus significatives entre ces deux systèmes. Aucune approche n’est intrinsèquement supérieure — ce sont des compromis différents sur l’installation, la couverture et la profondeur d’analyse.",
+    "midLeftTitle": "Alert Labs — capteurs répartis",
+    "midLeftP1": "Alert Labs propose un système fondé sur des capteurs : débit, détection de fuites et plateforme centralisée (AlertAQ). Les capteurs sont déployés dans le bâtiment pour des alertes localisées, le suivi de la consommation et l’appui aux systèmes d’arrêt.",
+    "midLeftP2": "Cette approche offre une couverture sur plusieurs points, utile lorsqu’il faut savoir précisément où un événement se produit dans le bâtiment.",
+    "midRightTitle": "Beluga — intelligence à point unique",
+    "midRightP1": "Beluga vise à comprendre le système à partir d’un seul point de mesure, par reconnaissance de formes pour identifier équipements, inefficiences et anomalies dans le temps. Plutôt que de multiplier les capteurs, il cherche à tirer une intelligence à l’échelle du système avec un matériel minimal.",
+    "midRightP2": "Cette approche limite la complexité d’installation tout en offrant un autre type d’information — modélisation du comportement du système plutôt que détection ponctuelle.",
+    "whenCompetitorHeading": "Alert Labs peut bien convenir si :",
+    "whenCompetitorBullets": ["Vous voulez une couverture capteurs sur plusieurs zones", "Vous avez besoin d’alertes localisées liées à chaque capteur", "Vous gérez de grands portefeuilles et voulez une surveillance répartie", "Vous préférez plusieurs capteurs pour une couverture physique étendue"],
+    "whenBelugaHeading": "Beluga peut mieux convenir si :",
+    "whenBelugaBullets": ["Vous voulez peu de complexité d’installation et aucune modification de plomberie", "Vous préférez tirer l’intelligence d’un seul capteur non invasif", "Vous visez la compréhension du système, les tendances et les informations à long terme", "Vous voulez comprendre comment l’eau est utilisée, pas seulement où les fuites surviennent"],
+    "faq": [
+      { "q": "Alert Labs exige-t-il plusieurs appareils par bâtiment ?", "a": "Oui. Alert Labs utilise en général plusieurs capteurs dans le bâtiment pour détecter les fuites et suivre les conditions par zone. Cette approche répartie permet des alertes localisées." },
+      { "q": "Beluga est-il moins détaillé avec moins de capteurs ?", "a": "Beluga traite le problème autrement. Plutôt que de multiplier les capteurs physiques, il s’appuie sur la reconnaissance de formes et l’analyse comportementale pour déduire le comportement du système à partir d’un seul point de mesure. Le résultat est un autre type d’information — intelligence globale du système plutôt que détection ponctuelle." },
+      { "q": "Quel système est le plus simple à installer dans un bâtiment existant ?", "a": "L’approche non invasive à capteur unique de Beluga demande en général moins de coordination et aucune modification de plomberie. Le déploiement Alert Labs implique plusieurs capteurs dans le bâtiment, ce qui peut nécessiter plus de planification." },
+      { "q": "Alert Labs peut-il couvrir un portefeuille de bâtiments ?", "a": "Oui. Alert Labs prend en charge la surveillance multi-bâtiments via sa plateforme centralisée (AlertAQ). Beluga permet aussi une visibilité multi-bâtiments, avec un autre modèle de déploiement et d’analyse." },
+      { "q": "Quelle est la principale différence entre Alert Labs et Beluga ?", "a": "Alert Labs s’appuie sur des capteurs répartis pour détecter et alerter sur des événements à des endroits précis. Beluga utilise un point unique non invasif pour construire un modèle comportemental du réseau d’eau, en privilégiant l’intelligence et les formes plutôt qu’une couverture point par point." }
+    ],
+    "relatedQuestions": [
+      "Quelle est la meilleure alternative à Alert Labs ?",
+      "Comment la surveillance par capteurs répartis se compare-t-elle à l’intelligence à point unique ?",
+      "Quel système est le plus facile à installer en commercial ?",
+      "Alert Labs est-il adapté à la surveillance de portefeuilles ?",
+      "Quelle est la différence entre surveillance par capteurs et par formes ?"
+    ],
+    "recommended": [
+      { "to": "/articles/best-water-monitoring-commercial-buildings", "title": "Meilleure surveillance de l’eau pour bâtiments commerciaux", "desc": "Un guide des systèmes pensés pour le commercial." },
+      { "to": "/articles/4-types-of-water-monitoring-systems", "title": "4 types de systèmes de surveillance de l’eau", "desc": "Comprendre les différentes approches." },
+      { "to": "/articles/non-invasive-vs-inline-water-monitoring", "title": "Surveillance non invasive et en ligne", "desc": "Comment le mode d’installation oriente le choix du système." }
+    ]
+  }
+}

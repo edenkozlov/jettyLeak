@@ -1,0 +1,54 @@
+{
+  "flo": {
+    "pageTitle": "Beluga vs Flo by Moen: Water Monitoring Compared",
+    "metaDescription": "Compare Beluga and Flo by Moen side by side. Understand how residential leak shutoff differs from building-level water intelligence for commercial properties.",
+    "heroH1": "Beluga vs Flo by Moen",
+    "heroSubtitle": "A clear, neutral comparison of two different approaches to water monitoring — residential leak shutoff versus building-level water intelligence.",
+    "introP1": "If you are searching for a Flo by Moen alternative or comparing Beluga vs Flo by Moen, it is important to understand that these two systems are designed with fundamentally different goals. Flo by Moen is built around immediate leak response and automatic shutoff for homes. Beluga is built around long-term system understanding and water intelligence for buildings.",
+    "introP2": "This page provides a side-by-side comparison based on publicly available information to help you determine which approach best fits your building, team, and priorities.",
+    "competitorLabel": "Flo by Moen",
+    "disclaimerCompetitorName": "Moen or Flo by Moen",
+    "ctaCompetitorName": "Flo by Moen",
+    "breadcrumbVs": "Beluga vs Flo by Moen",
+    "tableRows": [
+      { "feature": "Core purpose", "beluga": "Water system intelligence and monitoring", "competitor": "Leak detection and automatic shutoff" },
+      { "feature": "Installation", "beluga": "Non-invasive (no pipe cutting)", "competitor": "Installed directly on main water line" },
+      { "feature": "Leak detection", "beluga": "Yes (via anomaly detection)", "competitor": "Yes (real-time detection + shutoff)" },
+      { "feature": "Automatic shutoff", "beluga": "Not core feature", "competitor": "Yes" },
+      { "feature": "Water usage insights", "beluga": "Detailed, system-level visibility", "competitor": "Basic usage tracking" },
+      { "feature": "Fixture-level understanding", "beluga": "Yes (pattern-based identification)", "competitor": "Limited" },
+      { "feature": "Target environment", "beluga": "Commercial / multi-unit / infrastructure", "competitor": "Residential homes" },
+      { "feature": "Data depth", "beluga": "Continuous monitoring and benchmarking", "competitor": "Historical usage tracking" }
+    ],
+    "midTitle": "Reactive protection vs continuous water intelligence",
+    "midBottomP": "These are fundamentally different approaches: one reacts to problems, the other aims to continuously understand and optimize the system. Neither is inherently better — they serve different goals.",
+    "midLeftTitle": "Flo by Moen — reactive protection",
+    "midLeftP": "Flo by Moen monitors water flow in real time and can automatically shut off water when it detects a potential leak. This is particularly useful in residential settings where fast response to active leaks is the top priority.",
+    "midRightTitle": "Beluga — continuous intelligence",
+    "midRightP": "Beluga is designed as a water intelligence system. Rather than focusing only on leak events, it aims to understand how an entire water system behaves over time — identifying fixtures, tracking usage patterns, detecting inefficiencies, and flagging anomalies before they become critical issues.",
+    "whenCompetitorHeading": "Who Flo by Moen is often best suited for",
+    "whenCompetitorBullets": ["Homeowners who want automatic shutoff protection", "Households prioritizing immediate leak response", "Residential properties with a single main water line", "Users who prefer a consumer-grade, app-first experience"],
+    "whenBelugaHeading": "Who Beluga is best suited for",
+    "whenBelugaBullets": ["Building owners or operators who need system-wide visibility", "Property managers focused on reducing waste and identifying inefficiencies", "Teams managing commercial or multi-unit buildings", "Anyone who wants to understand how water is used across the system over time"],
+    "faq": [
+      { "q": "Is Beluga a leak detector like Flo by Moen?", "a": "Beluga includes leak detection through anomaly recognition, but its primary purpose is broader water system intelligence — tracking usage, identifying fixtures, and monitoring efficiency over time." },
+      { "q": "Does Flo by Moen work for commercial buildings?", "a": "Flo by Moen is primarily designed and marketed for residential use. Some commercial applications may be possible depending on plumbing configuration, but it is not its core market." },
+      { "q": "Does Beluga shut off water automatically?", "a": "Automatic shutoff is not a core feature of Beluga. Its focus is on continuous monitoring, anomaly detection, and delivering actionable insight rather than direct physical intervention." },
+      { "q": "Can Flo by Moen track water usage across multiple fixtures?", "a": "Flo by Moen provides aggregate flow and usage data. Fixture-level disaggregation is not a primary capability based on publicly available product information." },
+      { "q": "Which system is better for a property manager?", "a": "It depends on the goal. If the priority is automatic shutoff in a residential unit, Flo by Moen may be well suited. If the priority is system-wide visibility, usage intelligence, and anomaly detection across a building or portfolio, Beluga may be a stronger fit." },
+      { "q": "What is the main difference between Flo by Moen and Beluga?", "a": "Flo by Moen is a reactive protection system — it detects leaks and shuts off water. Beluga is a water intelligence platform — it continuously monitors system behavior, identifies patterns, and surfaces insights before problems escalate." }
+    ],
+    "relatedQuestions": [
+      "What is the best alternative to Flo by Moen for commercial buildings?",
+      "Is there a non-invasive water monitor that works for apartments?",
+      "How does Flo by Moen compare to other water monitoring systems?",
+      "What water monitoring system is best for multi-unit buildings?",
+      "Does Flo by Moen offer building-level water intelligence?"
+    ],
+    "recommended": [
+      { "to": "/articles/what-is-water-monitoring-system", "title": "What Is a Water Monitoring System?", "desc": "Understanding the different types of water monitoring systems." },
+      { "to": "/articles/water-monitoring-vs-leak-detection", "title": "Water Monitoring vs Leak Detection", "desc": "How continuous monitoring differs from event-based detection." },
+      { "to": "/articles/how-to-choose-water-monitoring-system", "title": "How to Choose a Water Monitoring System", "desc": "A step-by-step guide to selecting the right system." }
+    ]
+  }
+}

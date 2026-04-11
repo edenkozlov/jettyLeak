@@ -1,4 +1,5 @@
-import { useId } from 'react'
+import { useId, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Area,
   AreaChart,
@@ -9,13 +10,11 @@ import {
   YAxis,
 } from 'recharts'
 
-import { LANDING_BHI_WEEKLY } from './bhiTrendData'
+import { LANDING_BHI_DAY_KEYS, LANDING_BHI_WEEKLY } from './bhiTrendData'
 
 type LandingBhiTrendChartProps = {
-  /** Stretch chart area to fill column height (pair with a parent flex column). */
   fillHeight?: boolean
   className?: string
-  /** When set, shows under the title so the card matches a real building context */
   buildingName?: string
   buildingLocation?: string
 }
@@ -26,18 +25,33 @@ export function LandingBhiTrendChart({
   buildingName,
   buildingLocation,
 }: LandingBhiTrendChartProps) {
+  const { t } = useTranslation('landing')
   const fillId = `landing-bhi-area-${useId().replace(/:/g, '')}`
+
+  const chartData = useMemo(
+    () =>
+      LANDING_BHI_WEEKLY.map((row, i) => ({
+        day: t(`buildingHealth.chart.days.${LANDING_BHI_DAY_KEYS[i]!}`),
+        bhi: row.bhi,
+      })),
+    [t],
+  )
+
+  const tooltipUnit = t('buildingHealth.chart.tooltipUnit')
 
   return (
     <div
       className={`flex w-full min-h-0 flex-col rounded-xl border border-gray-200/80 bg-white p-3.5 shadow-md shadow-indigo-500/[0.05] ring-1 ring-black/[0.02] sm:p-4 ${fillHeight ? 'flex-1' : ''} ${className ?? ''}`}
-      aria-label="Example: 7-day Building Health Index trend"
+      aria-label={t('buildingHealth.chart.aria')}
     >
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-2.5">
         <div className="min-w-0">
-          <p className="text-[13px] font-semibold text-gray-900">7-day trend</p>
+          <p className="text-[13px] font-semibold text-gray-900">{t('buildingHealth.chart.title7d')}</p>
           {buildingName ? (
-            <p className="truncate text-[11px] text-gray-600" title={`${buildingName} · ${buildingLocation ?? ''}`}>
+            <p
+              className="truncate text-[11px] text-gray-600"
+              title={`${buildingName} · ${buildingLocation ?? ''}`}
+            >
               <span className="font-medium text-gray-800">{buildingName}</span>
               {buildingLocation ? (
                 <>
@@ -47,7 +61,7 @@ export function LandingBhiTrendChart({
               ) : null}
             </p>
           ) : (
-            <p className="text-[11px] text-gray-500">vs your baseline</p>
+            <p className="text-[11px] text-gray-500">{t('buildingHealth.chart.vsBaseline')}</p>
           )}
         </div>
         <p className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[12px] font-bold tabular-nums text-emerald-800">
@@ -70,19 +84,16 @@ export function LandingBhiTrendChart({
       <p className="mt-2 text-[11px] tabular-nums text-gray-600">
         <span className="font-semibold text-gray-900">78</span>
         <span className="mx-1 text-gray-300">·</span>
-        was 75
+        {t('buildingHealth.chart.was')} 75
         <span className="mx-1 text-gray-300">·</span>
-        range 72–78
+        {t('buildingHealth.chart.range')} 72–78
       </p>
 
       <div
         className={`mt-1.5 w-full min-w-0 ${fillHeight ? 'min-h-[120px] flex-1' : 'h-[128px] sm:h-[140px]'}`}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
-            data={[...LANDING_BHI_WEEKLY]}
-            margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-          >
+          <AreaChart data={chartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#10b981" stopOpacity={0.28} />
@@ -115,7 +126,7 @@ export function LandingBhiTrendChart({
                 padding: '6px 8px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
               }}
-              formatter={(value: number | undefined) => [value != null ? `${value}` : '—', 'BHI']}
+              formatter={(value: number | undefined) => [value != null ? `${value}` : '—', tooltipUnit]}
             />
             <Area
               type="monotone"

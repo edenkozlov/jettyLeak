@@ -1,6 +1,7 @@
+/** Anchor hrefs for landing nav & footer — labels come from `landing.navAnchors.*` in locale JSON. */
 export const LANDING_ANCHOR_LINKS = [
-  { label: 'Product', href: '#product' },
-  { label: 'Features', href: '#features' },
-  { label: 'Health', href: '#building-health' },
-  { label: 'How It Works', href: '#how-it-works' },
+  { labelKey: 'navAnchors.product', href: '#product' },
+  { labelKey: 'navAnchors.features', href: '#features' },
+  { labelKey: 'navAnchors.health', href: '#building-health' },
+  { labelKey: 'navAnchors.howItWorks', href: '#how-it-works' },
 ] as const

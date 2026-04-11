@@ -1,0 +1,56 @@
+{
+  "wint": {
+    "pageTitle": "Beluga vs WINT: Commercial Water Monitoring Compared",
+    "metaDescription": "Compare Beluga and WINT for commercial buildings. Two approaches to water monitoring — leak shutoff vs continuous system intelligence. Neutral, fact-based comparison.",
+    "heroH1": "Beluga vs WINT",
+    "heroSubtitle": "A detailed, neutral comparison of two commercial water monitoring platforms — leak mitigation versus system intelligence.",
+    "introP1": "If you are evaluating a WINT alternative or comparing Beluga vs WINT, you are likely managing a commercial property where water monitoring is an operational priority. Both platforms serve this space, but they reflect different philosophies in how buildings should interact with their water infrastructure.",
+    "introP2": "This page compares Beluga and WINT based on publicly available information to help building owners, operators, and facilities teams evaluate the right approach.",
+    "competitorLabel": "WINT",
+    "disclaimerCompetitorName": "WINT",
+    "ctaCompetitorName": "WINT",
+    "breadcrumbVs": "Beluga vs WINT",
+    "tableRows": [
+      { "feature": "Core purpose", "beluga": "Water intelligence and system visibility", "competitor": "Leak detection and water management" },
+      { "feature": "Installation approach", "beluga": "Non-invasive (no pipe modification)", "competitor": "Typically requires inline installation" },
+      { "feature": "Leak detection", "beluga": "Yes (pattern and anomaly-based)", "competitor": "Yes (flow-based with shutoff)" },
+      { "feature": "Automatic shutoff", "beluga": "Not core feature", "competitor": "Yes" },
+      { "feature": "System intelligence", "beluga": "Deep, system-level behavioral insights", "competitor": "Usage tracking with alerting" },
+      { "feature": "Fixture-level understanding", "beluga": "Yes (pattern recognition)", "competitor": "Limited" },
+      { "feature": "Target environment", "beluga": "Commercial / multi-unit buildings", "competitor": "Commercial / construction sites" },
+      { "feature": "Deployment complexity", "beluga": "Low (minimal hardware)", "competitor": "Moderate (inline hardware required)" },
+      { "feature": "Monitoring philosophy", "beluga": "Continuous behavioral modeling", "competitor": "Real-time flow monitoring + alerts" }
+    ],
+    "midTitle": "Key difference: shutoff vs intelligence",
+    "midLeftTitle": "WINT — real-time leak management",
+    "midLeftP1": "WINT focuses on monitoring water flow in real time, detecting leaks, and providing automatic shutoff capabilities. It is commonly used in commercial and construction environments where preventing water damage is an immediate operational concern.",
+    "midLeftP2": "This approach is well suited for teams that need rapid, automated response to active leak events.",
+    "midRightTitle": "Beluga — continuous system intelligence",
+    "midRightP1": "Beluga emphasizes understanding the full behavior of a building's water system. Rather than focusing only on flow events, it builds a continuous model of usage, enabling early detection of inefficiencies, fixture-level identification, and long-term performance tracking.",
+    "midRightP2": "This approach is designed for teams that want to understand how water moves through a building — not just react when something goes wrong.",
+    "whenCompetitorHeading": "WINT may be a strong fit if:",
+    "whenCompetitorBullets": ["You need real-time automatic shutoff in commercial environments", "Your primary concern is mitigating water damage risk during operations or construction", "You have the infrastructure to support inline hardware installation", "Your team needs event-based alerting tied to flow anomalies"],
+    "whenBelugaHeading": "Beluga may be a stronger fit if:",
+    "whenBelugaBullets": ["You want non-invasive deployment with minimal disruption", "You need long-term water system intelligence, not just event alerts", "You want to understand usage patterns, track fixtures, and benchmark performance", "You manage multi-unit or portfolio properties and need scalable visibility"],
+    "faq": [
+      { "q": "Is WINT used in commercial buildings or construction sites?", "a": "WINT is commonly associated with both commercial buildings and construction environments, particularly where active leak prevention and water damage mitigation are priorities." },
+      { "q": "Does Beluga require plumbing modifications?", "a": "No. Beluga is designed to be installed non-invasively, without altering existing piping or infrastructure. This can significantly reduce deployment time and cost." },
+      { "q": "Can WINT provide system-wide water intelligence?", "a": "WINT provides flow-based monitoring and alerting. Broader system intelligence — such as fixture identification and behavioral analysis — is a different focus area, which is central to Beluga's approach." },
+      { "q": "Which system is better for a building operations team?", "a": "It depends on the team's priorities. If real-time shutoff capability is essential, WINT may be a strong fit. If the goal is deeper understanding of how water is used across the building over time, Beluga's intelligence-first approach may be more aligned." },
+      { "q": "How do deployment timelines compare between Beluga and WINT?", "a": "Beluga's non-invasive approach generally allows for faster deployment with minimal disruption. WINT installations may require more coordination due to inline hardware requirements. Specific timelines depend on building configuration." },
+      { "q": "Are Beluga and WINT designed for the same use cases?", "a": "Both operate in the commercial water monitoring space, but they prioritize different things. WINT emphasizes leak detection and shutoff. Beluga emphasizes system visibility, pattern recognition, and long-term monitoring intelligence." }
+    ],
+    "relatedQuestions": [
+      "What is the best WINT alternative for commercial water monitoring?",
+      "How does WINT compare to other building water management systems?",
+      "What is the difference between leak shutoff and water intelligence?",
+      "Which water monitoring system is best for building operations teams?",
+      "Is non-invasive water monitoring effective in commercial buildings?"
+    ],
+    "recommended": [
+      { "to": "/articles/best-water-monitoring-commercial-buildings", "title": "Best Water Monitoring for Commercial Buildings", "desc": "A guide to systems designed for commercial environments." },
+      { "to": "/articles/why-leak-detection-not-enough-commercial", "title": "Why Leak Detection Alone Isn't Enough", "desc": "Why commercial buildings need more than alerts." },
+      { "to": "/articles/what-is-water-intelligence-system", "title": "What Is a Water Intelligence System?", "desc": "How intelligence systems go beyond detection." }
+    ]
+  }
+}

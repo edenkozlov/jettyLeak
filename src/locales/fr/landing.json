@@ -1,0 +1,435 @@
+{
+  "lang": {
+    "en": "EN",
+    "fr": "FR",
+    "groupAria": "Langue"
+  },
+  "nav": {
+    "toggleMenu": "Ouvrir ou fermer le menu",
+    "backHome": "Retour à l’accueil",
+    "caseStudy": "Étude de cas",
+    "investor": "Investisseurs",
+    "signIn": "Connexion",
+    "getQuote": "Obtenir un devis"
+  },
+  "navAnchors": {
+    "product": "Produit",
+    "features": "Fonctionnalités",
+    "health": "Santé",
+    "howItWorks": "Fonctionnement"
+  },
+  "hero": {
+    "badge": "L’intelligence de l’eau pour les bâtiments",
+    "titleBefore": "Visibilité",
+    "titleHighlight": "complète du réseau",
+    "titleAfter": " d’eau",
+    "subtitle": "Un capteur. Chaque point d’usage.",
+    "cta": "Obtenir un devis"
+  },
+  "product": {
+    "titleLine1": "Un système qui comprend",
+    "titleLine2": "votre plomberie",
+    "subtitle": "Voyez ce qui se passe immédiatement, et comment cela évolue dans le temps.",
+    "appAlt": "Application mobile Beluga",
+    "features": {
+      "understands": {
+        "title": "Comprend chaque équipement",
+        "desc": "Identifie le comportement des toilettes, lavabos, douches et appareils — même dans les bâtiments anciens sans documentation."
+      },
+      "singleInstall": {
+        "title": "Une seule installation",
+        "desc": "Un capteur sur la conduite principale offre une visibilité sur tout le bâtiment. Sans couper les tuyaux. Sans main-d’œuvre spécialisée."
+      },
+      "tracks": {
+        "title": "Suivi des performances dans le temps",
+        "desc": "Observez comment les équipements vieillissent. Repérez les inefficacités tôt, avant qu’elles ne coûtent cher."
+      },
+      "liveModel": {
+        "title": "Construit un modèle vivant de votre réseau",
+        "desc": "Beluga cartographie en continu l’écoulement de l’eau dans votre bâtiment pour une compréhension dynamique de la plomberie."
+      },
+      "immediate": {
+        "title": "Visibilité immédiate",
+        "desc": "Dès l’installation, Beluga met en avant l’usage, les inefficacités et les leviers d’amélioration des performances."
+      }
+    }
+  },
+  "features": {
+    "eyebrow": "Ce que Beluga permet",
+    "titleLine1": "Sachez ce qui se passe",
+    "titleLine2": "réellement dans votre bâtiment",
+    "cards": {
+      "fixturePerformance": {
+        "title": "Analyse des équipements sanitaires",
+        "desc": "Voyez comment toilettes, lavabos et douches fonctionnent vraiment — pas seulement comme prévu sur le papier."
+      },
+      "cost": {
+        "title": "Réduction des coûts d’eau",
+        "desc": "Identifiez les usages inefficaces et réduisez la consommation inutile."
+      },
+      "benchmarking": {
+        "title": "Comparaison et référencement",
+        "desc": "Comparez les équipements à des références de performance idéales pour repérer instantanément les unités sous-performantes."
+      },
+      "warranty": {
+        "title": "Garantie et remplacement",
+        "desc": "Mettez en évidence les équipements pouvant être remplacés selon leurs profils de performance."
+      },
+      "leak": {
+        "title": "Fuites et anomalies",
+        "desc": "Détectez les schémas d’usage anormaux dans le bâtiment, y compris les fuites."
+      }
+    }
+  },
+  "dashboard": {
+    "eyebrow": "Tableau de bord",
+    "title": "Tout au même endroit",
+    "subtitle": "Visibilité complète sur le réseau d’eau du bâtiment — de la consommation globale à la performance de chaque équipement.",
+    "phoneAlt": "Application mobile Beluga",
+    "telemetryAlt": "Données télémétriques de l’application Beluga",
+    "items": {
+      "usage": { "title": "Usage dans le temps", "desc": "Suivez la consommation avec des tendances claires en temps réel." },
+      "breakdown": { "title": "Répartition par équipement", "desc": "Comprenez où part votre eau." },
+      "flagged": { "title": "Équipements signalés", "desc": "Identifiez immédiatement ceux qui nécessitent une attention." },
+      "performance": { "title": "Suivi des performances", "desc": "Surveillez l’évolution des équipements dans le temps." },
+      "savings": { "title": "Pistes d’économies", "desc": "Estimez l’eau et les coûts évitables." },
+      "portfolio": { "title": "Vue portefeuille", "desc": "Comparez les bâtiments depuis un seul tableau de bord." }
+    }
+  },
+  "buildingHealth": {
+    "eyebrow": "Indice de santé du bâtiment",
+    "title": "Votre bâtiment — et ce qu’est une bonne performance",
+    "subtitle": "Comparez votre bâtiment à son propre fonctionnement habituel — et à la façon dont le réseau devrait tourner.",
+    "exampleAria": "Exemple d’indice de santé du bâtiment · {{name}}",
+    "example": {
+      "name": "Tour Lakeview",
+      "city": "Chicago (IL)"
+    },
+    "today": "Aujourd’hui",
+    "sampleNote": "Fuite réparée — le score remonte par rapport à la semaine dernière. Encore sous surveillance jusqu’à confirmation de la tendance.",
+    "pillars": {
+      "stability": "Stabilité",
+      "hydraulic": "Contrainte hydraulique",
+      "appliance": "Santé des appareils",
+      "mechanical": "Mécanique"
+    },
+    "scoreHowBuilt": "Comment le score est calculé",
+    "scoreHowBuiltAria": "Comment est calculé l’indice de santé du bâtiment",
+    "chart": {
+      "aria": "Exemple : tendance de l’indice sur 7 jours",
+      "title7d": "Tendance sur 7 jours",
+      "vsBaseline": "par rapport à votre référence",
+      "was": "était",
+      "range": "fourchette",
+      "tooltipUnit": "ISB",
+      "days": {
+        "mon": "lun",
+        "tue": "mar",
+        "wed": "mer",
+        "thu": "jeu",
+        "fri": "ven",
+        "sat": "sam",
+        "sun": "dim"
+      }
+    },
+    "gauge": {
+      "aria": "Score de santé 78, surveillance",
+      "watch": "SURVEILLANCE"
+    }
+  },
+  "sensor": {
+    "eyebrow": "Le capteur",
+    "title": "Une installation. Toute la visibilité.",
+    "subtitle": "Beluga se fixe sur la conduite d’arrivée d’eau et observe les écoulements dans le bâtiment — sans couper les tuyaux ni recourir à une main-d’œuvre spécialisée.",
+    "points": {
+      "tracking": {
+        "title": "Suivi d’usage réel",
+        "desc": "Visualisez l’usage de l’eau dans le temps, de la consommation totale aux schémas détaillés."
+      },
+      "fixture": {
+        "title": "Intelligence des équipements",
+        "desc": "Identifie automatiquement toilettes, lavabos, douches et appareils à partir des profils d’écoulement."
+      },
+      "insights": {
+        "title": "Indicateurs de performance",
+        "desc": "Comprenez ce qui est inefficace, ce qui change et où agir — sans deviner."
+      }
+    }
+  },
+  "howItWorks": {
+    "eyebrow": "Pour qui",
+    "titleLine1": "D’un seul immeuble",
+    "titleLine2": "à tout un portefeuille",
+    "cards": {
+      "propertyManagers": {
+        "label": "Gestionnaires d’immeubles",
+        "detail": "Comprenez ce qui se passe dans chaque bâtiment et réduisez les coûts d’exploitation."
+      },
+      "commercial": {
+        "label": "Bâtiments commerciaux",
+        "detail": "Bureaux, commerces et usages mixtes gagnent en visibilité sur la consommation et les gaspillages."
+      },
+      "multifamily": {
+        "label": "Copropriétés et condos",
+        "detail": "Suivez les réseaux communs, comparez les unités et détectez les problèmes tôt."
+      },
+      "industrial": {
+        "label": "Industriel et infrastructures",
+        "detail": "Surveillez de grands réseaux d’eau sans ajouter de complexité."
+      }
+    },
+    "caseStudyCta": "Voir l’étude de cas"
+  },
+  "interest": {
+    "titleLine1": "Comprenez le réseau",
+    "titleLine2": "d’eau de votre bâtiment",
+    "subtitle": "Visibilité sur chaque équipement, chaque schéma d’usage et chaque inefficacité.",
+    "cta": "Obtenir un devis"
+  },
+  "clients": {
+    "eyebrow": "Sur le terrain",
+    "title": "Bâtiments équipés Beluga",
+    "subtitle": "Installations réelles — où nous suivons la santé hydraulique aujourd’hui.",
+    "viewAll": "Voir tous les bâtiments"
+  },
+  "pillarsModal": {
+    "title": "Ce qui compose votre score",
+    "close": "Fermer",
+    "introLead": "Nous apprenons comment l’eau se comporte d’habitude dans ",
+    "introEm": "votre",
+    "introTrail": " bâtiment, comparons les nouveaux comportements à cet historique et à des références idéales pour l’ensemble du réseau. L’indice combine quatre familles de signaux — chacune s’appuie sur les données du capteur sur la conduite principale.",
+    "p1": {
+      "strong": "Stabilité du système",
+      "paren": "(part la plus importante)",
+      "rest": " — les schémas d’usage, le moment et la durée des écoulements correspondent-ils encore à ce que nous avons appris comme normal pour vous — tout écart ou dérive est signalé."
+    },
+    "p2": {
+      "strong": "Contrainte hydraulique",
+      "rest": " — l’intensité et la durée de travail du réseau par rapport à sa charge habituelle (pics brefs vs sollicitation prolongée ne comptent pas pareil)."
+    },
+    "p3": {
+      "strong": "Santé des appareils et équipements",
+      "rest": " — toilettes, lave-vaisselle et autres usages ont-ils encore leurs « signatures » habituelles ; une dérive peut annoncer usure ou inefficacité avant une panne visible."
+    },
+    "p4": {
+      "strong": "Santé mécanique",
+      "rest": " — vibrations du même capteur : turbulences et instabilités qui ne correspondent pas à un écoulement normal peuvent traduire une contrainte sur la plomberie."
+    },
+    "footnote": "La pondération exacte évolue avec nos mises à jour ; l’application indiquera toujours ce qui a influencé un score donné."
+  },
+  "footer": {
+    "tagline": "Surveillance non invasive de l’eau et détection de fuites pour bâtiments commerciaux.",
+    "linkedinAria": "Beluga sur LinkedIn",
+    "columns": {
+      "product": "Produit",
+      "resources": "Ressources",
+      "legal": "Légal"
+    },
+    "links": {
+      "caseStudy": "Étude de cas",
+      "getQuote": "Obtenir un devis",
+      "signIn": "Connexion",
+      "home": "Accueil",
+      "articles": "Articles",
+      "faq": "FAQ",
+      "support": "Assistance",
+      "investorDeck": "Présentation investisseurs",
+      "privacy": "Politique de confidentialité",
+      "terms": "Conditions d’utilisation"
+    },
+    "copyright": {
+      "landing": "© {{year}} Beluga — L’intelligence de l’eau pour les bâtiments",
+      "page": "© {{year}} Beluga — Fabriqué au Canada"
+    }
+  },
+  "a11y": {
+    "backToTop": "Retour en haut"
+  },
+  "compare": {
+    "columnTitle": "Comparer",
+    "linkFloByMoen": "Beluga contre Flo by Moen",
+    "linkPhyn": "Beluga contre Phyn",
+    "linkWint": "Beluga contre WINT",
+    "linkAlertLabs": "Beluga contre Alert Labs",
+    "linkWaterAlert": "Beluga contre Water Alert",
+    "linkFlume": "Beluga contre Flume",
+    "allComparisons": "Toutes les comparaisons",
+    "otherSystemsHeading": "Comparer d’autres systèmes de surveillance de l’eau",
+    "hubLinkText": "Meilleurs systèmes de surveillance de l’eau pour bâtiments",
+    "compareVsName": "Comparer Beluga et {{name}}",
+    "learnBeluga": "En savoir plus sur Beluga"
+  },
+  "quote": {
+    "pageTitle": "Obtenir un devis — Beluga",
+    "metaDescription": "Demandez un accès anticipé ou une évaluation gratuite de l’eau dans votre bâtiment. Indiquez votre rôle, la taille du portefeuille et vos priorités.",
+    "eyebrow": "Devis",
+    "roles": {
+      "residential_homeowner": "Propriétaire occupant (résidence)",
+      "residential_building_owner": "Propriétaire d’immeuble résidentiel",
+      "commercial_building_owner": "Propriétaire d’immeuble commercial",
+      "property_manager": "Gestionnaire d’immeuble",
+      "real_estate_broker": "Courtier immobilier",
+      "other": "Autre"
+    },
+    "sizes": {
+      "1_10": "1–10",
+      "10_50": "10–50",
+      "50_200": "50–200",
+      "200_plus": "200+"
+    },
+    "priorities": {
+      "preventing_leaks": "Prévenir les fuites",
+      "reducing_costs": "Réduire les coûts d’eau",
+      "understanding_usage": "Comprendre la consommation d’eau",
+      "avoiding_surprises": "Éviter les mauvaises surprises en entretien"
+    },
+    "roleStep": {
+      "title": "Qu’est-ce qui vous décrit le mieux?",
+      "subtitle": "Cela nous aide à adapter l’expérience à vos besoins."
+    },
+    "sizeStep": {
+      "title": "Taille du portefeuille",
+      "subtitle": "Combien d’unités ou de propriétés gérez-vous?"
+    },
+    "priorityStep": {
+      "title": "Qu’est-ce qui compte le plus pour vous?",
+      "subtitle": "Choisissez l’option qui correspond le mieux à votre objectif principal."
+    },
+    "emailStep": {
+      "titleLine1": "Un accès anticipé ou une évaluation gratuite",
+      "titleLine2": "de l’eau pour votre bâtiment?",
+      "placeholder": "vous@courriel.com",
+      "submit": "Demander l’accès",
+      "submitLoading": "Envoi…"
+    },
+    "back": "Retour",
+    "success": {
+      "title": "Vous êtes sur la liste",
+      "body": "Nous vous contacterons bientôt pour la suite. Merci de votre intérêt pour Beluga."
+    },
+    "errorFallback": "Une erreur s’est produite. Réessayez."
+  },
+  "caseStudy": {
+    "pageTitle": "Étude de cas — Beluga",
+    "metaDescription": "Comment une rupture de conduite et un premier prototype ont mené à Beluga — données de débit en temps réel, une anomalie à 700 L/h et pourquoi la détection précoce de l’eau compte pour les bâtiments au Canada.",
+    "eyebrow": "Étude de cas",
+    "heroTitle": "Comment une seule rupture de conduite est devenue un problème national à résoudre",
+    "getStarted": "Commencer",
+    "spark": {
+      "title": "L’étincelle",
+      "p1": "L’idée derrière notre système n'est pas née dans un laboratoire ni dans un pitch deck. Elle est née d’un coup de fil.",
+      "p2": "Après avoir appris que notre propriétaire avait subi une rupture de conduite dans l’un de ses immeubles, nous nous sommes posé une question simple : à quelle fréquence cela arrive-t-il vraiment? Ce que nous avons découvert était alarmant. Au Canada, près de <strong>48 % des réclamations d’assurance habitation</strong> sont causées par des dommages d’eau — presque le double qu’aux États-Unis. Pourtant, la plupart des bâtiments comptent encore sur la constatation des dommages une fois qu’ils sont déjà survenus.",
+      "p3": "Nous avons estimé que ce problème méritait d’être résolu."
+    },
+    "prototype": {
+      "title": "Le premier prototype",
+      "p1": "Nous avons bougé vite. En quelques jours, nous avions un premier prototype rudimentaire et un peu maladroit. Il était loin d’être beau, mais il fonctionnait. L’objectif était simple : mesurer le débit, établir une référence et voir si des anomalies précoces pouvaient être détectées avant qu’un dommage ne survienne.",
+      "imgAlt": "Premier prototype installé et en fonction",
+      "caption": "Premier prototype installé et en fonction"
+    },
+    "calibration": {
+      "title": "Calibration et l’imprévu",
+      "p1": "Pendant les deux premières heures d’essais, nous nous sommes concentrés sur la calibration et les mesures de référence. Usage normal du bâtiment — toilettes, lavabos, débit de fond. Tout semblait stable.",
+      "p2": "Puis quelque chose d’inattendu s’est produit.",
+      "highlight": "Le système a détecté un pic soudain de débit : 700 litres à l’heure.",
+      "p3": "Au début, nous avons cru à une erreur.",
+      "p4": "Ce n’en était pas une.",
+      "imgAlt": "Alerte du système montrant une anomalie de débit à 700 L/h",
+      "caption": "Alerte du système montrant une anomalie de débit à 700 L/h"
+    },
+    "findingSource": {
+      "title": "Trouver la source",
+      "p1": "Nous avons fouillé tout l’immeuble, étage par étage, unité par unité. Finalement, nous avons trouvé le coupable. Un raccord de boyau avait cédé, probablement sous l’effet de la pression, provoquant une fuite massive et continue.",
+      "p2": "Sans détection, cela aurait entraîné d’importants dommages d’eau.",
+      "imgAlt": "Source physique de la fuite identifiée sur place",
+      "caption": "Source physique de la fuite identifiée sur place"
+    },
+    "validation": {
+      "title": "Validation dans le monde réel",
+      "p1": "Notre propriétaire et deux gestionnaires d’immeuble sont venus sur place immédiatement. Voir les données de débit en direct a changé la conversation. À ce rythme de perte d’eau, le risque n’était plus théorique. Il était urgent.",
+      "p2": "Ils ont soupçonné que le bouchon du boyau avait sauté sous la pression. La vanne principale a été fermée et une enquête complète a commencé.",
+      "imgAlt": "Propriétaire et gestionnaires examinent le problème",
+      "caption": "Propriétaire et gestionnaires examinent le problème"
+    },
+    "mitigation": {
+      "title": "Atténuation confirmée",
+      "p1": "Une fois la vanne principale fermée, le système a raconté l’histoire instantanément. Le débit est tombé à zéro.",
+      "p2": "Le problème était entièrement maîtrisé.",
+      "imgAlt": "Débit à zéro confirmant la résolution",
+      "caption": "Débit à zéro — problème entièrement résolu"
+    },
+    "whyMattered": {
+      "title": "Pourquoi c’était important",
+      "p1": "Cela semblait aller au-delà du hasard.",
+      "p2": "En quelques heures à peine après l’installation d’un prototype rudimentaire, nous avions déjà évité ce qui aurait pu être un incident coûteux et dommageable. Ce moment a clarifié une chose : ce n’était pas un cas marginal. C’était un <strong>problème systémique dans les bâtiments canadiens</strong>.",
+      "p3": "Du point de vue des fondateurs, ce fut le tournant. Nous n’expérimentions plus une idée. Nous faisions face à un problème réel et mesurable qui touche propriétaires, locateurs, assureurs et villes partout au Canada.",
+      "p4": "Et il était clair que <strong>la détection précoce, et non le nettoyage, est la solution</strong>.",
+      "p5": "Cette étude de cas est devenue le socle de tout ce que nous construisons ensuite."
+    }
+  },
+  "support": {
+    "pageTitle": "Assistance — Beluga",
+    "metaDescription": "Contactez Beluga pour de l’aide avec votre capteur, votre tableau de bord ou le dépannage. Assistance par courriel et par téléphone.",
+    "title": "Assistance",
+    "intro": "Besoin d’aide avec Beluga? Nous sommes là pour vous. Que vous ayez une question sur votre capteur, besoin d’aide pour lire votre tableau de bord ou souhaitiez signaler un problème — notre équipe se fera un plaisir de vous aider.",
+    "contactTitle": "Nous joindre",
+    "contactBody": "Le moyen le plus rapide est le courriel. Écrivez-nous et nous vous répondrons dans un délai d’un jour ouvrable. Vous pouvez aussi nous appeler si vous préférez en discuter à l’oral.",
+    "commonTitle": "Questions fréquentes",
+    "q1": "Comment installer le capteur?",
+    "a1": "Beluga se fixe à l’extérieur de la conduite — sans perçage ni plombier. Elle fonctionne sur cuivre, PEX, CPVC et conduites galvanisées.",
+    "q2": "A-t-il besoin du Wi-Fi?",
+    "a2": "Pas au niveau de la conduite. Le capteur envoie les données en LoRa vers une passerelle ailleurs dans le bâtiment qui dispose d’une connectivité.",
+    "q3": "Comment lire mon tableau de bord?",
+    "a3": "L’application affiche le débit en temps réel en litres à l’heure, des graphiques d’historique et des notifications d’alerte. Si quelque chose semble anormal, l’application explique ce que cela signifie et quoi faire.",
+    "q4": "Je crois que mon capteur est hors ligne",
+    "a4": "Vérifiez que la passerelle est alimentée et connectée. Si le problème persiste, écrivez-nous et nous ferons le dépannage avec vous."
+  },
+  "clientsDirectory": {
+    "pageTitle": "Bâtiments sur Beluga — Beluga",
+    "metaDescription": "Répertoire de propriétés où Beluga surveille la santé hydraulique à partir de la conduite principale.",
+    "title": "Bâtiments sur Beluga",
+    "subtitle": "Une liste croissante de propriétés où nous surveillons la santé de l’eau à partir de la conduite principale."
+  },
+  "privacy": {
+    "pageTitle": "Politique de confidentialité — Beluga",
+    "metaDescription": "Comment Beluga recueille, utilise et protège vos renseignements lorsque vous utilisez notre application et nos services.",
+    "h1": "Politique de confidentialité",
+    "lastUpdated": "Dernière mise à jour : février 2026",
+    "intro": "Beluga (« nous », « notre ») s’engage à protéger votre vie privée. La présente politique explique comment nous recueillons, utilisons et protégeons vos renseignements lorsque vous utilisez l’application et les services Beluga.",
+    "collectTitle": "Renseignements que nous recueillons",
+    "collectBody": "Lorsque vous utilisez Beluga, nous recueillons les données de débit des capteurs installés dans votre bâtiment, notamment le débit, le volume et le moment des mesures. Nous recueillons aussi votre adresse courriel et des renseignements de base sur le compte lors de l’inscription.",
+    "useTitle": "Utilisation de vos données",
+    "useBody": "Nous utilisons les données des capteurs pour offrir la surveillance en temps réel, la détection de fuites, la classification des équipements et les rapports d’historique de consommation. Les renseignements du compte servent à fournir le service et à communiquer avec vous au sujet de votre compte.",
+    "securityTitle": "Stockage et sécurité des données",
+    "securityBody": "Vos données sont stockées de façon sécurisée avec un chiffrement conforme aux pratiques courantes. Nous ne vendons ni ne partageons vos renseignements personnels ni les données des capteurs à des tiers à des fins de marketing.",
+    "retentionTitle": "Conservation des données",
+    "retentionBody": "Nous conservons les données des capteurs tant que votre compte est actif. Vous pouvez demander la suppression de vos données en tout temps en nous contactant.",
+    "thirdPartyTitle": "Services tiers",
+    "thirdPartyBody": "Nous pouvons faire appel à des services tiers pour l’hébergement, l’analytique et les notifications push. Ces services sont assujettis à leurs propres politiques de confidentialité et sont choisis pour leur engagement en matière de protection des données.",
+    "contactTitle": "Contact",
+    "contactBeforeEmail": "Pour toute question sur cette politique ou sur vos données, écrivez-nous à",
+    "contactOrCall": "ou appelez le"
+  },
+  "terms": {
+    "pageTitle": "Conditions d’utilisation — Beluga",
+    "metaDescription": "Conditions régissant l’utilisation de l’application, du matériel et des services Beluga.",
+    "h1": "Conditions d’utilisation",
+    "lastUpdated": "Dernière mise à jour : février 2026",
+    "intro": "En utilisant l’application et les services Beluga, vous acceptez les conditions suivantes. Veuillez les lire attentivement.",
+    "useTitle": "Utilisation du service",
+    "useBody": "Beluga offre la surveillance du débit d’eau, la détection de fuites et l’analytique au moyen de capteurs et d’une application. Vous acceptez d’utiliser le service de façon licite et conforme aux présentes conditions.",
+    "accountTitle": "Responsabilité du compte",
+    "accountBody": "Vous êtes responsable de la sécurité de vos identifiants. Prévenez-nous immédiatement en cas d’accès non autorisé suspecté.",
+    "hardwareTitle": "Matériel et installation",
+    "hardwareBody": "Les capteurs Beluga sont conçus pour une installation non invasive. Vous êtes responsable du bon positionnement sur les conduites. Beluga décline toute responsabilité pour les dommages résultant d’une installation incorrecte ou d’une utilisation hors des conditions recommandées.",
+    "liabilityTitle": "Limitation de responsabilité",
+    "liabilityBody": "Beluga fournit surveillance et alertes à titre complémentaire. Ce n’est pas un substitut à une inspection de plomberie par un professionnel ni à un système d’arrêt d’urgence de l’eau. Nous déclinons toute responsabilité pour les dégâts d’eau, les pertes matérielles ou tout dommage indirect ou consécutif.",
+    "availabilityTitle": "Disponibilité du service",
+    "availabilityBody": "Nous visons une disponibilité continue mais ne garantissons pas un service ininterrompu. La maintenance, les mises à jour ou des facteurs hors de notre contrôle peuvent entraîner des interruptions temporaires.",
+    "changesTitle": "Modification des conditions",
+    "changesBody": "Nous pouvons mettre à jour ces conditions occasionnellement. L’utilisation continue du service après modification vaut acceptation des conditions mises à jour.",
+    "contactTitle": "Contact",
+    "contactLead": "Questions sur ces conditions ? Écrivez-nous à",
+    "contactOrCall": "ou appelez le"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "waterAlert": {
+    "pageTitle": "Beluga vs Water Alert: Leak Detection Systems Compared",
+    "metaDescription": "Compare Beluga and Water Alert. Traditional event-based leak detection vs continuous water intelligence for buildings. Neutral comparison based on public information.",
+    "heroH1": "Beluga vs Water Alert",
+    "heroSubtitle": "Understanding the difference between traditional event-based leak alerting and continuous water intelligence for buildings.",
+    "introSubheading": "Traditional leak alerting vs water intelligence platforms",
+    "introP1": "If you are looking for a Water Alert alternative or researching water leak detection systems for commercial buildings, it helps to understand the broader landscape. For decades, building water monitoring meant placing moisture sensors at high-risk points and waiting for an alarm. This approach is straightforward and catches active leaks.",
+    "introP2": "A newer category of water monitoring — water intelligence platforms — takes a different approach. These platforms continuously analyze how water moves through a building, identifying patterns, inefficiencies, and anomalies before they become costly problems.",
+    "introP3": "This page compares Water Alert, representing the traditional sensor-based approach, with Beluga, representing the intelligence-driven approach — based on publicly available information.",
+    "competitorLabel": "Water Alert",
+    "disclaimerCompetitorName": "Water Alert",
+    "ctaCompetitorName": "Water Alert",
+    "breadcrumbVs": "Beluga vs Water Alert",
+    "tableRows": [
+      { "feature": "Core purpose", "beluga": "Water intelligence platform", "competitor": "Leak detection hardware" },
+      { "feature": "Installation", "beluga": "Non-invasive (no pipe cutting)", "competitor": "Sensor-based install" },
+      { "feature": "Leak detection", "beluga": "Yes (pattern and anomaly-based)", "competitor": "Yes (moisture sensors and alarms)" },
+      { "feature": "Automatic shutoff", "beluga": "Not core feature", "competitor": "Limited / depends on setup" },
+      { "feature": "Usage insights", "beluga": "Yes — detailed and continuous", "competitor": "No" },
+      { "feature": "System intelligence", "beluga": "Yes — behavioral modeling", "competitor": "No" },
+      { "feature": "Target environment", "beluga": "Commercial / multi-unit buildings", "competitor": "Commercial / industrial" },
+      { "feature": "Monitoring type", "beluga": "Continuous analysis and benchmarking", "competitor": "Event-based detection and alerting" }
+    ],
+    "midTitle": "Key difference: event-based alerting vs continuous intelligence",
+    "midLeftTitle": "Water Alert — hardware-based detection",
+    "midLeftP1": "Water Alert provides hardware-based leak detection, primarily focused on detecting moisture at specific points and triggering alarms. The system is reactive by design — it tells you when water is where it should not be.",
+    "midLeftP2": "This approach is valuable for its simplicity and directness. No data interpretation is required — if a sensor detects moisture, an alert is triggered.",
+    "midRightTitle": "Beluga — data-driven system intelligence",
+    "midRightP1": "Beluga focuses on interpreting water behavior over time. Rather than only reacting to leaks, it continuously monitors the water system, identifies patterns and fixtures, and surfaces insights that can help prevent problems before they escalate.",
+    "midRightP2": "This approach provides a more comprehensive view of the system, but involves ongoing data analysis rather than binary event detection.",
+    "whenCompetitorHeading": "Water Alert may be a fit if:",
+    "whenCompetitorBullets": ["You need simple, reliable leak detection at specific locations", "You operate in environments where basic moisture alerting is sufficient", "You prefer a low-complexity hardware setup with minimal configuration", "Your budget or requirements are focused on point detection"],
+    "whenBelugaHeading": "Beluga may be a better fit if:",
+    "whenBelugaBullets": ["You manage complex buildings with varied water usage patterns", "You want ongoing system intelligence, not just event-based alarms", "You are looking to understand water system performance over time", "You want a non-invasive, software-driven approach to water monitoring"],
+    "faq": [
+      { "q": "What is the difference between traditional leak detection and water intelligence?", "a": "Traditional leak detection systems like Water Alert use hardware sensors (often moisture-based) to detect active leaks and trigger alarms. Water intelligence platforms like Beluga continuously analyze water flow behavior to identify patterns, inefficiencies, and anomalies — providing a broader view of the system beyond just leak events." },
+      { "q": "Is Water Alert the same as a smart water monitor?", "a": "Water Alert focuses on hardware-based detection, typically using moisture sensors and alarms to flag active leaks. Smart water monitors and water intelligence platforms generally provide more comprehensive analysis, including usage tracking, pattern recognition, and system-level insights." },
+      { "q": "Can Water Alert and Beluga be used together?", "a": "Depending on the building, some teams may choose to combine point sensors with broader monitoring. Each system should be evaluated on its own merits and compatibility with existing infrastructure." },
+      { "q": "Which system is better for a building with no existing monitoring?", "a": "If the goal is basic leak alerting with minimal setup, Water Alert-style hardware may be a starting point. If the goal is comprehensive water visibility — usage intelligence, anomaly detection, and long-term monitoring — Beluga may be a stronger first investment." },
+      { "q": "Does Beluga replace the need for point leak sensors?", "a": "Beluga provides system-level intelligence including anomaly detection. Whether point sensors are also needed depends on the building, the risk profile, and how the water system is configured. The two approaches serve complementary purposes." },
+      { "q": "What water monitoring options exist for commercial buildings?", "a": "Commercial buildings have several options, ranging from simple moisture sensor networks (like Water Alert) to flow-based monitoring systems (like WINT or Flo) to water intelligence platforms (like Beluga). The right choice depends on the building's complexity, the team's goals, and the level of insight required." }
+    ],
+    "relatedQuestions": [
+      "What is the best water leak detection system for commercial buildings?",
+      "How does traditional leak detection compare to water intelligence?",
+      "What are the most common water monitoring systems for buildings?",
+      "Is there a better alternative to moisture-based leak sensors?",
+      "What water monitoring system provides the most insight for building managers?"
+    ],
+    "recommended": [
+      { "to": "/articles/water-monitoring-vs-leak-detection", "title": "Water Monitoring vs Leak Detection", "desc": "Understanding the difference between monitoring and detection." },
+      { "to": "/articles/what-happens-after-leak-alert", "title": "What Happens After a Leak Alert", "desc": "Why detection is only the first step." },
+      { "to": "/articles/why-leak-detection-not-enough-commercial", "title": "Why Leak Detection Alone Isn't Enough", "desc": "What commercial buildings actually need." }
+    ]
+  }
+}

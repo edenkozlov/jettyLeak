@@ -1,0 +1,55 @@
+{
+  "flume": {
+    "pageTitle": "Beluga et Flume : moniteurs d’eau non invasifs",
+    "metaDescription": "Comparez Beluga et Flume — deux moniteurs non invasifs pour des contextes différents. Suivi résidentiel de la consommation contre intelligence de l’eau pour bâtiments. Comparaison neutre.",
+    "heroH1": "Beluga et Flume",
+    "heroSubtitle": "Tous deux non invasifs — mais conçus pour des environnements et des niveaux d’analyse très différents.",
+    "introP1": "Si vous cherchez une alternative à Flume ou comparez des options non invasives, gardez à l’esprit qu’« installation non invasive » ne signifie pas capacités identiques. Beluga et Flume sont non invasifs, mais pour des publics, des échelles et des profondeurs d’information différents.",
+    "introP2": "Cette page les compare à partir d’informations publiques pour vous aider à voir laquelle correspond à votre situation.",
+    "competitorLabel": "Flume",
+    "disclaimerCompetitorName": "Flume ou Flume Water",
+    "ctaCompetitorName": "Flume",
+    "breadcrumbVs": "Beluga et Flume",
+    "tableRows": [
+      { "feature": "Objectif principal", "beluga": "Intelligence de l’eau pour bâtiments", "competitor": "Suivi de la consommation pour la maison" },
+      { "feature": "Installation", "beluga": "Non invasive", "competitor": "Non invasive" },
+      { "feature": "Détection de fuites", "beluga": "Oui (anomalies et formes)", "competitor": "Oui (anomalies de consommation)" },
+      { "feature": "Arrêt automatique", "beluga": "Pas au cœur du produit", "competitor": "Non" },
+      { "feature": "Analyse de l’usage", "beluga": "Intelligence poussée à l’échelle du système", "competitor": "Suivi et alertes de base" },
+      { "feature": "Compréhension par équipement", "beluga": "Oui (reconnaissance de formes)", "competitor": "Non" },
+      { "feature": "Environnement cible", "beluga": "Commercial / multilogements", "competitor": "Résidentiel / maison individuelle" },
+      { "feature": "Profondeur du suivi", "beluga": "Élevée — modélisation et références", "competitor": "Modérée — débit et usage agrégés" }
+    ],
+    "midTitle": "Non invasifs, mais pour des contextes différents",
+    "midSubtitle": "Le point commun « non invasif » peut laisser croire à des produits interchangeables, mais l’environnement cible et la profondeur d’analyse diffèrent nettement.",
+    "midLeftTitle": "Flume — suivi pour les particuliers",
+    "midLeftP": "Flume propose une surveillance non invasive pour les propriétaires : consommation quotidienne, budgets et activité inhabituelle. Il se fixe sur le compteur d’eau résidentiel et livre des informations simples via une application grand public.",
+    "midRightTitle": "Beluga — intelligence de niveau bâtiment",
+    "midRightP": "Beluga porte le concept non invasif vers une intelligence de niveau commercial : réseau d’eau du bâtiment entier, identification d’équipements par formes d’usage, inefficiences et analyse comportementale sur la durée, au-delà du seul total de consommation.",
+    "whenCompetitorHeading": "Flume peut bien convenir si :",
+    "whenCompetitorBullets": ["Vous êtes propriétaire et voulez un suivi de consommation simple", "Vous voulez une installation non invasive sur un compteur résidentiel", "Votre priorité est la consommation du foyer et la détection de fuites", "Vous préférez une expérience grand public dans une application"],
+    "whenBelugaHeading": "Beluga peut mieux convenir si :",
+    "whenBelugaBullets": ["Vous êtes à l’échelle commerciale ou gérez du multilogement", "Vous avez besoin d’informations plus poussées sur le réseau, les équipements et l’efficacité", "Vous voulez une visibilité « infrastructure » et des références à long terme", "Vous avez besoin d’une surveillance non invasive pour des réseaux de plomberie complexes"],
+    "similarTitle": "Vous comparez des produits proches ?",
+    "similarBody": "Si vous étudiez les moniteurs non invasifs, consultez aussi nos comparaisons avec <0>Flo by Moen</0> et <1>Phyn</1>, souvent envisagés sur le marché résidentiel de la surveillance de l’eau.",
+    "faq": [
+      { "q": "Beluga et Flume s’installent-ils de la même façon ?", "a": "Tous deux insistent sur le non invasif. L’emplacement du matériel et le type de capteur peuvent différer. Beluga cible les réseaux commerciaux ; Flume, les compteurs résidentiels." },
+      { "q": "Flume convient-il aux bâtiments commerciaux ?", "a": "Flume est surtout conçu et vendu pour les maisons individuelles. Le commercial et le multilogement ne sont pas son cœur de cible d’après les informations publiques." },
+      { "q": "Beluga s’adresse-t-il aux propriétaires de maison ?", "a": "Beluga vise surtout le commercial, le multilogement et les exploitants. Les particuliers qui veulent un simple suivi de consommation trouveront peut-être Flume ou des produits résidentiels plus adaptés." },
+      { "q": "En quoi Beluga diffère-t-il de Flume si tous deux sont non invasifs ?", "a": "Marchés et profondeur diffèrent. Flume suit la consommation du foyer et alerte sur les anomalies. Beluga modélise le comportement du réseau d’eau du bâtiment, identifie les équipements et va au-delà de l’agrégat de consommation." },
+      { "q": "Puis-je utiliser Flume pour un immeuble à appartements ?", "a": "Flume est pensé pour un compteur d’eau résidentiel individuel. Les systèmes multilogements ou commerciaux sortent en général de son périmètre. Beluga est conçu pour ces environnements." }
+    ],
+    "relatedQuestions": [
+      "Quelle est la meilleure alternative à Flume pour le commercial ?",
+      "Comment les moniteurs non invasifs se comparent-ils maison contre bâtiment ?",
+      "Flume ou Beluga pour un gestionnaire d’immeuble ?",
+      "Quel système pour appartements et copropriétés ?",
+      "Comment Flume se compare-t-il aux autres moniteurs non invasifs ?"
+    ],
+    "recommended": [
+      { "to": "/articles/non-invasive-vs-inline-water-monitoring", "title": "Surveillance non invasive et en ligne", "desc": "Comparer les modes d’installation et leurs compromis." },
+      { "to": "/articles/what-is-water-monitoring-system", "title": "Qu’est-ce qu’un système de surveillance de l’eau ?", "desc": "Les grandes catégories de surveillance de l’eau." },
+      { "to": "/articles/how-to-choose-water-monitoring-system", "title": "Comment choisir un système de surveillance de l’eau", "desc": "Guide pratique pour choisir le bon système." }
+    ]
+  }
+}
