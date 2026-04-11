@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { BrandLogoMark } from '@/components/BrandLogoMark'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
+import { CONTACT_EMAIL, CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL } from '@/globals/constants'
 
 export default function Terms() {
   return (
@@ -55,8 +56,10 @@ export default function Terms() {
 
           <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Contact</h2>
           <p>
-            Questions about these terms? Reach us at{' '}
-            <a href="mailto:support@beluga.com" className="font-medium text-indigo-600 hover:text-indigo-500">support@beluga.com</a>.
+            Questions about these terms? Email{' '}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-indigo-600 hover:text-indigo-500">{CONTACT_EMAIL}</a>
+            {' '}or call{' '}
+            <a href={`tel:${CONTACT_PHONE_TEL}`} className="font-medium text-indigo-600 hover:text-indigo-500">{CONTACT_PHONE_DISPLAY}</a>.
           </p>
         </div>
       </main>

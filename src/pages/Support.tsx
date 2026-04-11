@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { BrandLogoMark } from '@/components/BrandLogoMark'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
+import { CONTACT_EMAIL, CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL } from '@/globals/constants'
 
 export default function Support() {
   return (
@@ -24,10 +25,15 @@ export default function Support() {
 
           <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Contact us</h2>
           <p>
-            The fastest way to reach us is by email. Send us a message and we'll get back to you within one business day.
+            The fastest way to reach us is by email. Send us a message and we'll get back to you within one business day. You can also call if you prefer to talk through an issue.
           </p>
-          <p>
-            <a href="mailto:support@beluga.com" className="font-medium text-indigo-600 hover:text-indigo-500">support@beluga.com</a>
+          <p className="space-y-2">
+            <span className="block">
+              <a href={`mailto:${CONTACT_EMAIL}`} className="font-medium text-indigo-600 hover:text-indigo-500">{CONTACT_EMAIL}</a>
+            </span>
+            <span className="block">
+              <a href={`tel:${CONTACT_PHONE_TEL}`} className="font-medium text-indigo-600 hover:text-indigo-500">{CONTACT_PHONE_DISPLAY}</a>
+            </span>
           </p>
 
           <h2 className="text-[20px] font-semibold text-gray-900 sm:text-[22px]">Common questions</h2>
