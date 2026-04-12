@@ -1609,6 +1609,15 @@ export default function Reports() {
                 {showRawData ? 'Hide Raw Data' : 'View Raw Data'}
               </button>
             )}
+            {showMagnetometerUi && selectedBuildingId != null && (
+              <button
+                type="button"
+                onClick={() => navigate(`/dashboard/fixtures/${selectedSensorId ?? ''}`)}
+                className="w-full shrink-0 rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 sm:w-auto sm:py-1 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+              >
+                Fixtures
+              </button>
+            )}
           </div>
 
           <div className="flex min-w-0 flex-wrap items-center gap-2">

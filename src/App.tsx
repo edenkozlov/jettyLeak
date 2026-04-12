@@ -34,6 +34,7 @@ const CompareFlume = lazy(() => import('@/pages/compare/CompareFlume'))
 const WaterMonitoringSystems = lazy(() => import('@/pages/compare/WaterMonitoringSystems'))
 const GetQuote = lazy(() => import('@/pages/GetQuote'))
 const Faq = lazy(() => import('@/pages/Faq'))
+const Fixtures = lazy(() => import('@/pages/Fixtures'))
 const MagReports = lazy(() => import('@/pages/MagReports'))
 const Reports = lazy(() => import('@/pages/Reports'))
 const BuildingsMap = lazy(() => import('@/pages/BuildingsMap'))
@@ -118,6 +119,7 @@ function AppRoutes() {
             <Route path="buildings/map" element={<BuildingsMap />} />
             <Route path="buildings/:id" element={<BuildingDetail />} />
             <Route path="buildings/:id/certification" element={<BuildingCertification />} />
+            <Route path="fixtures/:sensorId?" element={<Fixtures />} />
             <Route path="reports/:sensorId?" element={<Reports />} />
             <Route path="reports/:sensorId/:timeWindow/raw" element={<Reports />} />
             <Route path="reports/:sensorId/:timeWindow/flow" element={<Reports />} />

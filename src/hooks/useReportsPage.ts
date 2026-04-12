@@ -52,7 +52,15 @@ async function fetchMagOptimized(variables?: Record<string, unknown>) {
   const since = variables?.since as string
   const until = variables?.until as string
   if (!sensorIds || sensorIds.length === 0) return { mag_report: [] as MagReport[] }
-  const result = await GET_MAG_DOWNSAMPLED({ sensorIds, since, until, maxPoints: 1000 })
+  const sinceMs = new Date(since).getTime()
+  const untilMs = new Date(until).getTime()
+  const rangeMs = untilMs - sinceMs
+  // More points for shorter ranges so peak detection stays accurate
+  let maxPoints = 1000
+  if (rangeMs <= 5 * 60_000) maxPoints = 3000
+  else if (rangeMs <= 15 * 60_000) maxPoints = 5000
+  else if (rangeMs <= 60 * 60_000) maxPoints = 3000
+  const result = await GET_MAG_DOWNSAMPLED({ sensorIds, since, until, maxPoints })
   return { mag_report: result.mag_report as unknown as MagReport[] }
 }
 
@@ -536,7 +544,7 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
 
     // For 6h+ ranges, also fetch pre-computed flow_hourly data
     const rangeMs = RANGE_MS[timeRange]
-    if (rangeMs >= 6 * 60 * 60_000 || timeRange === 'all') {
+    if (rangeMs >= 60 * 60_000 || timeRange === 'all') {
       GET_FLOW_ANALYTICS({
         sensorIds: magSensorIdsForQuery,
         since: window.since,
@@ -598,7 +606,7 @@ export function useReportsPage(initialSensorId?: number | null, initialTimeRange
       }),
     ])
     const rangeMs = RANGE_MS[timeRange]
-    if (rangeMs >= 6 * 60 * 60_000 || timeRange === 'all') {
+    if (rangeMs >= 60 * 60_000 || timeRange === 'all') {
       GET_FLOW_ANALYTICS({
         sensorIds: magSensorIdsForQuery,
         since: window.since,

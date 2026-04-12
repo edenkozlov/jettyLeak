@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 
+import { supabase } from '@/lib/supabase'
 import {
   getFixturesByBuilding,
   type Fixture,
@@ -55,25 +56,47 @@ export default function CalibrationLabelModal({
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 
+  interface ExistingLabel {
+    id: number
+    ordering: number | null
+    fixture_id: number | null
+  }
+  const [existingLabels, setExistingLabels] = useState<ExistingLabel[]>([])
+
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    getFixturesByBuilding(buildingId)
-      .then((rows) => {
+
+    const startIso = new Date(signal.startMs).toISOString()
+    const endIso = new Date(signal.endMs).toISOString()
+
+    Promise.all([
+      getFixturesByBuilding(buildingId),
+      supabase
+        .from('calibration_label')
+        .select('id, ordering, fixture_id')
+        .eq('start_time', startIso)
+        .eq('end_time', endIso)
+        .order('ordering', { ascending: true }),
+    ])
+      .then(([fixtureRows, labelsRes]) => {
         if (cancelled) return
-        setFixtures(rows)
+        setFixtures(fixtureRows)
+        if (!labelsRes.error && labelsRes.data) {
+          setExistingLabels(labelsRes.data as ExistingLabel[])
+        }
         setLoading(false)
       })
       .catch((err) => {
         if (cancelled) return
-        console.warn('[CalibrationLabelModal] fetch fixtures failed', err)
-        setError('Failed to load fixtures')
+        console.warn('[CalibrationLabelModal] fetch failed', err)
+        setError('Failed to load data')
         setLoading(false)
       })
     return () => {
       cancelled = true
     }
-  }, [buildingId])
+  }, [buildingId, signal.startMs, signal.endMs])
 
   const toggleFixture = useCallback((id: number) => {
     setSelected((prev) => {
@@ -188,6 +211,30 @@ export default function CalibrationLabelModal({
               <span className="text-gray-400">({durationSec}s)</span>
             </div>
           </div>
+
+          {/* Existing labels */}
+          {existingLabels.length > 0 && !saved && (
+            <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50/60 p-3 dark:border-emerald-800 dark:bg-emerald-900/20">
+              <p className="mb-2 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                Labeled as
+              </p>
+              <div className="space-y-1">
+                {existingLabels.map((lbl) => {
+                  const f = lbl.fixture_id != null ? fixtureMap.get(lbl.fixture_id) : null
+                  return (
+                    <div key={lbl.id} className="flex items-center gap-2">
+                      <span className="flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
+                        {lbl.ordering ?? '·'}
+                      </span>
+                      <span className="text-xs text-emerald-800 dark:text-emerald-200">
+                        {f ? fixtureLabel(f) : `Fixture #${lbl.fixture_id ?? '?'}`}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
           {saved ? (
             <div className="flex flex-col items-center gap-2 py-6">

@@ -1,9 +1,22 @@
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import Map, { type MapRef } from 'react-map-gl/mapbox'
 
 import { useTheme } from '@/contexts/ThemeContext'
 import { MAPBOX_TOKEN } from '@/globals/constants'
 import type { BuildingFootprint } from '@/hooks/useBuildingFootprint'
+
+function isWebGLAvailable(): boolean {
+  try {
+    const canvas = document.createElement('canvas')
+    const ctx =
+      canvas.getContext('webgl2') ||
+      canvas.getContext('webgl') ||
+      canvas.getContext('experimental-webgl')
+    return ctx != null
+  } catch {
+    return false
+  }
+}
 
 interface BuildingMap3DProps {
   latitude: number
@@ -26,6 +39,8 @@ export default function BuildingMap3D({
   const savedFootprintRef = useRef(savedFootprint)
   savedFootprintRef.current = savedFootprint
   const { mode } = useTheme()
+  const [webglError, setWebglError] = useState(false)
+  const [webglSupported] = useState(() => isWebGLAvailable())
 
   const mapStyle =
     mode === 'dark'
@@ -186,12 +201,48 @@ export default function BuildingMap3D({
     return { latitude, longitude }
   }, [savedFootprint, latitude, longitude])
 
+  const staticFallbackUrl = useMemo(() => {
+    if (!MAPBOX_TOKEN) return null
+    const { latitude: lat, longitude: lng } = center
+    return (
+      `https://api.mapbox.com/styles/v1/mapbox/${mode === 'dark' ? 'dark-v11' : 'light-v11'}/static/` +
+      `${lng},${lat},17,60,-17.6/600x400@2x?access_token=${MAPBOX_TOKEN}`
+    )
+  }, [center, mode])
+
+  const onMapError = useCallback(() => {
+    setWebglError(true)
+  }, [])
+
   if (!MAPBOX_TOKEN) {
     return (
       <div
         className={`flex items-center justify-center rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-800 ${className}`}
       >
         <p className="text-sm text-gray-400">Mapbox token not configured</p>
+      </div>
+    )
+  }
+
+  if (!webglSupported || webglError) {
+    return (
+      <div
+        className={`relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 ${className}`}
+      >
+        {staticFallbackUrl ? (
+          <img
+            src={staticFallbackUrl}
+            alt="Building location"
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gray-100 dark:bg-gray-800">
+            <p className="text-sm text-gray-400">3D view unavailable</p>
+          </div>
+        )}
+        <div className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-1 text-[10px] text-white">
+          Static view — WebGL not available
+        </div>
       </div>
     )
   }
@@ -213,6 +264,7 @@ export default function BuildingMap3D({
         style={{ width: '100%', height: '100%' }}
         mapStyle={mapStyle}
         onLoad={onLoad}
+        onError={onMapError}
         antialias
       />
     </div>
