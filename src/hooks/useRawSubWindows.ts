@@ -47,9 +47,9 @@ interface SubWindowConfig {
 const SUB_WINDOW_CONFIG: Partial<Record<TimeRange, SubWindowConfig>> = {
   '15m': { count: 3, durationMs: 5 * 60_000 },
   '1h': { count: 12, durationMs: 5 * 60_000 },
-  '6h': { count: 6, durationMs: 60 * 60_000 },
-  '12h': { count: 12, durationMs: 60 * 60_000 },
-  '24h': { count: 24, durationMs: 60 * 60_000 },
+  '6h': { count: 24, durationMs: 15 * 60_000 },
+  '12h': { count: 48, durationMs: 15 * 60_000 },
+  '24h': { count: 96, durationMs: 15 * 60_000 },
 }
 
 export function getSubWindowConfig(range: TimeRange): SubWindowConfig | null {
@@ -121,8 +121,15 @@ export function useRawSubWindows({
   const [subWindows, setSubWindows] = useState<RawSubWindow[]>([])
   const [loading, setLoading] = useState(false)
   const fetchSeqRef = useRef(0)
+  const prevBaseKeyRef = useRef('')
 
   const config = enabled ? getSubWindowConfig(timeRange) : null
+
+  const baseKey = useMemo(() => {
+    if (!config || sensorId === null || magSensorIds.length === 0) return ''
+    const ids = [...magSensorIds].sort((a, b) => a - b)
+    return `${sensorId}-${ids.join(',')}-${timeRange}-${periodOffset}`
+  }, [config, sensorId, magSensorIds, timeRange, periodOffset])
 
   const windowSpec = useMemo(() => {
     if (!config || sensorId === null) return null
@@ -137,7 +144,6 @@ export function useRawSubWindows({
       ids,
       durationMs: config.durationMs,
       count: config.count,
-      key: `${sensorId}-${ids.join(',')}-${timeRange}-${periodOffset}-${refetchKey}`,
     }
   }, [config, sensorId, magSensorIds, timeRange, periodOffset, refetchKey])
 
@@ -145,55 +151,89 @@ export function useRawSubWindows({
     if (!windowSpec) {
       setSubWindows([])
       setLoading(false)
+      prevBaseKeyRef.current = ''
       return
     }
 
-    const seq = ++fetchSeqRef.current
-    setLoading(true)
-
-    const ranges: { index: number; sinceMs: number; untilMs: number }[] = []
-    for (let i = 0; i < windowSpec.count; i++) {
-      const sinceMs = windowSpec.sinceMs + i * windowSpec.durationMs
-      const untilMs = sinceMs + windowSpec.durationMs
-      ranges.push({ index: i, sinceMs, untilMs })
-    }
+    const isFullRefresh = baseKey !== prevBaseKeyRef.current
+    prevBaseKeyRef.current = baseKey
 
     const expectedIds = new Set(windowSpec.ids)
 
-    Promise.all(
-      ranges.map((r) =>
-        GET_MAG_DOWNSAMPLED({
-          sensorIds: windowSpec.ids,
-          since: new Date(r.sinceMs).toISOString(),
-          until: new Date(r.untilMs).toISOString(),
-          maxPoints: 1000,
-        }).then((res) => ({ ...r, rows: res.mag_report })),
-      ),
-    )
-      .then((results) => {
-        if (seq !== fetchSeqRef.current) return
-        const built: RawSubWindow[] = results.map((r) => {
-          const filtered = (r.rows as unknown as MagReport[])
-            .filter((row) => row.sensor_id != null && expectedIds.has(Number(row.sensor_id)))
-            .map(magReportToPoint)
-            .sort((a, b) => a.timestamp - b.timestamp)
-          return {
-            index: r.index,
-            sinceMs: r.sinceMs,
-            untilMs: r.untilMs,
-            points: filtered,
-          }
+    function buildWindow(
+      r: { index: number; sinceMs: number; untilMs: number },
+      rows: unknown[],
+    ): RawSubWindow {
+      const filtered = (rows as MagReport[])
+        .filter((row) => row.sensor_id != null && expectedIds.has(Number(row.sensor_id)))
+        .map(magReportToPoint)
+        .sort((a, b) => a.timestamp - b.timestamp)
+      return { index: r.index, sinceMs: r.sinceMs, untilMs: r.untilMs, points: filtered }
+    }
+
+    if (isFullRefresh) {
+      const seq = ++fetchSeqRef.current
+      setLoading(true)
+
+      const ranges: { index: number; sinceMs: number; untilMs: number }[] = []
+      for (let i = 0; i < windowSpec.count; i++) {
+        const sinceMs = windowSpec.sinceMs + i * windowSpec.durationMs
+        const untilMs = sinceMs + windowSpec.durationMs
+        ranges.push({ index: i, sinceMs, untilMs })
+      }
+
+      Promise.all(
+        ranges.map((r) =>
+          GET_MAG_DOWNSAMPLED({
+            sensorIds: windowSpec.ids,
+            since: new Date(r.sinceMs).toISOString(),
+            until: new Date(r.untilMs).toISOString(),
+            maxPoints: 1000,
+          }).then((res) => ({ ...r, rows: res.mag_report })),
+        ),
+      )
+        .then((results) => {
+          if (seq !== fetchSeqRef.current) return
+          const built = results.map((r) => buildWindow(r, r.rows as unknown[]))
+          setSubWindows(built.reverse())
+          setLoading(false)
         })
-        setSubWindows(built)
-        setLoading(false)
+        .catch((err) => {
+          if (seq !== fetchSeqRef.current) return
+          console.warn('[useRawSubWindows] fetch failed', err)
+          setSubWindows([])
+          setLoading(false)
+        })
+    } else {
+      // Poll: only refetch the most recent sub-window (last index, first after reverse)
+      const latestIndex = windowSpec.count - 1
+      const sinceMs = windowSpec.sinceMs + latestIndex * windowSpec.durationMs
+      const untilMs = sinceMs + windowSpec.durationMs
+
+      GET_MAG_DOWNSAMPLED({
+        sensorIds: windowSpec.ids,
+        since: new Date(sinceMs).toISOString(),
+        until: new Date(untilMs).toISOString(),
+        maxPoints: 1000,
       })
-      .catch((err) => {
-        if (seq !== fetchSeqRef.current) return
-        console.warn('[useRawSubWindows] fetch failed', err)
-        setSubWindows([])
-        setLoading(false)
-      })
-  }, [windowSpec])
+        .then((res) => {
+          const updated = buildWindow(
+            { index: latestIndex, sinceMs, untilMs },
+            res.mag_report as unknown[],
+          )
+          setSubWindows((prev) => {
+            if (prev.length === 0) return prev
+            // Most recent is first after reverse
+            const next = [...prev]
+            next[0] = updated
+            return next
+          })
+        })
+        .catch((err) => {
+          console.warn('[useRawSubWindows] poll failed', err)
+        })
+    }
+  }, [windowSpec, baseKey])
 
   const sharedYDomains = useMemo<SharedYDomains>(() => {
     if (subWindows.length === 0) {
@@ -229,6 +269,53 @@ export function useRawSubWindows({
       bandEnergy: paddedDomain(bands),
     }
   }, [subWindows])
+
+  // Dedicated polling interval for the most recent window (every 5s when live)
+  useEffect(() => {
+    if (!config || !enabled || periodOffset !== 0) return
+    if (magSensorIds.length === 0 || sensorId === null) return
+
+    const ids = [...magSensorIds].sort((a, b) => a - b)
+    const expectedIds = new Set(ids)
+    const durationMs = config.durationMs
+    const count = config.count
+
+    const interval = setInterval(() => {
+      const totalMs = count * durationMs
+      const untilMs = Date.now()
+      const sinceMs = untilMs - totalMs
+      const latestSinceMs = sinceMs + (count - 1) * durationMs
+      const latestUntilMs = latestSinceMs + durationMs
+
+      GET_MAG_DOWNSAMPLED({
+        sensorIds: ids,
+        since: new Date(latestSinceMs).toISOString(),
+        until: new Date(latestUntilMs).toISOString(),
+        maxPoints: 1000,
+      })
+        .then((res) => {
+          const points = (res.mag_report as unknown as MagReport[])
+            .filter((r) => r.sensor_id != null && expectedIds.has(Number(r.sensor_id)))
+            .map(magReportToPoint)
+            .sort((a, b) => a.timestamp - b.timestamp)
+          const updated: RawSubWindow = {
+            index: count - 1,
+            sinceMs: latestSinceMs,
+            untilMs: latestUntilMs,
+            points,
+          }
+          setSubWindows((prev) => {
+            if (prev.length === 0) return prev
+            const next = [...prev]
+            next[0] = updated
+            return next
+          })
+        })
+        .catch(() => {})
+    }, 5_000)
+
+    return () => clearInterval(interval)
+  }, [config, enabled, periodOffset, magSensorIds, sensorId])
 
   return { subWindows, sharedYDomains, loading }
 }

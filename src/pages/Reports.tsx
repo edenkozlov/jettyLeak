@@ -2364,6 +2364,8 @@ export default function Reports() {
                     sharedYDomains={sharedYDomains}
                     signalOverlays={showSubWindowSignals ? realSignalOverlays : []}
                     label={`Q${w.index + 1}`}
+                    magSensorIds={magSensorIdsForQuery}
+                    buildingId={selectedBuildingId}
                     onExpand={() => setExpandedSubWindowIndex(w.index)}
                   />
                 ))}
@@ -3328,6 +3330,8 @@ export default function Reports() {
                 sharedYDomains={sharedYDomains}
                 signalOverlays={showSubWindowSignals ? realSignalOverlays : []}
                 label={`Q${expandedSubWindow.index + 1}`}
+                magSensorIds={magSensorIdsForQuery}
+                buildingId={selectedBuildingId}
                 isExpanded
               />
             </div>
