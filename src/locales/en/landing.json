@@ -10,7 +10,7 @@
     "caseStudy": "Case Study",
     "investor": "Investor",
     "signIn": "Sign In",
-    "getQuote": "Get a quote"
+    "getQuote": "Contact us"
   },
   "navAnchors": {
     "product": "Product",
@@ -24,7 +24,7 @@
     "titleHighlight": "water system",
     "titleAfter": "visibility",
     "subtitle": "One sensor. Every fixture.",
-    "cta": "Get a quote"
+    "cta": "Contact us"
   },
   "product": {
     "titleLine1": "A system that understands",
@@ -184,7 +184,7 @@
     "titleLine1": "Understand your building's",
     "titleLine2": "water system",
     "subtitle": "Get visibility into every fixture, every pattern, and every inefficiency.",
-    "cta": "Get a quote"
+    "cta": "Contact us"
   },
   "clients": {
     "eyebrow": "On site",
@@ -227,7 +227,7 @@
     },
     "links": {
       "caseStudy": "Case study",
-      "getQuote": "Get a quote",
+      "getQuote": "Contact us",
       "signIn": "Sign In",
       "home": "Home",
       "articles": "Articles",
