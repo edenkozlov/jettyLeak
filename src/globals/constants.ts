@@ -8,6 +8,7 @@ export const CONTACT_PHONE_TEL = '+15147102555'
 export const CONTACT_PHONE_DISPLAY = '(514) 710-2555'
 
 export const LINKEDIN_COMPANY_URL = 'https://www.linkedin.com/company/100204846'
+export const TWITTER_URL = 'https://x.com/try_beluga'
 
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? ''
 export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? ''

@@ -5,7 +5,7 @@ import { Link } from 'react-router'
 import { BrandLogoMark, BRAND_LOGO_FOOTER_CLASS } from '@/components/BrandLogoMark'
 
 import { LANDING_ANCHOR_LINKS } from '@/components/landing/constants'
-import { CONTACT_EMAIL, LINKEDIN_COMPANY_URL } from '@/globals/constants'
+import { CONTACT_EMAIL, LINKEDIN_COMPANY_URL, TWITTER_URL } from '@/globals/constants'
 
 const linkClass =
   'text-[13px] leading-snug text-gray-600 transition-colors duration-200 hover:text-gray-950'
@@ -42,6 +42,14 @@ function LinkedInGlyph({ className }: { className?: string }) {
   )
 }
 
+function XGlyph({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  )
+}
+
 export function SiteFooter({ variant = 'page' }: { variant?: 'landing' | 'page' }) {
   const { t } = useTranslation('landing')
   const year = new Date().getFullYear()
@@ -61,15 +69,26 @@ export function SiteFooter({ variant = 'page' }: { variant?: 'landing' | 'page' 
             <p className="mt-5 max-w-[16rem] text-[13px] leading-relaxed text-gray-500">
               {t('footer.tagline')}
             </p>
-            <a
-              href={LINKEDIN_COMPANY_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group mt-6 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200/90 text-gray-500 transition-colors duration-200 hover:border-gray-300 hover:text-gray-900"
-              aria-label={t('footer.linkedinAria')}
-            >
-              <LinkedInGlyph className="h-[18px] w-[18px]" />
-            </a>
+            <div className="mt-6 flex gap-3">
+              <a
+                href={LINKEDIN_COMPANY_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200/90 text-gray-500 transition-colors duration-200 hover:border-gray-300 hover:text-gray-900"
+                aria-label={t('footer.linkedinAria')}
+              >
+                <LinkedInGlyph className="h-[18px] w-[18px]" />
+              </a>
+              <a
+                href={TWITTER_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200/90 text-gray-500 transition-colors duration-200 hover:border-gray-300 hover:text-gray-900"
+                aria-label={t('footer.xTwitterAria')}
+              >
+                <XGlyph className="h-[15px] w-[15px]" />
+              </a>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-10 sm:grid-cols-4 lg:col-span-9 lg:gap-8">
