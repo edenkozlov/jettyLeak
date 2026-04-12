@@ -10,7 +10,7 @@
     "caseStudy": "Étude de cas",
     "investor": "Investisseurs",
     "signIn": "Connexion",
-    "getQuote": "Obtenir un devis"
+    "getQuote": "Nous contacter"
   },
   "navAnchors": {
     "product": "Produit",
@@ -24,7 +24,7 @@
     "titleHighlight": "complète du réseau",
     "titleAfter": " d’eau",
     "subtitle": "Un capteur. Chaque point d’usage.",
-    "cta": "Obtenir un devis"
+    "cta": "Nous contacter"
   },
   "product": {
     "titleLine1": "Un système qui comprend",
@@ -184,7 +184,7 @@
     "titleLine1": "Comprenez le réseau",
     "titleLine2": "d’eau de votre bâtiment",
     "subtitle": "Visibilité sur chaque équipement, chaque schéma d’usage et chaque inefficacité.",
-    "cta": "Obtenir un devis"
+    "cta": "Nous contacter"
   },
   "clients": {
     "eyebrow": "Sur le terrain",
@@ -227,7 +227,7 @@
     },
     "links": {
       "caseStudy": "Étude de cas",
-      "getQuote": "Obtenir un devis",
+      "getQuote": "Nous contacter",
       "signIn": "Connexion",
       "home": "Accueil",
       "articles": "Articles",

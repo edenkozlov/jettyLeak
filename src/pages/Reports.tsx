@@ -16,8 +16,11 @@ import {
   YAxis,
 } from 'recharts'
 
+import HourlyAnalysisPanel from '@/components/HourlyAnalysisPanel'
 import LiveFlowIndicator from '@/components/LiveFlowIndicator'
+import RawDataPanel from '@/components/RawDataPanel'
 import useAuth from '@/hooks/auth/useAuth'
+import useRawSubWindows, { getSubWindowConfig } from '@/hooks/useRawSubWindows'
 import { computeWaveFrequency } from '@/utils/fft'
 import {
   computeFlowFromPeaks,
@@ -526,18 +529,15 @@ export default function Reports() {
     unknown: '#6b7280',
   }
 
-  const detectorSignalOverlays = useMemo(() => {
+  const realSignalOverlays = useMemo(() => {
     if (!parsedSignals.length) return []
-    const hasTimeline = timeline.points.length > 0
-    const result = parsedSignals
+    return parsedSignals
       .map((sig) => {
         const parsed = parseSignalValue(sig.value)
         if (!parsed) return null
         const startMs = sig.start_time ? new Date(sig.start_time).getTime() : null
         const endMs = sig.end_time ? new Date(sig.end_time).getTime() : null
         if (!startMs || !endMs) return null
-        const startCx = hasTimeline ? timeline.toCompressed(startMs) : startMs
-        const endCx = hasTimeline ? timeline.toCompressed(endMs) : endMs
         const signalType = String(parsed.signal_type)
         const fixtureName = parsed.fixture_name ?? '?'
         const distance = parsed.cosine_distance ?? parsed.mass_distance
@@ -549,16 +549,26 @@ export default function Reports() {
         if (parsed.duration_s != null) lines.push(`  ${parsed.duration_s}s · ${parsed.readings} readings`)
         return {
           id: sig.id,
-          startCx,
-          endCx,
+          startMs,
+          endMs,
           color: SIGNAL_TYPE_COLORS[signalType] ?? SIGNAL_TYPE_COLORS.unknown!,
-          fullLabel: lines.join('\n'),
+          label: lines.join('\n'),
         }
       })
       .filter((x): x is NonNullable<typeof x> => x !== null)
-    console.log(`[SIGNAL OVERLAYS] ${parsedSignals.length} → ${result.length} overlays`)
-    return result
-  }, [parsedSignals, timeline])
+  }, [parsedSignals])
+
+  const detectorSignalOverlays = useMemo(() => {
+    if (!realSignalOverlays.length) return []
+    const hasTimeline = timeline.points.length > 0
+    return realSignalOverlays.map((s) => ({
+      id: s.id,
+      startCx: hasTimeline ? timeline.toCompressed(s.startMs) : s.startMs,
+      endCx: hasTimeline ? timeline.toCompressed(s.endMs) : s.endMs,
+      color: s.color,
+      fullLabel: s.label,
+    }))
+  }, [realSignalOverlays, timeline])
 
   const dataMin =
     timeline.points.length > 0 ? timeline.points[0]!.cx : 0
@@ -695,6 +705,32 @@ export default function Reports() {
   const chartWindowStart = earliestDataTs > 0 && earliestDataTs < Infinity
     ? earliestDataTs
     : chartWindowEnd - numFlowBuckets * bucketMs
+
+  // --- Raw-data sub-window mode (15m / 1h / 6h / 12h / 24h) ---
+  const subWindowConfig = getSubWindowConfig(timeRange)
+  const isSubWindowMode = showRawData && subWindowConfig != null
+
+  const { subWindows, sharedYDomains, loading: subWindowsLoading } =
+    useRawSubWindows({
+      sensorId: selectedSensorId,
+      magSensorIds: magSensorIdsForQuery,
+      timeRange,
+      periodOffset,
+      enabled: isSubWindowMode,
+      refetchKey: tick,
+    })
+
+  const [expandedSubWindowIndex, setExpandedSubWindowIndex] = useState<number | null>(null)
+  const [showSubWindowSignals, setShowSubWindowSignals] = useState(true)
+
+  useEffect(() => {
+    if (!isSubWindowMode) setExpandedSubWindowIndex(null)
+  }, [isSubWindowMode])
+
+  const expandedSubWindow =
+    expandedSubWindowIndex != null
+      ? subWindows.find((w) => w.index === expandedSubWindowIndex) ?? null
+      : null
 
   const [tagFormTimestamp, setTagFormTimestamp] = useState<number | null>(null)
   const [tagTitle, setTagTitle] = useState('')
@@ -1879,9 +1915,12 @@ export default function Reports() {
         {/* Water Usage per bucket */}
         {bucketedFlowData.length > 0 && (
           <div className={`mb-6 transition-opacity duration-200 ${(reportsLoading || magLoading) ? 'pointer-events-none opacity-40' : 'opacity-100'}`}>
-            <h3 className="mb-1 text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Water Usage
-            </h3>
+            <div className="mb-1 flex items-start justify-between gap-3">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                Water Usage
+              </h3>
+              <HourlyAnalysisPanel sensorId={selectedSensorId} />
+            </div>
             {showMagnetometerUi && showRawData && magVolumeFromCycles && (
               <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
                 <span className="font-medium text-gray-600 dark:text-gray-300">
@@ -2276,7 +2315,64 @@ export default function Reports() {
           </div>
         ) : null}
 
-        {showMagnetometerUi && showRawData && magLayerBaseData.length > 0 && (
+        {showMagnetometerUi && isSubWindowMode && subWindowConfig && (
+          <div className="mt-5 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Raw mag · {subWindowConfig.count} ×{' '}
+                  {subWindowConfig.durationMs >= 60 * 60_000
+                    ? `${Math.round(subWindowConfig.durationMs / (60 * 60_000))} h`
+                    : `${Math.round(subWindowConfig.durationMs / 60_000)} min`}{' '}
+                  tiles
+                </h3>
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                  Each tile is fetched independently. Click any tile to expand. Y-axis is shared across tiles.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {subWindowsLoading && (
+                  <span className="text-[11px] text-gray-400 dark:text-gray-500">
+                    Loading…
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowSubWindowSignals((v) => !v)}
+                  aria-pressed={showSubWindowSignals}
+                  className={`rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                    showSubWindowSignals
+                      ? 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 dark:hover:bg-indigo-900/50'
+                      : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                  }`}
+                  title={showSubWindowSignals ? 'Hide signal overlays' : 'Show signal overlays'}
+                >
+                  {showSubWindowSignals ? 'Signals: on' : 'Signals: off'}
+                </button>
+              </div>
+            </div>
+            {subWindows.length === 0 && !subWindowsLoading ? (
+              <p className="py-6 text-center text-xs text-gray-400 dark:text-gray-500">
+                No samples in this window.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {subWindows.map((w) => (
+                  <RawDataPanel
+                    key={w.index}
+                    window={w}
+                    sharedYDomains={sharedYDomains}
+                    signalOverlays={showSubWindowSignals ? realSignalOverlays : []}
+                    label={`Q${w.index + 1}`}
+                    onExpand={() => setExpandedSubWindowIndex(w.index)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {showMagnetometerUi && showRawData && !isSubWindowMode && magLayerBaseData.length > 0 && (
           <div
             ref={magRawChartWrapperRef}
             className="select-none"
@@ -3201,6 +3297,43 @@ export default function Reports() {
           )}
         </div>
       </div>
+
+      {expandedSubWindow && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-6"
+          onClick={() => setExpandedSubWindowIndex(null)}
+        >
+          <div
+            className="flex h-full max-h-[min(94vh,100dvh)] w-full max-w-5xl flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-xl dark:border-gray-700 dark:bg-gray-900 sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-white sm:text-lg">
+                Raw mag · Q{expandedSubWindow.index + 1}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setExpandedSubWindowIndex(null)}
+                className="rounded-lg p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+                aria-label="Close"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="min-h-0 flex-1">
+              <RawDataPanel
+                window={expandedSubWindow}
+                sharedYDomains={sharedYDomains}
+                signalOverlays={showSubWindowSignals ? realSignalOverlays : []}
+                label={`Q${expandedSubWindow.index + 1}`}
+                isExpanded
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {tagFormTimestamp !== null && (
         <div
