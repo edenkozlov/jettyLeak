@@ -1,6 +1,6 @@
 import logo from '@/assets/beluga2048x1024WhiteBGTransparent.png'
 
-/** Nav / headers — compact beside default h-14–16 bars. */
+/** Nav / headers — wordmark + icon (transparent PNG, 2:1). */
 export const BRAND_LOGO_NAV_CLASS =
   'h-7 w-auto max-w-[min(100%,13rem)] shrink-0 object-contain object-left sm:h-8 sm:max-w-[min(100%,16rem)]'
 
@@ -13,8 +13,8 @@ export function BrandLogoMark({ className }: { className?: string }) {
     <img
       src={logo}
       alt="Beluga"
-      width={1203}
-      height={234}
+      width={2048}
+      height={1024}
       className={className ?? BRAND_LOGO_NAV_CLASS}
     />
   )
