@@ -36,7 +36,7 @@ const GetQuote = lazy(() => import('@/pages/GetQuote'))
 const Faq = lazy(() => import('@/pages/Faq'))
 const Fixtures = lazy(() => import('@/pages/Fixtures'))
 const MagReports = lazy(() => import('@/pages/MagReports'))
-const Reports = lazy(() => import('@/pages/Reports'))
+const ReportsRedirect = lazy(() => import('@/pages/ReportsRedirect'))
 const BuildingsMap = lazy(() => import('@/pages/BuildingsMap'))
 const Sensors = lazy(() => import('@/pages/Sensors'))
 const Admin = lazy(() => import('@/pages/Admin'))
@@ -120,10 +120,10 @@ function AppRoutes() {
             <Route path="buildings/:id" element={<BuildingDetail />} />
             <Route path="buildings/:id/certification" element={<BuildingCertification />} />
             <Route path="fixtures/:sensorId?" element={<Fixtures />} />
-            <Route path="reports/:sensorId?" element={<Reports />} />
-            <Route path="reports/:sensorId/:timeWindow/raw" element={<Reports />} />
-            <Route path="reports/:sensorId/:timeWindow/flow" element={<Reports />} />
-            <Route path="reports/:sensorId/:timeWindow" element={<Reports />} />
+            <Route path="reports/:sensorId?" element={<ReportsRedirect />} />
+            <Route path="reports/:sensorId/:timeWindow/raw" element={<ReportsRedirect />} />
+            <Route path="reports/:sensorId/:timeWindow/flow" element={<ReportsRedirect />} />
+            <Route path="reports/:sensorId/:timeWindow" element={<ReportsRedirect />} />
             <Route path="mag-reports/:buildingId?" element={<MagReports />} />
             <Route path="water-alerts" element={<WaterAlerts />} />
             <Route path="settings" element={<Settings />} />

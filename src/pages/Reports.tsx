@@ -403,23 +403,44 @@ function CustomTooltip({ active, payload, colors }: CustomTooltipProps) {
   )
 }
 
-export default function Reports() {
+interface ReportsProps {
+  /** When true, skips URL reading/writing and scopes the sensor selector to `buildingId`. */
+  embedded?: boolean
+  /** Initial sensor (takes priority over URL param). */
+  initialSensorId?: number | null
+  /** Restricts the sensor selector (embedded mode) to sensors in this building. */
+  buildingId?: number | null
+  /** Hide the top "Flow Reports" header row (used when host page already has a title). */
+  hideHeader?: boolean
+}
+
+export default function Reports({
+  embedded = false,
+  initialSensorId: initialSensorIdProp = null,
+  buildingId: embeddedBuildingId = null,
+  hideHeader = false,
+}: ReportsProps = {}) {
   const { mode } = useTheme()
   const colors = CHART_COLORS[mode]
   const { role } = useAuth()
   const showMagnetometerUi = role !== 'client'
   const navigate = useNavigate()
   const location = useLocation()
-  const { sensorId: sensorIdParam, timeWindow: timeWindowParam } = useParams<{ sensorId: string; timeWindow: string }>()
+  const routeParams = useParams<{ sensorId: string; timeWindow: string }>()
+  const sensorIdParam = embedded ? undefined : routeParams.sensorId
+  const timeWindowParam = embedded ? undefined : routeParams.timeWindow
   const paramSensorId = sensorIdParam ? Number(sensorIdParam) : null
   const validTimeRanges = new Set(['1m', '5m', '15m', '1h', '6h', '12h', '24h', 'all'])
   const paramTimeRange = timeWindowParam && validTimeRanges.has(timeWindowParam) ? timeWindowParam as TimeRange : undefined
+  // Local raw-toggle state used in embedded mode (URL-driven otherwise).
+  const [embeddedShowRaw, setEmbeddedShowRaw] = useState(true)
   /** Raw is default; chart-only uses an explicit `/flow` suffix. Legacy `/sensorId/time` (no suffix) counts as raw. */
-  const showRawData =
-    location.pathname.endsWith('/raw') ||
-    (!location.pathname.endsWith('/flow') &&
-      (location.pathname === '/dashboard' ||
-        location.pathname.startsWith('/dashboard/reports')))
+  const showRawData = embedded
+    ? embeddedShowRaw
+    : location.pathname.endsWith('/raw') ||
+      (!location.pathname.endsWith('/flow') &&
+        (location.pathname === '/dashboard' ||
+          location.pathname.startsWith('/dashboard/reports')))
 
   const {
     sensors,
@@ -452,7 +473,7 @@ export default function Reports() {
     handleToggleLive,
     handlePreviousPeriod,
     handleNextPeriod,
-  } = useReportsPage(paramSensorId, paramTimeRange)
+  } = useReportsPage(initialSensorIdProp ?? paramSensorId, paramTimeRange)
 
   const refetchMagRef = useRef(refetchMag)
   refetchMagRef.current = refetchMag
@@ -468,19 +489,29 @@ export default function Reports() {
 
   // Sync URL when time range changes via UI buttons
   useEffect(() => {
+    if (embedded) return
     if (selectedSensorId == null) return
     const expectedPath = buildPath(selectedSensorId, timeRange, showRawData)
     if (location.pathname !== expectedPath) {
       navigate(expectedPath, { replace: true })
     }
-  }, [selectedSensorId, timeRange, showRawData, buildPath, navigate, location.pathname])
+  }, [embedded, selectedSensorId, timeRange, showRawData, buildPath, navigate, location.pathname])
 
   useEffect(() => {
+    if (embedded) return
     if (paramSensorId === null && sensors.length > 0) {
       const defaultId = sensors[sensors.length - 1]!.id
       navigate(buildPath(defaultId, timeRange, true), { replace: true })
     }
-  }, [paramSensorId, sensors, navigate, buildPath, timeRange])
+  }, [embedded, paramSensorId, sensors, navigate, buildPath, timeRange])
+
+  // When embedded and prop changes, sync selected sensor.
+  useEffect(() => {
+    if (!embedded) return
+    if (initialSensorIdProp != null && initialSensorIdProp !== selectedSensorId) {
+      handleSensorChange(initialSensorIdProp)
+    }
+  }, [embedded, initialSensorIdProp]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedBuildingId = useMemo(() => {
     if (selectedSensorId == null) return null
@@ -830,9 +861,18 @@ export default function Reports() {
       setSelectedTag(null)
       handleSensorChange(newId)
       lastRefetchMsRef.current = 0
-      navigate(buildPath(newId, timeRange, showRawData))
+      if (embedded) {
+        // If the chosen sensor belongs to a different building, navigate to its consolidated page.
+        const newBuildingId =
+          sensors.find((s) => s.id === newId)?.building_id ?? null
+        if (newBuildingId != null && newBuildingId !== embeddedBuildingId) {
+          navigate(`/dashboard/buildings/${newBuildingId}`)
+        }
+      } else {
+        navigate(buildPath(newId, timeRange, showRawData))
+      }
     },
-    [resetZoom, setSelectedTag, handleSensorChange, navigate, buildPath, timeRange, showRawData],
+    [embedded, embeddedBuildingId, sensors, resetZoom, setSelectedTag, handleSensorChange, navigate, buildPath, timeRange, showRawData],
   )
 
   const visibleData = useMemo(() => {
@@ -1456,10 +1496,12 @@ export default function Reports() {
     )
   }
 
+  const displaySensors = sensors
+
   return (
     <div className="min-w-0 max-w-full">
-      <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+      <div className={`mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${hideHeader ? '' : 'sm:mb-6'}`}>
+        <div className={`flex min-w-0 items-center gap-2 sm:gap-3 ${hideHeader ? 'hidden' : ''}`}>
           <h1 className="text-xl font-bold sm:text-2xl">Flow Reports</h1>
           {isLive && connected && (
             <span className="flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
@@ -1490,7 +1532,7 @@ export default function Reports() {
             onChange={onSensorChange}
             className="min-w-0 w-full truncate rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-xs text-gray-900 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white sm:min-w-[12rem] sm:max-w-md sm:flex-1 sm:px-3 sm:py-2 sm:text-sm"
           >
-            {sensors.map((sensor) => (
+            {displaySensors.map((sensor) => (
               <option key={sensor.id} value={sensor.id}>
                 {sensor.name ?? `Sensor #${sensor.id}`}
                 {sensor.building?.name ? ` — ${sensor.building.name}` : ''}
@@ -1598,7 +1640,11 @@ export default function Reports() {
                 type="button"
                 onClick={() => {
                   if (selectedSensorId == null) return
-                  navigate(buildPath(selectedSensorId, timeRange, !showRawData))
+                  if (embedded) {
+                    setEmbeddedShowRaw((v) => !v)
+                  } else {
+                    navigate(buildPath(selectedSensorId, timeRange, !showRawData))
+                  }
                 }}
                 className={`w-full shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors sm:ml-auto sm:w-auto sm:py-1 ${
                   showRawData
