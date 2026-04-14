@@ -6,6 +6,8 @@ import BuildingEditPanel from '@/components/BuildingEditPanel'
 import CollapsibleSection from '@/components/CollapsibleSection'
 import BuildingFootprint from '@/components/BuildingFootprint'
 import BuildingMap3D from '@/components/BuildingMap3D'
+import Reports from '@/pages/Reports'
+import useAuth from '@/hooks/auth/useAuth'
 import { MAPBOX_TOKEN } from '@/globals/constants'
 import { useBuildingDetail } from '@/hooks/useBuildingDetail'
 import {
@@ -59,6 +61,8 @@ export default function BuildingDetail() {
   const navigate = useNavigate()
   const location = useLocation()
   const { building, loading, error } = useBuildingDetail(id)
+  const { role } = useAuth()
+  const showMagnetometerUi = role !== 'client'
 
   // BHI passed via navigation state from the buildings list — available instantly
   const navState = location.state as { bhi?: number; bhiLabel?: string } | null
@@ -517,7 +521,21 @@ export default function BuildingDetail() {
         </div>
       )}
 
-      {/* Analytics — starts immediately using URL param, no waiting for building data */}
+      {/* Primary: Flow Reports usage chart (embedded — auto-picks the building's primary sensor) */}
+      {validBuildingId != null && (
+        <div className="mb-4 sm:mb-6">
+          <Reports
+            embedded
+            hideHeader
+            buildingId={validBuildingId}
+            initialSensorId={
+              sensors.length > 0 ? sensors[sensors.length - 1]!.id : null
+            }
+          />
+        </div>
+      )}
+
+      {/* Building analytics (BHI, etc.) — starts immediately using URL param */}
       <div className="mb-4 sm:mb-6">
         {validBuildingId != null && (
           <BuildingAnalytics
@@ -612,8 +630,8 @@ export default function BuildingDetail() {
         ) : null}
       </CollapsibleSection>
 
-      {/* Magnetometer raw signals — collapsed, after 3D views */}
-      {magData.length > 0 && (
+      {/* Magnetometer raw signals — admin only, collapsed, after 3D views */}
+      {showMagnetometerUi && magData.length > 0 && (
         <div className="mt-4 sm:mt-6">
           <CollapsibleSection
             title="Magnetometer Data"
