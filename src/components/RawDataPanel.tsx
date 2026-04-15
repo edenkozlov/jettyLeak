@@ -281,7 +281,11 @@ export default function RawDataPanel({
     setZoomLoading(true)
     try {
       const points = await fetchZoomedData(left, right)
-      setZoomStack((stack) => [...stack, { sinceMs: left, untilMs: right, points }])
+      // Clamp domain to actual data extent so the chart doesn't show
+      // empty space past the last data point.
+      const actualLeft = points.length > 0 ? Math.min(left, points[0]!.timestamp) : left
+      const actualRight = points.length > 0 ? Math.min(right, points[points.length - 1]!.timestamp) : right
+      setZoomStack((stack) => [...stack, { sinceMs: actualLeft, untilMs: actualRight, points }])
     } catch (err) {
       console.warn('[RawDataPanel] zoom fetch failed', err)
     } finally {
