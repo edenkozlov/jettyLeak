@@ -27,6 +27,10 @@ interface Props {
   cachedBhi?: number | null
   cachedBhiLabel?: string | null
   onMagData?: (data: MagChartPoint[]) => void
+  /** Suppress the built-in BHI card + quick-stats row when the parent renders its own hero. */
+  hideHealthAndStats?: boolean
+  /** Called with the live analytics/health payload for the parent hero. */
+  onAnalytics?: (payload: { data: AnalyticsData | null; health: BuildingHealth | null; loading: boolean }) => void
 }
 
 // ---------------------------------------------------------------------------
@@ -1196,39 +1200,47 @@ export function MagDataSection({ data }: { data: MagChartPoint[] }) {
 // Main component
 // ---------------------------------------------------------------------------
 
-export default function BuildingAnalytics({ buildingId, cachedBhi, cachedBhiLabel, onMagData }: Props) {
+export default function BuildingAnalytics({ buildingId, cachedBhi, cachedBhiLabel, onMagData, hideHealthAndStats, onAnalytics }: Props) {
   const { data, health, bucketedFlow, magChart, loading, error } = useBuildingAnalytics(buildingId)
 
   useEffect(() => {
     onMagData?.(magChart)
   }, [magChart, onMagData])
 
+  useEffect(() => {
+    onAnalytics?.({ data, health, loading })
+  }, [data, health, loading, onAnalytics])
+
   return (
     <div className="space-y-4">
-      <BuildingHealthSection
-        health={health}
-        loading={loading}
-        cachedBhi={cachedBhi}
-        cachedBhiLabel={cachedBhiLabel}
-      />
+      {!hideHealthAndStats && (
+        <>
+          <BuildingHealthSection
+            health={health}
+            loading={loading}
+            cachedBhi={cachedBhi}
+            cachedBhiLabel={cachedBhiLabel}
+          />
 
-      {/* Top row: Live Flow + Water Usage stats — always visible */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <LiveFlowIndicator buildingId={buildingId} />
-        {loading ? (
-          <>
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-          </>
-        ) : data ? (
-          <>
-            <StatCard label="Today" value={data.today} />
-            <StatCard label="This Week" value={data.thisWeek} />
-            <StatCard label="This Month" value={data.thisMonth} />
-          </>
-        ) : null}
-      </div>
+          {/* Top row: Live Flow + Water Usage stats — always visible */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <LiveFlowIndicator buildingId={buildingId} />
+            {loading ? (
+              <>
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+                <StatCardSkeleton />
+              </>
+            ) : data ? (
+              <>
+                <StatCard label="Today" value={data.today} />
+                <StatCard label="This Week" value={data.thisWeek} />
+                <StatCard label="This Month" value={data.thisMonth} />
+              </>
+            ) : null}
+          </div>
+        </>
+      )}
 
       {/* Flow rate bar chart — always visible */}
       {loading ? (

@@ -16,7 +16,7 @@ import { UPDATE_BUILDING_BHI } from '@/mutations/buildingMutations'
 import type { Sensor } from '@/types'
 import type { BucketedFlowPoint, FlowPoint } from '@/utils/flowComputation'
 
-export type { BuildingHealth, BucketedFlowPoint }
+export type { BuildingHealth, BucketedFlowPoint, FlowHourlyRow }
 
 export interface MagChartPoint {
   timestamp: number
@@ -190,6 +190,8 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
   const [health, setHealth] = useState<BuildingHealth | null>(null)
   const [bucketedFlow, setBucketedFlow] = useState<BucketedFlowPoint[]>([])
   const [magChart, setMagChart] = useState<MagChartPoint[]>([])
+  const [flowHourlyRows, setFlowHourlyRows] = useState<FlowHourlyRow[]>([])
+  const [sensorMultiplier, setSensorMultiplier] = useState<number | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const tokenRef = useRef(token)
@@ -202,6 +204,8 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
       setHealth(null)
       setBucketedFlow([])
       setMagChart([])
+      setFlowHourlyRows([])
+      setSensorMultiplier(null)
       return
     }
 
@@ -211,15 +215,25 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
 
     ;(async () => {
       try {
-        // Step 1: Resolve mag sensor IDs and multiplier (2 small requests)
+        // Step 1: Resolve sensors + multiplier.
+        // Primary source = the `sensor` table filtered by `building_id` (this
+        // is what the flow chart uses). The older `mag_to_building` linkage
+        // table is only consulted as a supplement — many buildings have real
+        // sensor rows without any `mag_to_building` entries.
         const [magResult, sensorResult] = await Promise.all([
-          GET_MAG_SENSORS_BY_BUILDING_ID({ buildingId }),
+          GET_MAG_SENSORS_BY_BUILDING_ID({ buildingId }).catch(() => null),
           GET_SENSORS_BY_BUILDING_ID({ buildingId }),
         ])
         if (cancelled) return
 
-        const magIds =
-          (magResult?.mag_to_building as { mag_id: number }[])?.map((m) => m.mag_id) ?? []
+        const sensors = (sensorResult?.sensor as Sensor[]) ?? []
+        const directIds = sensors.map((s) => s.id)
+        const linkageIds =
+          ((magResult?.mag_to_building as { mag_id: number }[] | undefined) ?? []).map(
+            (m) => m.mag_id,
+          )
+        // Union: any sensor on this building OR any mag_to_building linkage
+        const magIds = Array.from(new Set<number>([...directIds, ...linkageIds]))
         if (magIds.length === 0) {
           setData(null)
           setHealth(null)
@@ -227,18 +241,21 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
           return
         }
 
-        const sensors = (sensorResult?.sensor as Sensor[]) ?? []
+        // Pick the first sensor with a valid multiplier (any sensor on the
+        // building will do — flow analytics are building-aggregated downstream).
         let multiplier: number | null = null
-        for (const magId of magIds) {
-          const match = sensors.find((s) => s.id === magId)
-          if (match?.multiplier != null) {
-            multiplier = match.multiplier
+        for (const id of magIds) {
+          const match = sensors.find((s) => s.id === id)
+          if (match?.multiplier != null && Number(match.multiplier) > 0) {
+            multiplier = Number(match.multiplier)
             break
           }
         }
         if (multiplier === null) {
-          const withMul = sensors.find((s) => s.multiplier != null)
-          if (withMul?.multiplier != null) multiplier = withMul.multiplier
+          const withMul = sensors.find(
+            (s) => s.multiplier != null && Number(s.multiplier) > 0,
+          )
+          if (withMul?.multiplier != null) multiplier = Number(withMul.multiplier)
         }
         if (multiplier === null || multiplier <= 0) {
           setData(null)
@@ -399,6 +416,8 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
         setData(analyticsPayload)
         setBucketedFlow(todayBucketed)
         setMagChart(recentMagChart)
+        setFlowHourlyRows(hourlyRows)
+        setSensorMultiplier(multiplier)
 
         // Persist BHI to DB
         UPDATE_BUILDING_BHI({
@@ -424,5 +443,14 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
     }
   }, [buildingId, token])
 
-  return { data, health, bucketedFlow, magChart, loading, error }
+  return {
+    data,
+    health,
+    bucketedFlow,
+    magChart,
+    flowHourlyRows,
+    sensorMultiplier,
+    loading,
+    error,
+  }
 }

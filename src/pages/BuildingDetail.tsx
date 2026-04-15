@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router'
 
-import BuildingAnalytics, { MagDataSection } from '@/components/BuildingAnalytics'
+import { MagDataSection } from '@/components/BuildingAnalytics'
 import BuildingEditPanel from '@/components/BuildingEditPanel'
-import CollapsibleSection from '@/components/CollapsibleSection'
+import BuildingFixturesStrip from '@/components/BuildingFixturesStrip'
+import BuildingFlowChart from '@/components/BuildingFlowChart'
+import BuildingOverviewHero from '@/components/BuildingOverviewHero'
 import BuildingFootprint from '@/components/BuildingFootprint'
 import BuildingMap3D from '@/components/BuildingMap3D'
-import Reports from '@/pages/Reports'
+import { useBuildingAnalytics } from '@/hooks/useBuildingAnalytics'
 import useAuth from '@/hooks/auth/useAuth'
 import { MAPBOX_TOKEN } from '@/globals/constants'
 import { useBuildingDetail } from '@/hooks/useBuildingDetail'
@@ -107,8 +109,19 @@ export default function BuildingDetail() {
   const displayClient = localClient !== undefined ? localClient : building?.client
 
   const [footprintExpanded, setFootprintExpanded] = useState(false)
-  const [magData, setMagData] = useState<Parameters<typeof MagDataSection>[0]['data']>([])
-  const handleMagData = useCallback((d: typeof magData) => setMagData(d), [])
+
+  // Parse building ID from URL param so analytics can start immediately
+  const buildingIdNum = id ? parseInt(id, 10) : null
+  const validBuildingIdForHook =
+    buildingIdNum !== null && !Number.isNaN(buildingIdNum) ? buildingIdNum : null
+
+  // Single analytics + health hook, shared by hero, mag section, and flow chart.
+  const {
+    data: analyticsData,
+    health: healthData,
+    magChart,
+    loading: analyticsLoading,
+  } = useBuildingAnalytics(validBuildingIdForHook)
 
   const handleEditSaved = useCallback((updates: Partial<Building>) => {
     if (updates.name !== undefined) setLocalName(updates.name ?? null)
@@ -363,10 +376,7 @@ export default function BuildingDetail() {
     [building?.fixtures, ],
   )
 
-  // Parse building ID from URL param so analytics can start immediately
-  const buildingIdNum = id ? parseInt(id, 10) : null
-  const validBuildingId =
-    buildingIdNum !== null && !Number.isNaN(buildingIdNum) ? buildingIdNum : null
+  const validBuildingId = validBuildingIdForHook
 
   // Priority: user selection > saved in DB > Overpass API result
   const displayFootprints = selectedFootprint
@@ -521,34 +531,37 @@ export default function BuildingDetail() {
         </div>
       )}
 
-      {/* Primary: Flow Reports usage chart (embedded — auto-picks the building's primary sensor) */}
+      {/* 1. HERO — quick stats + WHI + 3 pillars + fixture reference */}
       {validBuildingId != null && (
         <div className="mb-4 sm:mb-6">
-          <Reports
-            embedded
-            hideHeader
+          <BuildingOverviewHero
             buildingId={validBuildingId}
-            initialSensorId={
-              sensors.length > 0 ? sensors[sensors.length - 1]!.id : null
-            }
+            health={healthData}
+            analytics={analyticsData}
+            footprint={building?.footprint ?? null}
+            numberOfFloors={numberOfFloors}
+            address={displayAddress ?? building?.full_address ?? null}
+            loading={analyticsLoading}
           />
         </div>
       )}
 
-      {/* Building analytics (BHI, etc.) — starts immediately using URL param */}
-      <div className="mb-4 sm:mb-6">
-        {validBuildingId != null && (
-          <BuildingAnalytics
-            buildingId={validBuildingId}
-            cachedBhi={instantBhi}
-            cachedBhiLabel={instantBhiLabel}
-            onMagData={handleMagData}
-          />
-        )}
-      </div>
+      {/* 2. UNIFIED CHART — flow rate / usage toggle, with interval selector */}
+      {validBuildingId != null && (
+        <div className="mb-4 sm:mb-6">
+          <BuildingFlowChart buildingId={validBuildingId} />
+        </div>
+      )}
 
-      {/* Map views — collapsible, loads in bg */}
-      <CollapsibleSection title="3D View & Footprint">
+      {/* 3. FIXTURES STRIP — typed icons, grouped by DB fixture type */}
+      {validBuildingId != null && (
+        <div className="mb-4 sm:mb-6">
+          <BuildingFixturesStrip buildingId={validBuildingId} />
+        </div>
+      )}
+
+      {/* 4. Map views — flat, not collapsible */}
+      <div className="mb-4 sm:mb-6">
         {loading ? (
           <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
             <div className={`h-72 rounded-xl bg-gray-200/70 dark:bg-gray-700/50 sm:h-96 ${shimmer}`} />
@@ -628,17 +641,12 @@ export default function BuildingDetail() {
             )}
           </div>
         ) : null}
-      </CollapsibleSection>
+      </div>
 
-      {/* Magnetometer raw signals — admin only, collapsed, after 3D views */}
-      {showMagnetometerUi && magData.length > 0 && (
+      {/* Magnetometer raw signals — admin only, flat (not collapsible) */}
+      {showMagnetometerUi && magChart.length > 0 && (
         <div className="mt-4 sm:mt-6">
-          <CollapsibleSection
-            title="Magnetometer Data"
-            preview={`${magData.length} samples · Total, X, Y, Z`}
-          >
-            <MagDataSection data={magData} />
-          </CollapsibleSection>
+          <MagDataSection data={magChart} />
         </div>
       )}
 

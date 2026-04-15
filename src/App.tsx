@@ -44,6 +44,7 @@ const Settings = lazy(() => import('@/pages/Settings'))
 const Team = lazy(() => import('@/pages/Team'))
 const BuildingCertification = lazy(() => import('@/pages/BuildingCertification'))
 const WaterAlerts = lazy(() => import('@/pages/WaterAlerts'))
+const Activity = lazy(() => import('@/pages/Activity'))
 const Articles = lazy(() => import('@/pages/articles/Articles'))
 const ArticleWhatIsWaterMonitoring = lazy(() => import('@/pages/articles/ArticleWhatIsWaterMonitoring'))
 const ArticleHowToChoose = lazy(() => import('@/pages/articles/ArticleHowToChoose'))
@@ -119,19 +120,21 @@ function AppRoutes() {
             <Route path="buildings/map" element={<BuildingsMap />} />
             <Route path="buildings/:id" element={<BuildingDetail />} />
             <Route path="buildings/:id/certification" element={<BuildingCertification />} />
-            <Route path="fixtures/:sensorId?" element={<Fixtures />} />
+            <Route path="fixtures/:buildingId?" element={<Fixtures />} />
             <Route path="reports/:sensorId?" element={<ReportsRedirect />} />
             <Route path="reports/:sensorId/:timeWindow/raw" element={<ReportsRedirect />} />
             <Route path="reports/:sensorId/:timeWindow/flow" element={<ReportsRedirect />} />
             <Route path="reports/:sensorId/:timeWindow" element={<ReportsRedirect />} />
-            <Route path="mag-reports/:buildingId?" element={<MagReports />} />
-            <Route path="water-alerts" element={<WaterAlerts />} />
+            <Route path="activity" element={<Activity />} />
             <Route path="settings" element={<Settings />} />
             <Route path="team" element={<Team />} />
             <Route element={<AdminRoute />}>
               <Route path="clients" element={<Clients />} />
               <Route path="sensors" element={<Sensors />} />
               <Route path="admin" element={<Admin />} />
+              <Route path="mag-reports/:buildingId?" element={<MagReports />} />
+              <Route path="engineering/mag/:buildingId?" element={<MagReports />} />
+              <Route path="water-alerts" element={<WaterAlerts />} />
             </Route>
           </Route>
         </Routes>
