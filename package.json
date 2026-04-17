@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@beluga/core": "file:../beluga-core",
     "@reduxjs/toolkit": "^2.5.0",
     "@sentry/react": "^9.1.0",
     "@supabase/supabase-js": "^2.49.0",

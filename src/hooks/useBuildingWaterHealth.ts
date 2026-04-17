@@ -24,6 +24,8 @@ import {
   type FixtureBenchmark,
 } from '@/utils/waterBenchmarks'
 import { detectRegionFromAddress, type Region } from '@/utils/regionDetection'
+import { computeWHI as computeWHICanonical } from '@beluga/core'
+import { GET_BUILDING_ANALYTICS_SUMMARY, type BuildingAnalyticsSummary } from '@/queries/getBuildingAnalyticsSummary'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Water Health Index (WHI) — 3 real, measurable pillars.
@@ -42,10 +44,6 @@ import { detectRegionFromAddress, type Region } from '@/utils/regionDetection'
 // the user. Once we store per-session volumes upstream (signal.value.volume_l),
 // fixture efficiency can become a true scored pillar.
 // ─────────────────────────────────────────────────────────────────────────────
-
-const W_INTENSITY = 0.50
-const W_LEAK = 0.35
-const W_TREND = 0.15
 
 export type WaterHealthGrade = 'excellent' | 'good' | 'watch' | 'poor' | 'unknown'
 
@@ -825,6 +823,7 @@ interface Input {
   health: BuildingHealth | null
   footprint: LatLon[] | null | undefined
   numberOfFloors: number | null | undefined
+  totalSqft?: number | null
   /** Building address — used to detect region and pick the right fixture benchmarks. */
   address: string | null | undefined
   loading: boolean
@@ -836,10 +835,23 @@ export function useBuildingWaterHealth({
   health,
   footprint,
   numberOfFloors,
+  totalSqft,
   address,
   loading,
 }: Input): WaterHealthIndex {
   const fixturesState = useBuildingFixtures(buildingId)
+
+  // RPC summary — single source of truth for WHI inputs (same RPC mobile uses)
+  const [rpcSummary, setRpcSummary] = useState<BuildingAnalyticsSummary | null>(null)
+
+  useEffect(() => {
+    if (buildingId == null) { setRpcSummary(null); return }
+    let cancelled = false
+    GET_BUILDING_ANALYTICS_SUMMARY(buildingId)
+      .then((s) => { if (!cancelled) setRpcSummary(s) })
+      .catch(() => { if (!cancelled) setRpcSummary(null) })
+    return () => { cancelled = true }
+  }, [buildingId])
 
   // Fetch sensors (for multipliers) + peak flow from dominant_freq_hz
   const [peakFlow, setPeakFlow] = useState<PeakFlowStats | null>(null)
@@ -895,20 +907,33 @@ export function useBuildingWaterHealth({
       countScaleFactor,
     )
 
-    // Weighted score across available pillars. If a pillar is unavailable,
-    // its weight is redistributed pro-rata to the others so the score isn't
-    // artificially penalized.
-    const parts: Array<{ w: number; s: number }> = []
-    if (intensity.score != null) parts.push({ w: W_INTENSITY, s: intensity.score })
-    if (leak.score != null) parts.push({ w: W_LEAK, s: leak.score })
-    if (trend.score != null) parts.push({ w: W_TREND, s: trend.score })
+    // Canonical WHI from @beluga/core — uses the RPC summary so web + mobile
+    // feed the exact same server-computed numbers into the same function.
+    const whiResult = rpcSummary
+      ? computeWHICanonical({
+          monthLitres: rpcSummary.this_month,
+          footprint,
+          numberOfFloors,
+          totalSqft,
+          thisWeek: rpcSummary.this_week,
+          lastWeek: rpcSummary.last_week,
+          leak: rpcSummary.leak_score != null
+            ? { score: rpcSummary.leak_score }
+            : leak.score != null
+              ? { score: leak.score }
+              : null,
+        })
+      : computeWHICanonical({
+          monthLitres: analytics?.thisMonth ?? 0,
+          footprint,
+          numberOfFloors,
+          totalSqft,
+          thisWeek: analytics?.thisWeek ?? 0,
+          lastWeek: analytics?.lastWeek ?? 0,
+          leak: leak.score != null ? { score: leak.score } : null,
+        })
 
-    let score: number | null = null
-    if (parts.length > 0) {
-      const totalW = parts.reduce((a, b) => a + b.w, 0)
-      score = parts.reduce((a, b) => a + b.w * b.s, 0) / totalW
-    }
-
+    const score = whiResult.score
     const grade: WaterHealthGrade = score == null ? 'unknown' : scoreToGrade(score)
 
     return {
@@ -924,5 +949,5 @@ export function useBuildingWaterHealth({
       peakFlow,
       region,
     }
-  }, [health, fixturesState, analytics, footprint, numberOfFloors, loading, peakFlow, peakLoading, region])
+  }, [health, fixturesState, analytics, footprint, numberOfFloors, loading, peakFlow, peakLoading, region, rpcSummary])
 }

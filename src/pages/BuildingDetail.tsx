@@ -35,6 +35,11 @@ import {
 } from '@/mutations/sensorMutations'
 import type { Building, Fixture, FixtureType, Sensor } from '@/types'
 import { isCertificationEligible } from '@/utils/certification'
+import useRawSubWindows, { getSubWindowConfig } from '@/hooks/useRawSubWindows'
+import RawDataPanel, { type RawSignalOverlay } from '@/components/RawDataPanel'
+import type { TimeRange } from '@/hooks/useReportsPage'
+import { supabase } from '@/lib/supabase'
+import { parseSignalValue } from '@/types/signal'
 
 // Ray-casting point-in-polygon test
 function pointInPolygon(
@@ -109,6 +114,68 @@ export default function BuildingDetail() {
   const displayClient = localClient !== undefined ? localClient : building?.client
 
   const [footprintExpanded, setFootprintExpanded] = useState(false)
+
+  // Raw magnetometer sub-windows (admin only)
+  const [rawTimeRange, setRawTimeRange] = useState<TimeRange>('15m')
+  const magSensorIds = sensors.map((s) => s.id)
+  const rawSubConfig = showMagnetometerUi ? getSubWindowConfig(rawTimeRange) : null
+  const { subWindows, sharedYDomains, loading: subWindowsLoading } = useRawSubWindows({
+    sensorId: magSensorIds[0] ?? null,
+    magSensorIds,
+    timeRange: rawTimeRange,
+    periodOffset: 0,
+    enabled: showMagnetometerUi && magSensorIds.length > 0,
+    refetchKey: 0,
+  })
+  const [showSignalOverlays, setShowSignalOverlays] = useState(true)
+  const [signalOverlays, setSignalOverlays] = useState<RawSignalOverlay[]>([])
+
+  // Fetch signals (predictions) to overlay on the raw mag tiles
+  useEffect(() => {
+    if (!showMagnetometerUi || magSensorIds.length === 0 || !rawSubConfig) {
+      setSignalOverlays([])
+      return
+    }
+    let cancelled = false
+    const totalMs = rawSubConfig.count * rawSubConfig.durationMs
+    const since = new Date(Date.now() - totalMs).toISOString()
+    ;(async () => {
+      try {
+        const { data } = await supabase
+          .from('signal')
+          .select('id, start_time, end_time, value, sensor_id')
+          .in('sensor_id', magSensorIds)
+          .gte('start_time', since)
+          .order('start_time', { ascending: false })
+          .limit(500)
+        if (cancelled || !data) return
+        const COLORS: Record<string, string> = {
+          toilet: '#8b5cf6', sink: '#f59e0b', shower: '#3b82f6',
+          dishwasher: '#ec4899', urinal: '#14b8a6', unknown: '#6b7280',
+        }
+        const overlays: RawSignalOverlay[] = data
+          .map((sig) => {
+            const parsed = parseSignalValue(sig.value)
+            if (!parsed) return null
+            const startMs = sig.start_time ? new Date(sig.start_time).getTime() : null
+            const endMs = sig.end_time ? new Date(sig.end_time).getTime() : null
+            if (!startMs || !endMs) return null
+            const type = String(parsed.signal_type ?? 'unknown').toLowerCase()
+            const name = parsed.fixture_name ?? type
+            return {
+              id: sig.id,
+              startMs,
+              endMs,
+              color: COLORS[type] ?? COLORS.unknown!,
+              label: `${type} (${name})`,
+            }
+          })
+          .filter((x): x is RawSignalOverlay => x !== null)
+        setSignalOverlays(overlays)
+      } catch { /* non-fatal */ }
+    })()
+    return () => { cancelled = true }
+  }, [showMagnetometerUi, magSensorIds.join(','), rawTimeRange, rawSubConfig])
 
   // Parse building ID from URL param so analytics can start immediately
   const buildingIdNum = id ? parseInt(id, 10) : null
@@ -540,6 +607,7 @@ export default function BuildingDetail() {
             analytics={analyticsData}
             footprint={building?.footprint ?? null}
             numberOfFloors={numberOfFloors}
+            totalSqft={building?.total_sqft ?? null}
             address={displayAddress ?? building?.full_address ?? null}
             loading={analyticsLoading}
           />
@@ -689,6 +757,73 @@ export default function BuildingDetail() {
               />
             </div>
           </div>
+        </div>
+      )}
+
+      {/* 5. Raw Magnetometer — admin only, 15-min sub-window tiles */}
+      {showMagnetometerUi && validBuildingId != null && magSensorIds.length > 0 && (
+        <div className="mb-4 sm:mb-6">
+          <div className="mb-3 flex flex-wrap items-center gap-3">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              Raw Magnetometer
+            </h2>
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              Per-axis breakdown · {rawSubConfig ? `${rawSubConfig.count} × ${rawSubConfig.durationMs / 60_000}min tiles` : ''}
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowSignalOverlays((v) => !v)}
+              className={`rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                showSignalOverlays
+                  ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
+                  : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'
+              }`}
+            >
+              {showSignalOverlays ? 'Predictions: on' : 'Predictions: off'}
+            </button>
+            <div className="flex gap-1">
+              {(['15m', '1h', '6h', '12h', '24h'] as const).map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setRawTimeRange(r)}
+                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                    rawTimeRange === r
+                      ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {subWindowsLoading && (
+            <p className="py-4 text-center text-xs text-gray-400">Loading tiles…</p>
+          )}
+
+          {!subWindowsLoading && subWindows.length === 0 && (
+            <p className="rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-xs text-gray-400 dark:border-gray-700">
+              No mag data in this window.
+            </p>
+          )}
+
+          {subWindows.length > 0 && (
+            <div className="flex flex-col gap-3">
+              {subWindows.map((w) => (
+                <RawDataPanel
+                  key={w.index}
+                  window={w}
+                  sharedYDomains={sharedYDomains}
+                  signalOverlays={showSignalOverlays ? signalOverlays : []}
+                  label={`Q${w.index + 1}`}
+                  magSensorIds={magSensorIds}
+                  buildingId={validBuildingId}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

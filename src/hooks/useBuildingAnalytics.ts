@@ -294,20 +294,20 @@ export function useBuildingAnalytics(buildingId: number | null | undefined) {
 
         const last24h = new Date(nowMs - 24 * 3_600_000)
 
+        // Decouple: analytics is critical, mag chart is nice-to-have.
+        // If mag times out, stats still load.
         const [analyticsResult, chartResult] = await Promise.all([
-          // 1 request — returns ~672 rows max for 28 days
           GET_FLOW_ANALYTICS({
             sensorIds: magIds,
             since: fetchSince.toISOString(),
             until: now.toISOString(),
           }),
-          // 1 request — returns ~1500 downsampled points
           GET_MAG_DOWNSAMPLED({
             sensorIds: magIds,
             since: last24h.toISOString(),
             until: now.toISOString(),
             maxPoints: 1500,
-          }),
+          }).catch(() => ({ mag_report: [] as any[] })),
         ])
         if (cancelled) return
 

@@ -92,6 +92,7 @@ export default function Fixtures() {
     health,
     footprint: building?.footprint ?? null,
     numberOfFloors: building?.number_of_floors ?? null,
+    totalSqft: building?.total_sqft ?? null,
     address: building?.full_address ?? null,
     loading: analyticsLoading,
   })

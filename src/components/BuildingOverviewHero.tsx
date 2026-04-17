@@ -771,6 +771,7 @@ interface Props {
   analytics: AnalyticsData | null
   footprint?: LatLon[] | null
   numberOfFloors?: number | null
+  totalSqft?: number | null
   address?: string | null
   loading: boolean
 }
@@ -781,6 +782,7 @@ export default function BuildingOverviewHero({
   analytics,
   footprint,
   numberOfFloors,
+  totalSqft,
   address,
   loading,
 }: Props) {
@@ -790,6 +792,7 @@ export default function BuildingOverviewHero({
     health,
     footprint,
     numberOfFloors,
+    totalSqft,
     address,
     loading,
   })

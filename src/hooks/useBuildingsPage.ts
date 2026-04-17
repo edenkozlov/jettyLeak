@@ -51,6 +51,7 @@ export function useBuildingsPage() {
           bhi_label: r.bhi_label,
           bhi_updated_at: null,
           footprint: null,
+          total_sqft: null,
           sensors_aggregate: { aggregate: { count: r.sensor_count } },
           client: r.client_first_name || r.client_last_name
             ? { id: r.client_id ?? '', created_at: '', email: null, first_name: r.client_first_name, last_name: r.client_last_name }
