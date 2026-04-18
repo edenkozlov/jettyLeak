@@ -45,6 +45,8 @@ interface SubWindowConfig {
 }
 
 const SUB_WINDOW_CONFIG: Partial<Record<TimeRange, SubWindowConfig>> = {
+  '1m': { count: 1, durationMs: 60_000 },
+  '5m': { count: 1, durationMs: 5 * 60_000 },
   '15m': { count: 3, durationMs: 5 * 60_000 },
   '1h': { count: 12, durationMs: 5 * 60_000 },
   '6h': { count: 24, durationMs: 15 * 60_000 },

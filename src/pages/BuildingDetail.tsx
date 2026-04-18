@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useLocation, useNavigate, useParams } from 'react-router'
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 
 import { MagDataSection } from '@/components/BuildingAnalytics'
 import BuildingEditPanel from '@/components/BuildingEditPanel'
@@ -115,24 +115,57 @@ export default function BuildingDetail() {
 
   const [footprintExpanded, setFootprintExpanded] = useState(false)
 
-  // Raw magnetometer sub-windows (admin only)
-  const [rawTimeRange, setRawTimeRange] = useState<TimeRange>('15m')
+  // ── URL-driven admin tab state ──
+  const [searchParams, setSearchParams] = useSearchParams()
+  const activeTab = searchParams.get('tab') === 'admin' && showMagnetometerUi ? 'admin' : 'overview'
   const magSensorIds = sensors.map((s) => s.id)
-  const rawSubConfig = showMagnetometerUi ? getSubWindowConfig(rawTimeRange) : null
+
+  // Admin tab: selected sensor from URL (defaults to first)
+  const urlSensorId = searchParams.get('sensor') ? Number(searchParams.get('sensor')) : null
+  const adminSensorId =
+    urlSensorId != null && magSensorIds.includes(urlSensorId)
+      ? urlSensorId
+      : magSensorIds[0] ?? null
+  const adminSensorIds = adminSensorId != null ? [adminSensorId] : magSensorIds
+
+  // Admin tab: time range from URL
+  const ADMIN_TIME_RANGES = ['1m', '5m', '15m', '1h', '6h', '12h', '24h'] as const
+  const urlRange = searchParams.get('range') as TimeRange | null
+  const rawTimeRange: TimeRange = urlRange && ADMIN_TIME_RANGES.includes(urlRange as any) ? urlRange : '15m'
+
+  // Admin tab: pause state from URL
+  const isPaused = searchParams.get('paused') === '1'
+
+  // Helper to update URL params without replacing history
+  const setAdminParam = useCallback((key: string, value: string | null) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      if (value == null) next.delete(key)
+      else next.set(key, value)
+      return next
+    }, { replace: true })
+  }, [setSearchParams])
+
+  const setTab = useCallback((tab: 'overview' | 'admin') => {
+    setAdminParam('tab', tab === 'admin' ? 'admin' : null)
+  }, [setAdminParam])
+
+  const rawSubConfig = activeTab === 'admin' ? getSubWindowConfig(rawTimeRange) : null
+  const [refetchKey] = useState(0)
   const { subWindows, sharedYDomains, loading: subWindowsLoading } = useRawSubWindows({
-    sensorId: magSensorIds[0] ?? null,
-    magSensorIds,
+    sensorId: adminSensorId,
+    magSensorIds: adminSensorIds,
     timeRange: rawTimeRange,
     periodOffset: 0,
-    enabled: showMagnetometerUi && magSensorIds.length > 0,
-    refetchKey: 0,
+    enabled: activeTab === 'admin' && adminSensorIds.length > 0 && !isPaused,
+    refetchKey: isPaused ? -1 : refetchKey,
   })
   const [showSignalOverlays, setShowSignalOverlays] = useState(true)
   const [signalOverlays, setSignalOverlays] = useState<RawSignalOverlay[]>([])
 
   // Fetch signals (predictions) to overlay on the raw mag tiles
   useEffect(() => {
-    if (!showMagnetometerUi || magSensorIds.length === 0 || !rawSubConfig) {
+    if (activeTab !== 'admin' || adminSensorIds.length === 0 || !rawSubConfig) {
       setSignalOverlays([])
       return
     }
@@ -144,7 +177,7 @@ export default function BuildingDetail() {
         const { data } = await supabase
           .from('signal')
           .select('id, start_time, end_time, value, sensor_id')
-          .in('sensor_id', magSensorIds)
+          .in('sensor_id', adminSensorIds)
           .gte('start_time', since)
           .order('start_time', { ascending: false })
           .limit(500)
@@ -175,7 +208,7 @@ export default function BuildingDetail() {
       } catch { /* non-fatal */ }
     })()
     return () => { cancelled = true }
-  }, [showMagnetometerUi, magSensorIds.join(','), rawTimeRange, rawSubConfig])
+  }, [activeTab, adminSensorIds.join(','), rawTimeRange, rawSubConfig])
 
   // Parse building ID from URL param so analytics can start immediately
   const buildingIdNum = id ? parseInt(id, 10) : null
@@ -598,6 +631,29 @@ export default function BuildingDetail() {
         </div>
       )}
 
+      {/* Tab bar — Overview | Admin (admin-only) */}
+      {showMagnetometerUi && (
+        <div className="mb-4 flex gap-1 border-b border-gray-200 dark:border-gray-700">
+          {(['overview', 'admin'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={`px-4 py-2.5 text-sm font-medium transition-colors ${
+                activeTab === t
+                  ? 'border-b-2 border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+            >
+              {t === 'overview' ? 'Overview' : 'Admin'}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ──────── OVERVIEW TAB ──────── */}
+      {activeTab === 'overview' && <>
+
       {/* 1. HERO — quick stats + WHI + 3 pillars + fixture reference */}
       {validBuildingId != null && (
         <div className="mb-4 sm:mb-6">
@@ -711,10 +767,128 @@ export default function BuildingDetail() {
         ) : null}
       </div>
 
-      {/* Magnetometer raw signals — admin only, flat (not collapsible) */}
-      {showMagnetometerUi && magChart.length > 0 && (
-        <div className="mt-4 sm:mt-6">
-          <MagDataSection data={magChart} />
+      </>}
+
+      {/* ──────── ADMIN TAB ──────── */}
+      {activeTab === 'admin' && validBuildingId != null && (
+        <div className="mb-4">
+          {/* Sensor picker + controls */}
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            {/* Sensor selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Sensor:</span>
+              <div className="flex gap-1">
+                {sensors.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setAdminParam('sensor', String(s.id))}
+                    className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                      adminSensorId === s.id
+                        ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
+                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    {s.name || `#${s.id}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+
+            {/* Time range */}
+            <div className="flex gap-1">
+              {ADMIN_TIME_RANGES.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setAdminParam('range', r)}
+                  className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                    rawTimeRange === r
+                      ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+
+            <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+
+            {/* Pause / Resume */}
+            <button
+              type="button"
+              onClick={() => setAdminParam('paused', isPaused ? null : '1')}
+              className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                isPaused
+                  ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                  : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'
+              }`}
+            >
+              <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                {isPaused ? (
+                  <path d="M8 5v14l11-7z" />
+                ) : (
+                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+                )}
+              </svg>
+              {isPaused ? 'Resume' : 'Pause'}
+            </button>
+
+            {/* Predictions toggle */}
+            <button
+              type="button"
+              onClick={() => setShowSignalOverlays((v) => !v)}
+              className={`rounded-md border px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+                showSignalOverlays
+                  ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
+                  : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'
+              }`}
+            >
+              {showSignalOverlays ? 'Predictions: on' : 'Predictions: off'}
+            </button>
+
+            <span className="text-xs text-gray-400 dark:text-gray-500">
+              {rawSubConfig ? `${rawSubConfig.count} × ${rawSubConfig.durationMs / 60_000}min` : ''}
+              {isPaused ? ' · paused' : ''}
+            </span>
+          </div>
+
+          {/* Mag data overview chart */}
+          {magChart.length > 0 && (
+            <div className="mb-4">
+              <MagDataSection data={magChart} />
+            </div>
+          )}
+
+          {/* Sub-window tiles */}
+          {subWindowsLoading && (
+            <p className="py-4 text-center text-xs text-gray-400">Loading tiles…</p>
+          )}
+
+          {!subWindowsLoading && subWindows.length === 0 && (
+            <p className="rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-xs text-gray-400 dark:border-gray-700">
+              No mag data in this window.
+            </p>
+          )}
+
+          {subWindows.length > 0 && (
+            <div className="flex flex-col gap-3">
+              {subWindows.map((w) => (
+                <RawDataPanel
+                  key={w.index}
+                  window={w}
+                  sharedYDomains={sharedYDomains}
+                  signalOverlays={showSignalOverlays ? signalOverlays : []}
+                  label={`Q${w.index + 1}`}
+                  magSensorIds={adminSensorIds}
+                  buildingId={validBuildingId}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -760,72 +934,6 @@ export default function BuildingDetail() {
         </div>
       )}
 
-      {/* 5. Raw Magnetometer — admin only, 15-min sub-window tiles */}
-      {showMagnetometerUi && validBuildingId != null && magSensorIds.length > 0 && (
-        <div className="mb-4 sm:mb-6">
-          <div className="mb-3 flex flex-wrap items-center gap-3">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Raw Magnetometer
-            </h2>
-            <span className="text-xs text-gray-400 dark:text-gray-500">
-              Per-axis breakdown · {rawSubConfig ? `${rawSubConfig.count} × ${rawSubConfig.durationMs / 60_000}min tiles` : ''}
-            </span>
-            <button
-              type="button"
-              onClick={() => setShowSignalOverlays((v) => !v)}
-              className={`rounded-md border px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                showSignalOverlays
-                  ? 'border-indigo-300 bg-indigo-50 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
-                  : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'
-              }`}
-            >
-              {showSignalOverlays ? 'Predictions: on' : 'Predictions: off'}
-            </button>
-            <div className="flex gap-1">
-              {(['15m', '1h', '6h', '12h', '24h'] as const).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRawTimeRange(r)}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                    rawTimeRange === r
-                      ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
-                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {subWindowsLoading && (
-            <p className="py-4 text-center text-xs text-gray-400">Loading tiles…</p>
-          )}
-
-          {!subWindowsLoading && subWindows.length === 0 && (
-            <p className="rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-xs text-gray-400 dark:border-gray-700">
-              No mag data in this window.
-            </p>
-          )}
-
-          {subWindows.length > 0 && (
-            <div className="flex flex-col gap-3">
-              {subWindows.map((w) => (
-                <RawDataPanel
-                  key={w.index}
-                  window={w}
-                  sharedYDomains={sharedYDomains}
-                  signalOverlays={showSignalOverlays ? signalOverlays : []}
-                  label={`Q${w.index + 1}`}
-                  magSensorIds={magSensorIds}
-                  buildingId={validBuildingId}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 }

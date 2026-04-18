@@ -13,37 +13,25 @@ import {
 import { useGraphQL } from '@/hooks/useGraphQL'
 import { useTheme } from '@/contexts/ThemeContext'
 import { supabase } from '@/lib/supabase'
-import { GET_PREDICTED_SIGNALS } from '@/queries/getPredictedSignals'
-import { GET_LABELS } from '@/queries/getLabels'
+// Retired: predicted signals + training labels
+// import { GET_PREDICTED_SIGNALS } from '@/queries/getPredictedSignals'
+// import { GET_LABELS } from '@/queries/getLabels'
 import { GET_SENSORS } from '@/queries/getSensors'
 import { GET_MAG_REPORTS } from '@/queries/getMagReports'
-import { INSERT_SIGNAL, DELETE_SIGNAL, UPDATE_PREDICTED_SIGNAL } from '@/mutations/signalMutations'
+// Retired: signal mutations for training
+// import { INSERT_SIGNAL, DELETE_SIGNAL, UPDATE_PREDICTED_SIGNAL } from '@/mutations/signalMutations'
 import { computeFlowFromPeaks, type FlowPoint } from '@/utils/flowComputation'
 import type { MagReport } from '@/types/magReport'
+import useRawSubWindows, { getSubWindowConfig } from '@/hooks/useRawSubWindows'
+import RawDataPanel from '@/components/RawDataPanel'
+// MagDataSection available if needed later
+// import { MagDataSection } from '@/components/BuildingAnalytics'
+import type { TimeRange } from '@/hooks/useReportsPage'
 
 const EXPRESS_URL = import.meta.env.VITE_EXPRESS_ENDPOINT || 'http://localhost:3000'
+const ADMIN_TIME_RANGES: TimeRange[] = ['1m', '5m', '15m', '1h', '6h', '12h', '24h']
 
-type Tab = 'predictions' | 'labels' | 'retrain' | 'firmware' | 'bluetooth' | 'invites'
-
-interface PredictedSignal {
-  id: number
-  sensor_id: number
-  sensor: { name: string; building: { name: string } | null } | null
-  prediction: string
-  confidence: number | null
-  start_time: string
-  end_time: string
-  created_at: string
-}
-
-interface Label {
-  id: number
-  sensor_id: number
-  sensor: { name: string } | null
-  value: string
-  start_time: string
-  end_time: string
-}
+type Tab = 'sensors' | 'firmware' | 'bluetooth' | 'invites'
 
 interface Sensor {
   id: number
@@ -56,23 +44,7 @@ interface Sensor {
   building: { id: number; name: string } | null
 }
 
-interface RetrainTestResult {
-  signalId: number
-  trueLabel: string
-  predicted: string
-  correct: boolean
-  confidence: number
-  scores: Record<string, number>
-}
 
-interface RetrainResult {
-  modelsCount?: number
-  fixtureTypes?: string[]
-  totalSequences?: number
-  testResults?: RetrainTestResult[]
-  accuracy?: number
-  error?: string
-}
 
 // What we're inspecting in the detail panel — works for both labels and predictions
 interface SegmentDetail {
@@ -107,9 +79,7 @@ const FIXTURE_TYPES = [
 ]
 
 const TAB_ITEMS: { key: Tab; label: string }[] = [
-  { key: 'predictions', label: 'Predicted Signals' },
-  { key: 'labels', label: 'Training Labels' },
-  { key: 'retrain', label: 'Tools' },
+  { key: 'sensors', label: 'Sensors' },
   { key: 'firmware', label: 'Firmware' },
   { key: 'bluetooth', label: 'Bluetooth' },
   { key: 'invites', label: 'Invite Codes' },
@@ -153,7 +123,7 @@ function formatTime(ts: number): string {
 
 // ── Segment Detail Panel ────────────────────────────────────────────────
 
-function SegmentPanel({
+function _SegmentPanel({
   detail,
   onClose,
   onSaveAsTraining,
@@ -467,7 +437,7 @@ const TIME_RANGES = [
   { label: '6 hours', ms: 6 * 60 * 60_000 },
 ]
 
-function LabelCreator({
+function _LabelCreator({
   sensors,
   onSave,
   saving,
@@ -752,56 +722,287 @@ function LabelCreator({
 
 // ── Main Admin Page ─────────────────────────────────────────────────────
 
-export default function Admin() {
-  const [activeTab, setActiveTab] = useState<Tab>('predictions')
-  const [segmentDetail, setSegmentDetail] = useState<SegmentDetail | null>(null)
+// ─────────────────────────────────────────────────────────────────────────────
+// Sensor card with computed flow stats from raw mag sub-windows
+// ─────────────────────────────────────────────────────────────────────────────
 
+function AdminSensorCard({
+  sensor,
+  subWindows,
+  loading,
+}: {
+  sensor: Sensor
+  subWindows: { points: { timestamp: number; x: number | null; total: number | null; bandEnergy10s: number | null; bandEnergy60s: number | null }[] }[]
+  loading: boolean
+}) {
+  const { mode } = useTheme()
+
+  const { flowStats, flowChartData } = useMemo(() => {
+    if (!sensor.multiplier || sensor.multiplier <= 0 || subWindows.length === 0)
+      return { flowStats: null, flowChartData: [] as { timestamp: number; flowRateLph: number; accumulatedL: number }[] }
+
+    const allPoints = subWindows
+      .flatMap((w) => w.points)
+      .sort((a, b) => a.timestamp - b.timestamp)
+
+    if (allPoints.length < 5)
+      return { flowStats: null, flowChartData: [] }
+
+    const magData = allPoints.map((p) => ({
+      timestamp: p.timestamp,
+      x: p.x,
+      total: p.total,
+      bandEnergy10s: p.bandEnergy10s,
+      bandEnergy60s: p.bandEnergy60s,
+    }))
+
+    const flowPoints = computeFlowFromPeaks(magData, sensor.multiplier)
+    if (flowPoints.length === 0)
+      return { flowStats: { currentLph: 0, totalLitres: 0, peakLph: 0, avgLph: 0 }, flowChartData: [] }
+
+    const lastRate = flowPoints[flowPoints.length - 1]!.flowRateLph
+    const totalLitres = flowPoints[flowPoints.length - 1]!.accumulatedL
+    const peakLph = Math.max(...flowPoints.map((p) => p.flowRateLph))
+    const avgLph = flowPoints.reduce((s, p) => s + p.flowRateLph, 0) / flowPoints.length
+
+    return {
+      flowStats: {
+        currentLph: Math.round(lastRate * 10) / 10,
+        totalLitres: Math.round(totalLitres * 100) / 100,
+        peakLph: Math.round(peakLph * 10) / 10,
+        avgLph: Math.round(avgLph * 10) / 10,
+      },
+      flowChartData: flowPoints,
+    }
+  }, [sensor.multiplier, subWindows])
+
+  const isFlowing = flowStats != null && flowStats.currentLph > 0
+
+  return (
+    <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+      <div className="flex items-center gap-3 mb-3">
+        <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${
+          isFlowing ? 'bg-emerald-100 dark:bg-emerald-900/30' : 'bg-indigo-100 dark:bg-indigo-900/30'
+        }`}>
+          <svg className={`h-5 w-5 ${isFlowing ? 'text-emerald-600 dark:text-emerald-400' : 'text-indigo-600 dark:text-indigo-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+            {sensor.name || `Sensor #${sensor.id}`}
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            ID: {sensor.id}
+            {sensor.multiplier != null && ` · Multiplier: ${sensor.multiplier}`}
+            {sensor.building && typeof sensor.building === 'object' && 'name' in sensor.building
+              ? ` · ${(sensor.building as any).name}`
+              : ''}
+          </p>
+        </div>
+        {isFlowing && (
+          <span className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+            </span>
+            Flowing
+          </span>
+        )}
+      </div>
+
+      {/* Flow stats grid */}
+      {flowStats != null ? (
+        <div className="grid grid-cols-4 gap-3">
+          <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900/40">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Current flow</p>
+            <p className={`text-lg font-bold tabular-nums ${isFlowing ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'}`}>
+              {flowStats.currentLph} <span className="text-xs font-normal text-gray-400">L/h</span>
+            </p>
+          </div>
+          <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900/40">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Total usage</p>
+            <p className="text-lg font-bold tabular-nums text-gray-900 dark:text-white">
+              {flowStats.totalLitres} <span className="text-xs font-normal text-gray-400">L</span>
+            </p>
+          </div>
+          <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900/40">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Peak flow</p>
+            <p className="text-lg font-bold tabular-nums text-gray-900 dark:text-white">
+              {flowStats.peakLph} <span className="text-xs font-normal text-gray-400">L/h</span>
+            </p>
+          </div>
+          <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900/40">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Avg flow</p>
+            <p className="text-lg font-bold tabular-nums text-gray-900 dark:text-white">
+              {flowStats.avgLph} <span className="text-xs font-normal text-gray-400">L/h</span>
+            </p>
+          </div>
+        </div>
+      ) : loading ? (
+        <p className="text-xs text-gray-400">Computing flow…</p>
+      ) : sensor.multiplier == null || sensor.multiplier <= 0 ? (
+        <p className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+          No multiplier set — calibrate this sensor to see flow data.
+        </p>
+      ) : (
+        <p className="text-xs text-gray-400">No flow data in this window.</p>
+      )}
+
+      {/* Flow rate chart */}
+      {flowChartData.length > 2 && (
+        <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50/50 p-2 dark:border-gray-700 dark:bg-gray-900/30">
+          <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            Flow rate
+          </p>
+          <ResponsiveContainer width="100%" height={160}>
+            <LineChart data={flowChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={mode === 'dark' ? '#374151' : '#e5e7eb'}
+              />
+              <XAxis
+                dataKey="timestamp"
+                type="number"
+                domain={['dataMin', 'dataMax']}
+                tickFormatter={(ts: number) => {
+                  const d = new Date(ts)
+                  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+                }}
+                tick={{ fontSize: 10, fill: mode === 'dark' ? '#9ca3af' : '#6b7280' }}
+                stroke={mode === 'dark' ? '#374151' : '#e5e7eb'}
+              />
+              <YAxis
+                tick={{ fontSize: 10, fill: '#3b82f6' }}
+                stroke={mode === 'dark' ? '#374151' : '#e5e7eb'}
+                tickFormatter={(v: number) => v.toFixed(0)}
+                width={40}
+              />
+              <Tooltip
+                labelFormatter={(ts) =>
+                  new Date(Number(ts)).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+                }
+                formatter={(v) => [`${Number(v).toFixed(1)} L/h`, 'Flow']}
+                contentStyle={{
+                  backgroundColor: mode === 'dark' ? '#1f2937' : '#fff',
+                  border: `1px solid ${mode === 'dark' ? '#374151' : '#e5e7eb'}`,
+                  borderRadius: 8,
+                  fontSize: 11,
+                  color: mode === 'dark' ? '#f3f4f6' : '#111827',
+                }}
+              />
+              <Line
+                type="stepAfter"
+                dataKey="flowRateLph"
+                stroke="#3b82f6"
+                strokeWidth={1.5}
+                dot={false}
+                isAnimationActive={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+
+          {/* Accumulated usage chart */}
+          <p className="mb-1 mt-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            Accumulated usage
+          </p>
+          <ResponsiveContainer width="100%" height={100}>
+            <LineChart data={flowChartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke={mode === 'dark' ? '#374151' : '#e5e7eb'}
+              />
+              <XAxis
+                dataKey="timestamp"
+                type="number"
+                domain={['dataMin', 'dataMax']}
+                tickFormatter={(ts: number) => {
+                  const d = new Date(ts)
+                  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+                }}
+                tick={{ fontSize: 10, fill: mode === 'dark' ? '#9ca3af' : '#6b7280' }}
+                stroke={mode === 'dark' ? '#374151' : '#e5e7eb'}
+              />
+              <YAxis
+                tick={{ fontSize: 10, fill: '#10b981' }}
+                stroke={mode === 'dark' ? '#374151' : '#e5e7eb'}
+                tickFormatter={(v: number) => `${v.toFixed(1)}L`}
+                width={45}
+              />
+              <Tooltip
+                labelFormatter={(ts) =>
+                  new Date(Number(ts)).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+                }
+                formatter={(v) => [`${Number(v).toFixed(2)} L`, 'Total']}
+                contentStyle={{
+                  backgroundColor: mode === 'dark' ? '#1f2937' : '#fff',
+                  border: `1px solid ${mode === 'dark' ? '#374151' : '#e5e7eb'}`,
+                  borderRadius: 8,
+                  fontSize: 11,
+                  color: mode === 'dark' ? '#f3f4f6' : '#111827',
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="accumulatedL"
+                stroke="#10b981"
+                strokeWidth={1.5}
+                dot={false}
+                isAnimationActive={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default function Admin() {
+  const [activeTab, setActiveTab] = useState<Tab>('sensors')
   // Data hooks
   const { data: sensorsData, executeQuery: fetchSensors } =
     useGraphQL<{ sensor: Sensor[] }>(GET_SENSORS)
   const fetchSensorsRef = useRef(fetchSensors)
   fetchSensorsRef.current = fetchSensors
 
-  const { data: predictionsData, loading: predictionsLoading, error: predictionsError, executeQuery: fetchPredictions } =
-    useGraphQL<{ predicted_signal: PredictedSignal[] }>(GET_PREDICTED_SIGNALS)
-  const fetchPredictionsRef = useRef(fetchPredictions)
-  fetchPredictionsRef.current = fetchPredictions
+  // Sensors tab state
+  const allSensors = (sensorsData?.sensor ?? []) as Sensor[]
+  const [adminSelectedSensorId, setAdminSelectedSensorId] = useState<number | null>(null)
+  const [sensorSearch, setSensorSearch] = useState('')
+  const [sensorDropdownOpen, setSensorDropdownOpen] = useState(false)
 
-  const { data: labelsData, loading: labelsLoading, error: labelsError, executeQuery: fetchLabels } =
-    useGraphQL<{ signal: Label[] }>(GET_LABELS)
-  const fetchLabelsRef = useRef(fetchLabels)
-  fetchLabelsRef.current = fetchLabels
+  // Sort by ID ascending, default to lowest ID sensor
+  const sortedSensors = useMemo(() => [...allSensors].sort((a, b) => a.id - b.id), [allSensors])
+  const filteredSensors = useMemo(() => {
+    if (!sensorSearch) return sortedSensors
+    const q = sensorSearch.toLowerCase()
+    return sortedSensors.filter((s) =>
+      (s.name ?? '').toLowerCase().includes(q) ||
+      String(s.id).includes(q) ||
+      (s.building && typeof s.building === 'object' && 'name' in s.building
+        ? ((s.building as any).name ?? '').toLowerCase().includes(q)
+        : false)
+    )
+  }, [sortedSensors, sensorSearch])
 
-  const { executeQuery: executeInsertSignal } =
-    useGraphQL<{ insert_signal_one: { id: number } }>(INSERT_SIGNAL)
-  const executeInsertSignalRef = useRef(executeInsertSignal)
-  executeInsertSignalRef.current = executeInsertSignal
+  const adminSensor = adminSelectedSensorId != null
+    ? sortedSensors.find((s) => s.id === adminSelectedSensorId) ?? sortedSensors[0] ?? null
+    : sortedSensors[0] ?? null
+  const adminSensorIds = adminSensor ? [adminSensor.id] : []
+  const [adminTimeRange, setAdminTimeRange] = useState<TimeRange>('5m')
+  const [adminPaused, setAdminPaused] = useState(false)
 
-  const { executeQuery: executeDeleteSignal } =
-    useGraphQL<{ delete_signal_by_pk: { id: number } | null }>(DELETE_SIGNAL)
-  const executeDeleteSignalRef = useRef(executeDeleteSignal)
-  executeDeleteSignalRef.current = executeDeleteSignal
-
-  const { executeQuery: executeUpdatePrediction } =
-    useGraphQL<{ update_predicted_signal_by_pk: { id: number; prediction: string } }>(UPDATE_PREDICTED_SIGNAL)
-  const executeUpdatePredictionRef = useRef(executeUpdatePrediction)
-  executeUpdatePredictionRef.current = executeUpdatePrediction
-
-  const [sensorFilter, setSensorFilter] = useState('')
-  const [addLabelLoading, setAddLabelLoading] = useState(false)
-  const [addLabelError, setAddLabelError] = useState('')
-
-  // Retrain state
-  const [retrainLoading, setRetrainLoading] = useState(false)
-  const [retrainResult, setRetrainResult] = useState<RetrainResult | null>(null)
-  const [retrainError, setRetrainError] = useState('')
-
-  // Sanitize state
-  const [sanitizeSensorId, setSanitizeSensorId] = useState('')
-  const [sanitizeLoading, setSanitizeLoading] = useState(false)
-  const [sanitizeResult, setSanitizeResult] = useState<{ totalDeleted: number; totalKept: number } | null>(null)
-  const [sanitizeError, setSanitizeError] = useState('')
-
+  const adminSubConfig = activeTab === 'sensors' ? getSubWindowConfig(adminTimeRange) : null
+  const { subWindows: adminSubWindows, sharedYDomains: adminYDomains, loading: adminSubLoading } =
+    useRawSubWindows({
+      sensorId: adminSensor?.id ?? null,
+      magSensorIds: adminSensorIds,
+      timeRange: adminTimeRange,
+      periodOffset: 0,
+      enabled: activeTab === 'sensors' && adminSensorIds.length > 0 && !adminPaused,
+      refetchKey: adminPaused ? -1 : 0,
+    })
   // Firmware OTA state
   const [fwSensorType, setFwSensorType] = useState<'receiver' | 'dual'>('receiver')
   const [fwVersion, setFwVersion] = useState('')
@@ -928,8 +1129,6 @@ export default function Admin() {
   }, [])
 
   const sensors = sensorsData?.sensor ?? []
-  const predictions = predictionsData?.predicted_signal ?? []
-  const labels = labelsData?.signal ?? []
 
   useEffect(() => { fetchSensorsRef.current() }, [])
 
@@ -950,83 +1149,6 @@ export default function Admin() {
     const tickInterval = setInterval(() => setNow(Date.now()), 10000)
     return () => { clearInterval(pollInterval); clearInterval(tickInterval) }
   }, [activeTab])
-
-  useEffect(() => {
-    if (activeTab !== 'predictions') return
-    const where = sensorFilter ? { sensor_id: { _eq: parseInt(sensorFilter) } } : {}
-    fetchPredictionsRef.current({ limit: 100, where })
-  }, [activeTab, sensorFilter])
-
-  useEffect(() => {
-    if (activeTab !== 'labels') return
-    fetchLabelsRef.current()
-  }, [activeTab])
-
-  // Close detail panel on tab switch
-  useEffect(() => { setSegmentDetail(null) }, [activeTab])
-
-  const handleDeleteLabel = useCallback(async (id: number) => {
-    await executeDeleteSignalRef.current({ id })
-    fetchLabelsRef.current()
-  }, [])
-
-  const handleSaveAsTraining = useCallback(async (sensorId: number, startTime: string, endTime: string, value: string, predictedSignalId?: number) => {
-    // Insert training label
-    await executeInsertSignalRef.current({
-      sensor_id: sensorId,
-      value,
-      start_time: startTime,
-      end_time: endTime,
-      time: startTime,
-    })
-    // Also update the predicted_signal prediction to match the new label
-    if (predictedSignalId != null) {
-      await executeUpdatePredictionRef.current({ id: predictedSignalId, prediction: value })
-      // Refresh predictions list
-      const where = sensorFilter ? { sensor_id: { _eq: parseInt(sensorFilter) } } : {}
-      fetchPredictionsRef.current({ limit: 100, where })
-    }
-  }, [sensorFilter])
-
-  async function handleRetrain() {
-    setRetrainLoading(true)
-    setRetrainError('')
-    setRetrainResult(null)
-    try {
-      const res = await fetch(`${EXPRESS_URL}/api/admin/retrain`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
-      const result = await res.json()
-      if (!res.ok) throw new Error(result.error || `${res.status} ${res.statusText}`)
-      setRetrainResult(result)
-    } catch (e: unknown) {
-      setRetrainError(e instanceof Error ? e.message : 'Retrain failed')
-    } finally {
-      setRetrainLoading(false)
-    }
-  }
-
-  async function handleSanitize() {
-    if (!sanitizeSensorId) return
-    setSanitizeLoading(true)
-    setSanitizeError('')
-    setSanitizeResult(null)
-    try {
-      const res = await fetch(`${EXPRESS_URL}/api/admin/sanitize`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sensor_id: parseInt(sanitizeSensorId) }),
-      })
-      const result = await res.json()
-      if (!res.ok) throw new Error(result.error || `${res.status} ${res.statusText}`)
-      setSanitizeResult(result)
-    } catch (e: unknown) {
-      setSanitizeError(e instanceof Error ? e.message : 'Sanitize failed')
-    } finally {
-      setSanitizeLoading(false)
-    }
-  }
 
   // ── Sensor status helpers ──────────────────
   const DEAD_THRESHOLD_MS = 3 * 60 * 1000 // 3 minutes
@@ -1232,33 +1354,7 @@ export default function Admin() {
     }
   }
 
-  function openPredictionDetail(p: PredictedSignal) {
-    const sensor = sensors.find((s) => s.id === p.sensor_id)
-    setSegmentDetail({
-      sensorId: p.sensor_id,
-      sensorName: p.sensor?.name ?? `#${p.sensor_id}`,
-      sensorMultiplier: sensor?.multiplier ?? null,
-      startTime: p.start_time,
-      endTime: p.end_time,
-      prediction: p.prediction,
-      sourceId: p.id,
-      source: 'prediction',
-    })
-  }
-
-  function openLabelDetail(l: Label) {
-    const sensor = sensors.find((s) => s.id === l.sensor_id)
-    setSegmentDetail({
-      sensorId: l.sensor_id,
-      sensorName: l.sensor?.name ?? `#${l.sensor_id}`,
-      sensorMultiplier: sensor?.multiplier ?? null,
-      startTime: l.start_time,
-      endTime: l.end_time,
-      label: l.value,
-      sourceId: l.id,
-      source: 'label',
-    })
-  }
+  // Removed: openPredictionDetail, openLabelDetail (retired tabs)
 
   return (
     <div className="mx-auto min-w-0 max-w-6xl">
@@ -1282,294 +1378,135 @@ export default function Admin() {
         ))}
       </div>
 
-      {/* Predicted Signals */}
-      {activeTab === 'predictions' && (
+      {/* ──────── SENSORS TAB ──────── */}
+      {activeTab === 'sensors' && (
         <div>
-          <div className="mb-4 flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
-            <label className="shrink-0 text-sm font-medium text-gray-700 dark:text-gray-300">Filter by sensor:</label>
-            <select
-              value={sensorFilter}
-              onChange={(e) => setSensorFilter(e.target.value)}
-              className="min-w-0 w-full max-w-md rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-            >
-              <option value="">All sensors</option>
-              {sensors.map((s) => (
-                <option key={s.id} value={s.id}>{s.name || s.id}</option>
-              ))}
-            </select>
-          </div>
-
-          {predictionsLoading && <p className="text-gray-500 dark:text-gray-400">Loading predictions...</p>}
-          {predictionsError && (
-            <p className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">{predictionsError}</p>
-          )}
-
-          {!predictionsLoading && !predictionsError && (
-            <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-gray-200 [-webkit-overflow-scrolling:touch] dark:border-gray-700">
-              <table className="min-w-[720px] divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    {['ID', 'Sensor', 'Building', 'Prediction', 'Confidence', 'Start Time', 'End Time', ''].map((header, i) => (
-                      <th key={i} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{header}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                  {predictions.length === 0 ? (
-                    <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No predicted signals found.</td></tr>
-                  ) : (
-                    predictions.map((p) => (
-                      <tr
-                        key={p.id}
-                        className={`cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${segmentDetail?.sourceId === p.id && segmentDetail?.source === 'prediction' ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}
-                        onClick={() => openPredictionDetail(p)}
-                      >
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{p.id}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{p.sensor?.name ?? p.sensor_id}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{p.sensor?.building?.name ?? '—'}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm">
-                          <span className="rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">{p.prediction}</span>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
-                          {p.confidence != null ? `${(p.confidence * 100).toFixed(1)}%` : '—'}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{new Date(p.start_time).toLocaleString()}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{new Date(p.end_time).toLocaleString()}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
-                          <span className="text-xs text-indigo-500 dark:text-indigo-400">View &rarr;</span>
-                        </td>
-                      </tr>
-                    ))
+          {/* Sensor picker + controls */}
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            {/* Searchable sensor select */}
+            <div className="relative">
+              <input
+                type="text"
+                value={sensorSearch}
+                onChange={(e) => setSensorSearch(e.target.value)}
+                onFocus={() => setSensorDropdownOpen(true)}
+                placeholder={adminSensor ? (adminSensor.name || `Sensor #${adminSensor.id}`) : 'Select sensor…'}
+                className="w-56 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 placeholder-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
+              />
+              {sensorDropdownOpen && (
+                <div className="absolute left-0 top-full z-10 mt-1 max-h-72 w-80 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
+                  {filteredSensors.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setAdminSelectedSensorId(s.id)
+                        setSensorSearch('')
+                        setSensorDropdownOpen(false)
+                      }}
+                      className={`w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                        adminSensor?.id === s.id ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300' : 'text-gray-700 dark:text-gray-300'
+                      }`}
+                    >
+                      <span className="font-medium">{s.name || `Sensor #${s.id}`}</span>
+                      {s.building && typeof s.building === 'object' && 'name' in s.building && (
+                        <span className="ml-2 text-xs text-gray-400">
+                          {(s.building as any).name}
+                        </span>
+                      )}
+                      <span className="ml-2 text-xs text-gray-400">#{s.id}</span>
+                    </button>
+                  ))}
+                  {filteredSensors.length === 0 && (
+                    <p className="px-3 py-2 text-xs text-gray-400">No matching sensors</p>
                   )}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {segmentDetail && segmentDetail.source === 'prediction' && (
-            <SegmentPanel
-              detail={segmentDetail}
-              onClose={() => setSegmentDetail(null)}
-              onSaveAsTraining={handleSaveAsTraining}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Training Labels */}
-      {activeTab === 'labels' && (
-        <div>
-          {/* Add Label */}
-          <LabelCreator
-            sensors={sensors}
-            onSave={async (sensorId, startTime, endTime, value) => {
-              setAddLabelLoading(true)
-              setAddLabelError('')
-              try {
-                await executeInsertSignal({
-                  sensor_id: sensorId,
-                  value,
-                  start_time: startTime,
-                  end_time: endTime,
-                  time: startTime,
-                })
-                fetchLabels()
-              } catch (err: unknown) {
-                setAddLabelError(err instanceof Error ? err.message : 'Failed to add label')
-              } finally {
-                setAddLabelLoading(false)
-              }
-            }}
-            saving={addLabelLoading}
-            error={addLabelError}
-          />
-
-          {labelsLoading && <p className="text-gray-500 dark:text-gray-400">Loading labels...</p>}
-          {labelsError && (
-            <p className="mb-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">{labelsError}</p>
-          )}
-
-          {!labelsLoading && !labelsError && (
-            <div className="min-w-0 max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-gray-200 [-webkit-overflow-scrolling:touch] dark:border-gray-700">
-              <table className="min-w-[640px] divide-y divide-gray-200 dark:divide-gray-700">
-                <thead className="bg-gray-50 dark:bg-gray-800">
-                  <tr>
-                    {['ID', 'Sensor', 'Value', 'Start Time', 'End Time', ''].map((header, i) => (
-                      <th key={i} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{header}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                  {labels.length === 0 ? (
-                    <tr><td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No labels found.</td></tr>
-                  ) : (
-                    labels.map((l) => (
-                      <tr
-                        key={l.id}
-                        className={`cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 ${segmentDetail?.sourceId === l.id && segmentDetail?.source === 'label' ? 'bg-indigo-50 dark:bg-indigo-900/20' : ''}`}
-                        onClick={() => openLabelDetail(l)}
-                      >
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900 dark:text-gray-100">{l.id}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{l.sensor?.name ?? l.sensor_id}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm">
-                          <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-900/40 dark:text-green-300">{l.value.replace(/_/g, ' ')}</span>
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{new Date(l.start_time).toLocaleString()}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{new Date(l.end_time).toLocaleString()}</td>
-                        <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDeleteLabel(l.id) }}
-                            className="rounded-md px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/30"
-                          >
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {segmentDetail && segmentDetail.source === 'label' && (
-            <SegmentPanel
-              detail={segmentDetail}
-              onClose={() => setSegmentDetail(null)}
-              onSaveAsTraining={handleSaveAsTraining}
-            />
-          )}
-        </div>
-      )}
-
-      {/* Retrain */}
-      {activeTab === 'retrain' && (
-        <div className="mx-auto min-w-0 max-w-lg space-y-6">
-          {/* Retrain */}
-          <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Retrain Model</h2>
-            <div className="mb-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-700 dark:bg-amber-900/30">
-              <p className="text-sm text-amber-800 dark:text-amber-300">
-                This will retrain the HMM models using all labeled signals in the database.
-              </p>
-            </div>
-            <button
-              onClick={handleRetrain}
-              disabled={retrainLoading}
-              className="w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
-            >
-              {retrainLoading ? 'Retraining...' : 'Retrain Model'}
-            </button>
-
-            {retrainError && (
-              <p className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">{retrainError}</p>
-            )}
-
-            {retrainResult && (
-              <div className="mt-4 space-y-4">
-                <div className="rounded-md border border-green-200 bg-green-50 px-4 py-4 dark:border-green-700 dark:bg-green-900/30">
-                  <p className="mb-2 text-sm font-medium text-green-800 dark:text-green-300">Retrain completed successfully.</p>
-                  <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-green-700 dark:text-green-400">
-                    {retrainResult.fixtureTypes && (
-                      <span>Types: {retrainResult.fixtureTypes.join(', ')}</span>
-                    )}
-                    {retrainResult.totalSequences != null && (
-                      <span>Sequences: {retrainResult.totalSequences}</span>
-                    )}
-                    {retrainResult.accuracy != null && (
-                      <span className="font-semibold">Accuracy: {(retrainResult.accuracy * 100).toFixed(1)}%</span>
-                    )}
-                  </div>
                 </div>
-
-                {/* Test results table */}
-                {retrainResult.testResults && retrainResult.testResults.length > 0 && (
-                  <div className="min-w-0 overflow-hidden rounded-md border border-gray-200 dark:border-gray-700">
-                    <div className="border-b border-gray-200 bg-gray-50 px-4 py-2 dark:border-gray-700 dark:bg-gray-800">
-                      <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                        Test Results ({retrainResult.testResults.filter(r => r.correct).length}/{retrainResult.testResults.length} correct)
-                      </h3>
-                    </div>
-                    <div className="max-h-64 overflow-x-auto overflow-y-auto overscroll-x-contain">
-                      <table className="min-w-[520px] divide-y divide-gray-200 text-xs dark:divide-gray-700">
-                        <thead className="bg-gray-50 dark:bg-gray-800">
-                          <tr>
-                            {['Signal', 'True Label', 'Predicted', 'Confidence', 'Result'].map((h) => (
-                              <th key={h} className="px-3 py-2 text-left font-semibold text-gray-500 dark:text-gray-400">{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200 bg-white dark:divide-gray-700 dark:bg-gray-900">
-                          {retrainResult.testResults.map((r) => (
-                            <tr key={r.signalId} className={r.correct ? '' : 'bg-red-50/50 dark:bg-red-900/10'}>
-                              <td className="px-3 py-1.5 text-gray-700 dark:text-gray-300">#{r.signalId}</td>
-                              <td className="px-3 py-1.5 text-gray-700 dark:text-gray-300">{r.trueLabel}</td>
-                              <td className="px-3 py-1.5">
-                                <span className={`rounded-full px-2 py-0.5 font-medium ${r.correct ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'}`}>
-                                  {r.predicted}
-                                </span>
-                              </td>
-                              <td className="px-3 py-1.5 text-gray-700 dark:text-gray-300">{(r.confidence * 100).toFixed(1)}%</td>
-                              <td className="px-3 py-1.5">
-                                {r.correct
-                                  ? <span className="font-medium text-green-600 dark:text-green-400">Correct</span>
-                                  : <span className="font-medium text-red-600 dark:text-red-400">Wrong</span>
-                                }
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Sanitize */}
-          <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
-            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Sanitize Sensor Data</h2>
-            <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 dark:border-red-700 dark:bg-red-900/30">
-              <p className="text-sm text-red-800 dark:text-red-300">
-                Deletes all mag_report rows with no flow activity (band energy &lt; 5) for the selected sensor. This is irreversible.
-              </p>
+              )}
             </div>
-            <div className="mb-4">
-              <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Sensor</label>
-              <select
-                value={sanitizeSensorId}
-                onChange={(e) => { setSanitizeSensorId(e.target.value); setSanitizeResult(null); setSanitizeError('') }}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
-              >
-                <option value="">Select sensor</option>
-                {sensors.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name || s.id}</option>
-                ))}
-              </select>
+
+            <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+
+            <div className="flex gap-1">
+              {ADMIN_TIME_RANGES.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setAdminTimeRange(r)}
+                  className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                    adminTimeRange === r
+                      ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300'
+                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
             </div>
+
+            <div className="h-4 w-px bg-gray-200 dark:bg-gray-700" />
+
             <button
-              onClick={handleSanitize}
-              disabled={sanitizeLoading || !sanitizeSensorId}
-              className="w-full rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 dark:bg-red-500 dark:hover:bg-red-600"
+              type="button"
+              onClick={() => setAdminPaused((v) => !v)}
+              className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors ${
+                adminPaused
+                  ? 'border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                  : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'
+              }`}
             >
-              {sanitizeLoading ? 'Sanitizing...' : 'Sanitize'}
+              <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                {adminPaused ? <path d="M8 5v14l11-7z" /> : <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />}
+              </svg>
+              {adminPaused ? 'Resume' : 'Pause'}
             </button>
 
-            {sanitizeError && (
-              <p className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">{sanitizeError}</p>
-            )}
-
-            {sanitizeResult && (
-              <div className="mt-4 rounded-md border border-green-200 bg-green-50 px-4 py-4 dark:border-green-700 dark:bg-green-900/30">
-                <p className="mb-2 text-sm font-medium text-green-800 dark:text-green-300">Sanitization complete.</p>
-                <p className="text-sm text-green-700 dark:text-green-400">Deleted: {sanitizeResult.totalDeleted.toLocaleString()} rows</p>
-                <p className="text-sm text-green-700 dark:text-green-400">Kept: {sanitizeResult.totalKept.toLocaleString()} rows</p>
-              </div>
+            {adminSubConfig && (
+              <span className="text-xs text-gray-400 dark:text-gray-500">
+                {adminSubConfig.count} × {adminSubConfig.durationMs / 60_000}min
+                {adminPaused ? ' · paused' : ''}
+              </span>
             )}
           </div>
+
+          {/* Sensor info + live flow stats */}
+          {adminSensor && (
+            <AdminSensorCard
+              sensor={adminSensor}
+              subWindows={adminSubWindows}
+              loading={adminSubLoading}
+            />
+          )}
+
+          {/* Sub-window tiles */}
+          {adminSubLoading && (
+            <p className="py-6 text-center text-xs text-gray-400">Loading tiles…</p>
+          )}
+
+          {!adminSubLoading && adminSubWindows.length === 0 && (
+            <p className="rounded-lg border border-dashed border-gray-200 px-4 py-10 text-center text-sm text-gray-400 dark:border-gray-700">
+              {adminSensorIds.length === 0
+                ? 'No sensors found. Add a sensor first.'
+                : 'No mag data in this time window.'}
+            </p>
+          )}
+
+          {adminSubWindows.length > 0 && (
+            <div className="flex flex-col gap-3">
+              {adminSubWindows.map((w) => (
+                <RawDataPanel
+                  key={w.index}
+                  window={w}
+                  sharedYDomains={adminYDomains}
+                  label={`Q${w.index + 1}`}
+                  magSensorIds={adminSensorIds}
+                  buildingId={null}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
+
 
       {/* Firmware OTA */}
       {activeTab === 'firmware' && (
