@@ -123,6 +123,8 @@ function formatTime(ts: number): string {
 
 // ── Segment Detail Panel ────────────────────────────────────────────────
 
+// @ts-expect-error — kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function _SegmentPanel({
   detail,
   onClose,
@@ -437,6 +439,8 @@ const TIME_RANGES = [
   { label: '6 hours', ms: 6 * 60 * 60_000 },
 ]
 
+// @ts-expect-error — kept for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function _LabelCreator({
   sensors,
   onSave,
