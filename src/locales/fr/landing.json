@@ -10,7 +10,8 @@
     "caseStudy": "Étude de cas",
     "investor": "Investisseurs",
     "signIn": "Connexion",
-    "getQuote": "Nous contacter"
+    "getQuote": "Nous contacter",
+    "propertyIntel": "Intelligence immobilière"
   },
   "navAnchors": {
     "product": "Produit",
@@ -24,7 +25,10 @@
     "titleHighlight": "complète du réseau",
     "titleAfter": " d’eau",
     "subtitle": "Un capteur. Chaque point d’usage.",
-    "cta": "Nous contacter"
+    "cta": "Nous contacter",
+    "searchEyebrow": "Vérifiez un immeuble",
+    "searchPlaceholder": "Entrez une adresse…",
+    "searchHint": "Estimation instantanée fondée sur des signaux — directionnelle, ne remplace pas une inspection."
   },
   "product": {
     "titleLine1": "Un système qui comprend",
@@ -236,7 +240,8 @@
       "support": "Assistance",
       "investorDeck": "Présentation investisseurs",
       "privacy": "Politique de confidentialité",
-      "terms": "Conditions d’utilisation"
+      "terms": "Conditions d’utilisation",
+      "propertyIntel": "Intelligence immobilière"
     },
     "copyright": {
       "landing": "© {{year}} Beluga — L’intelligence de l’eau pour les bâtiments",
@@ -432,5 +437,290 @@
     "contactTitle": "Contact",
     "contactLead": "Questions sur ces conditions ? Écrivez-nous à",
     "contactOrCall": "ou appelez le"
+  },
+  "intelligence": {
+    "meta": {
+      "title": "Intelligence immobilière — Beluga",
+      "description": "Estimez la santé de la plomberie d’un immeuble à partir d’une adresse. Scores par catégorie basés sur des signaux d’infrastructure — ne remplacent pas une inspection physique."
+    },
+    "hero": {
+      "eyebrow": "Intelligence immobilière",
+      "titleBefore": "Visualisez la",
+      "titleHighlight": "santé cachée",
+      "titleAfter": "de la plomberie de tout immeuble.",
+      "subtitle": "Beluga estime le risque plomberie de manière directionnelle à partir d’une adresse, en croisant dossiers publics, heuristiques d’infrastructure et signaux régionaux. Pour en savoir plus sur votre immeuble et obtenir des données en temps réel, il vous faudra un appareil Beluga.",
+      "searchHint": "Essayez une adresse complète. Les estimations sont optimales aux États-Unis et au Canada.",
+      "primaryCta": "Demander une évaluation réelle",
+      "secondaryCta": "Fonctionnement",
+      "tryAnother": "Vérifier une autre adresse",
+      "requestReal": "Demander une évaluation réelle",
+      "trust": {
+        "publicRecords": "Dossiers publics",
+        "infrastructure": "Heuristiques d’infrastructure",
+        "environmental": "Signaux environnementaux"
+      }
+    },
+    "search": {
+      "placeholder": "Entrez une adresse…",
+      "clear": "Effacer l’adresse",
+      "attribution": "Résultats fournis par Mapbox"
+    },
+    "map": {
+      "pinConfirmation": "Adresse confirmée",
+      "previewEyebrow": "Couverture active",
+      "previewTitle": "Déposez n’importe quelle adresse US ou CA",
+      "previewBody": "La carte se centre sur l’immeuble puis superpose l’intelligence régionale autour.",
+      "seeFullBreakdown": "Voir l’analyse complète"
+    },
+    "loading": {
+      "title": "Estimation en cours",
+      "estimating": "Estimation",
+      "steps": {
+        "collecting": "Collecte des signaux d’adresse et régionaux",
+        "heuristics": "Croisement des heuristiques d’infrastructure",
+        "scoring": "Calcul des scores et agrégation"
+      }
+    },
+    "bands": {
+      "excellent": "Excellent",
+      "good": "Bon",
+      "watch": "Moyen",
+      "action": "Faible"
+    },
+    "confidence": {
+      "high": "Confiance élevée",
+      "medium": "Confiance modérée",
+      "low": "Signal limité",
+      "tooltip": "La confiance reflète la densité de signaux publics et d’infrastructure appariés à cette adresse."
+    },
+    "results": {
+      "eyebrow": "Santé plomberie estimée",
+      "overall": "Global",
+      "estimated": "Estimé, non inspecté",
+      "confidencePct": "Confiance {{pct}} %",
+      "confidenceShort": "Conf. {{pct}} %",
+      "categoriesEyebrow": "Répartition par catégorie",
+      "categoriesTitle": "Sept scores fondés sur des signaux",
+      "categoriesSubtitle": "1 = risque le plus élevé · 10 = signaux de santé les plus forts",
+      "scaleHint": "1 risque élevé · 10 forte santé",
+      "ctaPrimary": "Demander une évaluation réelle",
+      "ctaReset": "Vérifier une autre adresse",
+      "narrative": {
+        "excellent": "Les signaux convergent positivement. Une évaluation réelle devrait confirmer un immeuble bien entretenu et à faible risque côté plomberie.",
+        "good": "La plupart des indicateurs sont sains avec quelques points de vigilance. Une évaluation Beluga confirmerait où concentrer l’attention.",
+        "watch": "Plusieurs catégories présentent des signaux de risque élevés. Une évaluation réelle est recommandée pour transformer ces lectures directionnelles en constats vérifiés.",
+        "action": "Plusieurs catégories signalent un risque significatif. Une évaluation réelle Beluga est fortement recommandée pour valider et prioriser."
+      }
+    },
+    "categories": {
+      "pipeCondition": {
+        "eyebrow": "Infrastructure",
+        "title": "État des canalisations",
+        "rationale": {
+          "default": "Estimé à partir de l’époque du bâti, de l’âge des infrastructures locales et des signaux disponibles.",
+          "preWar": "Époque pré-Seconde Guerre — les canalisations d’alimentation ont probablement dépassé leur prime.",
+          "midCentury": "Époque d’après-guerre — mélanges galvanisé / cuivre ancien encore en service.",
+          "modern": "Infrastructure d’alimentation typiquement moderne pour ce secteur.",
+          "recent": "Canalisations récentes — bien dans la durée de vie utile.",
+          "agingMains": "Réseaux municipaux d’alimentation vieillissants — risque de base plus élevé.",
+          "modernMains": "Réseaux d’alimentation relativement modernes — risque de base plus faible.",
+          "coastalExposure": "Air côtier et eaux saumâtres accélèrent la corrosion des conduites.",
+          "floodExposure": "Exposition historique aux inondations sollicite les conduites enterrées.",
+          "hardWater": "Eau dure régionale — dépôts calcaires accélérés sur les canalisations anciennes."
+        }
+      },
+      "leakResilience": {
+        "eyebrow": "Fiabilité",
+        "title": "Résistance aux fuites",
+        "rationale": {
+          "default": "Combine priors d’âge des canalisations et signaux climatiques régionaux.",
+          "freezeThaw": "Cycles gel-dégel — fatigue des joints et micro-fuites plus probables sur le réseau ancien.",
+          "preWar": "Canalisations pré-Seconde Guerre — probabilité de fuite supérieure à la moyenne.",
+          "midCentury": "Époque d’après-guerre — raccords et robinetterie en fin de vie utile.",
+          "modern": "Canalisations modernes — probabilité de fuite de base faible.",
+          "recent": "Constructions récentes — PEX ou cuivre moderne, fuites très peu probables.",
+          "agingMains": "Réseaux municipaux vieillissants — plus de ruptures en amont.",
+          "combinedSewer": "Refoulements d’égouts unitaires peuvent mettre le réseau sous pression indue.",
+          "modernMains": "Réseaux municipaux modernes — taux de défaillance plus bas."
+        }
+      },
+      "pressureStability": {
+        "eyebrow": "Hydraulique",
+        "title": "Stabilité de pression",
+        "rationale": {
+          "default": "Reflète les priors d’alimentation municipale et les colonnes du bâtiment.",
+          "denseUrban": "Colonnes urbaines denses — variations de pression entre étages fréquentes.",
+          "urbanCore": "Patrons d’alimentation urbains — variabilité de pression modérée.",
+          "commercialUse": "Charges d’appareils commerciaux et dispositifs anti-retour — irrégularités accrues.",
+          "residentialUse": "Profil d’alimentation résidentiel — irrégularités peu fréquentes.",
+          "freezeThaw": "Les cycles gel-dégel perturbent périodiquement la pression du réseau dans cette région.",
+          "agingMains": "Réseaux vieillissants — plus de risque d’irrégularités de pression.",
+          "modernMains": "Réseaux modernes — pression délivrée stable.",
+          "preWar": "Colonnes pré-Seconde Guerre — pression souvent inégale entre les unités.",
+          "recent": "Colonnes modernes avec équilibrage de pression — stabilité attendue."
+        }
+      },
+      "fixtureCondition": {
+        "eyebrow": "Usure",
+        "title": "État des appareils",
+        "rationale": {
+          "default": "Reflète la chimie de l’eau, l’époque d’installation et le profil d’usage.",
+          "hardWater": "Eau dure régionale — durée de vie des cartouches, vannes et chasses raccourcie.",
+          "preWar": "Époque pré-Seconde Guerre — appareils souvent remplacés, mais colonnes d’origine fréquentes.",
+          "midCentury": "Époque d’après-guerre — joints et cartouches approchent la fin de vie.",
+          "modern": "Époque moderne — usure typique attendue.",
+          "recent": "Constructions récentes — profil d’usure en début de vie seulement.",
+          "commercialUse": "Appareils commerciaux à fort usage — usure et défaillances accélérées.",
+          "residentialUse": "Usage résidentiel — usure typique attendue.",
+          "coastalExposure": "Air côtier — corrosion des finitions et cartouches accélérée."
+        }
+      },
+      "drainReliability": {
+        "eyebrow": "Évacuation",
+        "title": "Fiabilité des égouts / drainage",
+        "rationale": {
+          "default": "Contexte d’évacuation et d’égouts au niveau du secteur — risque modéré de refoulement possible.",
+          "combinedSewer": "Réseau d’égout unitaire — risques historiquement élevés de refoulement et de surcharge.",
+          "floodExposure": "Exposition historique aux inondations et aux eaux pluviales — risque de refoulement plus élevé.",
+          "coastalExposure": "Zone côtière — nappe haute et intrusions racinaires plus fréquentes.",
+          "preWar": "Collecteurs en argile ou fonte d’époque — risque accru de fissures et d’intrusions.",
+          "midCentury": "Collecteurs d’après-guerre — proches de l’âge typique de remplacement.",
+          "modern": "Évacuations PVC modernes typiques — risque de base seulement.",
+          "recent": "Évacuations PVC récentes — risque de base faible.",
+          "urbanCore": "Réseaux d’évacuation urbains denses — risque de surcharge modestement plus élevé."
+        }
+      },
+      "waterEfficiency": {
+        "eyebrow": "Efficacité",
+        "title": "Efficacité de l’eau",
+        "rationale": {
+          "default": "Combine priors d’époque des appareils et pression climatique régionale.",
+          "droughtExposed": "Région exposée à la sécheresse combinée à des appareils anciens — risque de gaspillage notable.",
+          "droughtEfficient": "Région sécheresse avec appareils modernes — efficacité fortement soutenue.",
+          "hardWater": "Eau dure — l’accumulation de tartre réduit l’efficacité avec le temps.",
+          "commercialUse": "Usages commerciaux avec appareils anciens — risque de gaspillage plus élevé.",
+          "residentialUse": "Profil résidentiel — risque de gaspillage modéré et stable.",
+          "preWar": "Appareils pré-Seconde Guerre — consommation bien supérieure aux standards modernes.",
+          "midCentury": "Appareils d’après-guerre — moins efficaces que les équivalents modernes.",
+          "modern": "Appareils modernes — efficacité de base typique.",
+          "recent": "Constructions récentes — bases d’efficacité solides."
+        }
+      },
+      "scoreConfidence": {
+        "eyebrow": "Couverture",
+        "title": "Confiance du score",
+        "rationale": {
+          "default": "Reflète la quantité de signaux appariés à cette adresse.",
+          "richSignals": "Correspondance d’adresse forte avec plusieurs signaux publics.",
+          "goodCoverage": "Bonne couverture régionale et adresse précise appariée.",
+          "partialCoverage": "Couverture partielle — correspondance au niveau de la rue avec densité modérée.",
+          "areaOnly": "Seules des données de zone correspondent — réévaluez avec une adresse complète pour plus de confiance.",
+          "limitedRegion": "Zone hors de notre couverture principale — signaux plus limités qu’attendu."
+        }
+      }
+    },
+    "signals": {
+      "northeastLegacy": "Infrastructure héritée du Nord-Est",
+      "midwestLegacy": "Infrastructure héritée du Midwest",
+      "quebecLegacy": "Cohorte héritée du Québec",
+      "ontarioUrban": "Cohorte urbaine de l’Ontario",
+      "pacificCa": "Canada du Pacifique",
+      "atlanticCa": "Canada atlantique",
+      "prairieFreeze": "Prairies — cycles gel-dégel",
+      "midAtlantic": "Cohorte du Mid-Atlantic",
+      "uppermid": "Cohorte du Haut Midwest",
+      "sunbelt": "Cohorte récente du Sunbelt",
+      "desertSw": "Cohorte du Sud-Ouest désertique",
+      "coastalHumid": "Climat humide côtier",
+      "gulfCoast": "Cohorte du Golfe du Mexique",
+      "southeast": "Cohorte du Sud-Est",
+      "westCoast": "Côte ouest / exposée à la sécheresse",
+      "pacificNw": "Cohorte du Nord-Ouest Pacifique",
+      "mountainWest": "Cohorte des montagnes Rocheuses",
+      "generalRegion": "Priors régionaux génériques",
+      "era.pre1940": "Époque de bâti pré-1940",
+      "era.1940-1970": "Époque de bâti 1940–1970",
+      "era.1970-2000": "Époque de bâti 1970–2000",
+      "era.2000+": "Époque de bâti post-2000",
+      "combinedSewer": "Réseau d’égout unitaire",
+      "freezeClimate": "Climat à cycles gel-dégel",
+      "droughtClimate": "Climat exposé à la sécheresse",
+      "coastalExposure": "Exposition côtière",
+      "floodExposure": "Exposition aux inondations / eaux pluviales",
+      "hardWater": "Eau dure régionale",
+      "urbanCore": "Centre urbain dense",
+      "commercialUse": "Usage commercial / rassemblement",
+      "residentialUse": "Usage résidentiel",
+      "streetLevelMatch": "Adresse appariée au niveau de la rue",
+      "postalCodeMatch": "Code postal apparié",
+      "areaOnlyMatch": "Correspondance au niveau de la zone"
+    },
+    "why": {
+      "title": "Pourquoi ce score ?",
+      "intro": "Cette estimation croise priors d’infrastructure régionaux, heuristiques d’âge du bâti et signaux environnementaux déduits de l’adresse. Volontairement explicable — rien n’est une boîte noire.",
+      "signalsHeading": "Signaux utilisés",
+      "categoriesHeading": "Ce qui a influencé chaque catégorie"
+    },
+    "disclaimer": {
+      "title": "Estimé, non inspecté",
+      "body": "Ce score est une estimation fondée sur la localisation, les signaux de propriété et des heuristiques d’infrastructure. Il ne remplace ni une inspection physique ni une évaluation par un professionnel agréé."
+    },
+    "howItWorks": {
+      "eyebrow": "Fonctionnement",
+      "title": "D’une adresse à une lecture plomberie directionnelle.",
+      "subtitle": "Trois étapes déterministes. Pas de modèle opaque — chaque score est traçable jusqu’aux signaux qui l’ont produit.",
+      "step": "Étape {{n}}",
+      "ingest": {
+        "title": "Ingestion des signaux d’adresse",
+        "body": "Nous résolvons l’adresse en région, type de bien, code postal et époque du bâti — l’ossature de chaque estimation qui suit."
+      },
+      "heuristics": {
+        "title": "Application des heuristiques",
+        "body": "Les priors régionaux d’âge des canalisations, topologie d’égouts, chimie de l’eau et climat façonnent la base de chaque catégorie."
+      },
+      "estimate": {
+        "title": "Score explicable",
+        "body": "Sept scores catégoriels agrégés en un score global, chacun accompagné d’une justification et d’un indicateur de confiance."
+      }
+    },
+    "trust": {
+      "eyebrow": "Méthodologie",
+      "title": "Conçu pour être inspecté, pas cru aveuglément.",
+      "body": "Chaque score est fondé sur des signaux et reste directionnel. Les catégories sont pondérées pour la décision, pas pour le marketing. L’estimation d’aujourd’hui repose sur des données publiques et régionales ; celle de demain intégrera le réseau d’infrastructure Beluga en temps réel.",
+      "note": "Même adresse, même score — déterministe par conception, pour comparer et défendre les chiffres dans le temps.",
+      "sources": {
+        "permits": {
+          "title": "Permis et dossiers de construction",
+          "body": "L’historique des permis municipaux et les époques de construction alimentent les priors d’âge et d’usure."
+        },
+        "buildingAge": {
+          "title": "Bases d’âge du bâti",
+          "body": "Les données d’âge au niveau cadastral calibrent le risque par adresse selon la distribution régionale."
+        },
+        "environmental": {
+          "title": "Données environnementales et climatiques",
+          "body": "Exposition gel-dégel, stress hydrique et proximité côtière informent les risques de fuite et d’évacuation."
+        },
+        "belugaNetwork": {
+          "title": "Réseau Beluga",
+          "body": "Le comportement réel des appareils remontés par le réseau Beluga remplacera progressivement les heuristiques par du signal mesuré."
+        }
+      }
+    },
+    "finalCta": {
+      "eyebrow": "Prêt pour une lecture réelle ?",
+      "title": "Transformez une estimation directionnelle en évaluation confirmée.",
+      "body": "Une évaluation Beluga remplace les heuristiques par du signal mesuré — comportement au niveau des appareils, intelligence des fuites et score de santé plomberie fondé sur des données réelles.",
+      "primary": "Demander un devis",
+      "secondary": "Voir une étude de cas"
+    },
+    "ctaPopup": {
+      "eyebrow": "Une lecture réelle ?",
+      "title": "Transformez cette estimation en évaluation confirmée.",
+      "body": "Obtenez des données mesurées grâce à une évaluation Beluga — comportement des appareils, signaux de fuite et un score de santé certifié.",
+      "primary": "Obtenir un appareil Beluga",
+      "later": "Plus tard",
+      "dismiss": "Fermer"
+    }
   }
 }

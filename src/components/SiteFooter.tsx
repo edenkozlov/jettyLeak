@@ -100,6 +100,9 @@ export function SiteFooter({ variant = 'page' }: { variant?: 'landing' | 'page' 
                       {t(labelKey)}
                     </a>
                   ))}
+                  <Link to="/property-intelligence" className={linkClass}>
+                    {t('footer.links.propertyIntel')}
+                  </Link>
                   <Link to="/quote" className={linkClass}>
                     {t('footer.links.getQuote')}
                   </Link>
@@ -111,6 +114,9 @@ export function SiteFooter({ variant = 'page' }: { variant?: 'landing' | 'page' 
                 <>
                   <Link to="/" className={linkClass}>
                     {t('footer.links.home')}
+                  </Link>
+                  <Link to="/property-intelligence" className={linkClass}>
+                    {t('footer.links.propertyIntel')}
                   </Link>
                   <Link to="/quote" className={linkClass}>
                     {t('footer.links.getQuote')}

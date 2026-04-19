@@ -57,6 +57,18 @@
   to   { opacity: 1; transform: translateY(0) translateX(-50%); }
 }
 
+/* Property Intelligence reveal */
+@keyframes fade-scale {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Shimmer loader needs a starting position — existing keyframe only defines 100% */
+@keyframes shimmer-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+
 /* Mapbox popup overrides */
 .map-popup .mapboxgl-popup-content {
   border-radius: 12px;
