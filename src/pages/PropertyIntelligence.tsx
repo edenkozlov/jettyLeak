@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router'
 
@@ -144,11 +144,37 @@ function SplitHero({
   onReset,
 }: SplitHeroProps) {
   const isLarge = useIsLargeScreen()
-  // On desktop the panel sits beside the map in its own column. We still
-  // pass a left padding to flyTo so the building lands in the visual centre
-  // of the remaining space, not right at the panel edge where the 3D
-  // building extrusion can appear to be clipped by the panel boundary.
   const mapPadding = isLarge ? { left: 120 } : undefined
+
+  // Scroll hint for the mobile panel — only shown when the panel actually has
+  // overflow AND the user hasn't yet scrolled near the bottom.
+  const scrollableRef = useRef<HTMLDivElement>(null)
+  const [showScrollHint, setShowScrollHint] = useState(false)
+
+  const recomputeScrollHint = useCallback(() => {
+    const el = scrollableRef.current
+    if (!el) return
+    const overflows = el.scrollHeight - el.clientHeight > 16
+    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 24
+    setShowScrollHint(overflows && !nearBottom)
+  }, [])
+
+  useEffect(() => {
+    recomputeScrollHint()
+    const el = scrollableRef.current
+    if (!el) return
+    const ro = new ResizeObserver(recomputeScrollHint)
+    ro.observe(el)
+    window.addEventListener('resize', recomputeScrollHint)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', recomputeScrollHint)
+    }
+  }, [recomputeScrollHint, hasSelection, loading, result])
+
+  const onPanelScroll = useCallback(() => {
+    recomputeScrollHint()
+  }, [recomputeScrollHint])
 
   return (
     <section
@@ -161,7 +187,11 @@ function SplitHero({
       <div className="flex h-full w-full flex-col-reverse lg:flex-row">
         {/* Panel — takes remaining vertical space on mobile, fixed width on desktop */}
         <aside className="relative z-10 flex min-h-0 w-full flex-1 flex-col border-t border-gray-200 bg-white lg:h-full lg:flex-none lg:w-[440px] lg:border-t-0 lg:border-r xl:w-[480px]">
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div
+            ref={scrollableRef}
+            onScroll={onPanelScroll}
+            className="min-h-0 flex-1 overflow-y-auto"
+          >
             {hasSelection ? (
               <ResultPanel
                 loading={loading}
@@ -174,6 +204,32 @@ function SplitHero({
               <EmptyPanel onSelect={onSelect} />
             )}
           </div>
+          {/* Mobile scroll affordance — gradient + "scroll" chip so users know
+              the breakdown continues below the visible area. Hides on desktop
+              (no overflow there) and when scrolled to the end. */}
+          {showScrollHint ? (
+            <div
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white via-white/85 to-transparent lg:hidden"
+              aria-hidden
+            >
+              <div className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-gray-200 bg-white/95 px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-gray-600 shadow-sm backdrop-blur">
+                Scroll
+                <svg
+                  className="h-3 w-3 animate-bounce"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M12 5v14" />
+                  <path d="m19 12-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+          ) : null}
         </aside>
 
         {/* Map — fixed 55% viewport height on mobile so it never collapses to a
