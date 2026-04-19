@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from 'react-router'
 
 import ScrollToTopButton from '@/components/ScrollToTopButton'
-import { LandingFooter, LandingNav } from '@/components/landing'
+import { LandingNav } from '@/components/landing'
 import { AddressAutocomplete, PropertyMap } from '@/components/intelligence'
 import { useDocumentMeta } from '@/hooks/useDocumentMeta'
 import {
@@ -100,7 +100,6 @@ export default function PropertyIntelligence() {
         onReset={reset}
       />
 
-      <LandingFooter />
       <ScrollToTopButton />
       <QuoteCtaPopup resultShown={result != null} />
     </div>
@@ -156,12 +155,13 @@ function SplitHero({
       className="relative w-full border-b border-gray-200 pt-16"
       style={{ height: '100svh', minHeight: 640 }}
     >
-      {/* On small screens, put the map FIRST so users see the fly-to animation
-          and the highlighted building, then scroll to the breakdown panel. */}
+      {/* On small screens, put the map FIRST (visually, via flex-col-reverse)
+          so users see the fly-to animation and the highlighted building, then
+          swipe the panel to read the breakdown. */}
       <div className="flex h-full w-full flex-col-reverse lg:flex-row">
-        {/* Panel */}
-        <aside className="relative z-10 flex w-full shrink-0 flex-col border-t border-gray-200 bg-white lg:h-full lg:w-[440px] lg:border-t-0 lg:border-r xl:w-[480px]">
-          <div className="flex-1 overflow-y-auto">
+        {/* Panel — takes remaining vertical space on mobile, fixed width on desktop */}
+        <aside className="relative z-10 flex min-h-0 w-full flex-1 flex-col border-t border-gray-200 bg-white lg:h-full lg:flex-none lg:w-[440px] lg:border-t-0 lg:border-r xl:w-[480px]">
+          <div className="min-h-0 flex-1 overflow-y-auto">
             {hasSelection ? (
               <ResultPanel
                 loading={loading}
@@ -176,8 +176,9 @@ function SplitHero({
           </div>
         </aside>
 
-        {/* Map */}
-        <div className="relative min-h-[320px] flex-1 lg:min-h-0">
+        {/* Map — fixed 55% viewport height on mobile so it never collapses to a
+            sliver, fills remaining width on desktop. */}
+        <div className="relative h-[55svh] w-full shrink-0 lg:h-full lg:w-auto lg:flex-1 lg:shrink">
           <PropertyMap
             latitude={coords.latitude}
             longitude={coords.longitude}
