@@ -147,9 +147,12 @@ export function useRawSubWindows({
       durationMs: config.durationMs,
       count: config.count,
     }
-  }, [config, sensorId, magSensorIds, timeRange, periodOffset, refetchKey])
+  }, [config, sensorId, magSensorIds, timeRange, periodOffset])
 
   useEffect(() => {
+    // Paused — keep existing data, don't fetch
+    if (refetchKey < 0) return
+
     if (!windowSpec) {
       setSubWindows([])
       setLoading(false)
@@ -225,7 +228,6 @@ export function useRawSubWindows({
           )
           setSubWindows((prev) => {
             if (prev.length === 0) return prev
-            // Most recent is first after reverse
             const next = [...prev]
             next[0] = updated
             return next
@@ -235,7 +237,7 @@ export function useRawSubWindows({
           console.warn('[useRawSubWindows] poll failed', err)
         })
     }
-  }, [windowSpec, baseKey])
+  }, [windowSpec, baseKey, refetchKey])
 
   const sharedYDomains = useMemo<SharedYDomains>(() => {
     if (subWindows.length === 0) {
@@ -274,7 +276,7 @@ export function useRawSubWindows({
 
   // Dedicated polling interval for the most recent window (every 5s when live)
   useEffect(() => {
-    if (!config || !enabled || periodOffset !== 0) return
+    if (!config || !enabled || periodOffset !== 0 || refetchKey < 0) return
     if (magSensorIds.length === 0 || sensorId === null) return
 
     const ids = [...magSensorIds].sort((a, b) => a - b)
@@ -317,7 +319,7 @@ export function useRawSubWindows({
     }, 5_000)
 
     return () => clearInterval(interval)
-  }, [config, enabled, periodOffset, magSensorIds, sensorId])
+  }, [config, enabled, periodOffset, magSensorIds, sensorId, refetchKey])
 
   return { subWindows, sharedYDomains, loading }
 }

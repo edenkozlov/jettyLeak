@@ -737,46 +737,74 @@ function AdminSensorCard({
 }) {
   const { mode } = useTheme()
 
-  const { flowStats, flowChartData } = useMemo(() => {
-    if (!sensor.multiplier || sensor.multiplier <= 0 || subWindows.length === 0)
-      return { flowStats: null, flowChartData: [] as { timestamp: number; flowRateLph: number; accumulatedL: number }[] }
+  // Throttled flow computation — the mag sub-windows update every 5s via poll,
+  // but recomputing flow on every poll causes the chart to jump because
+  // downsampled points shift slightly each fetch. We recompute at most every
+  // 10s and hold the previous result between recomputations.
+  const FLOW_RECOMPUTE_MS = 10_000
+  const lastFlowComputeRef = useRef(0)
+  const stableFlowRef = useRef<{ stats: { currentLph: number; totalLitres: number; peakLph: number; avgLph: number } | null; chart: FlowPoint[] }>({ stats: null, chart: [] })
+
+  const now = Date.now()
+  const shouldRecompute = now - lastFlowComputeRef.current >= FLOW_RECOMPUTE_MS
+
+  if (shouldRecompute && sensor.multiplier && sensor.multiplier > 0 && subWindows.length > 0) {
+    lastFlowComputeRef.current = now
 
     const allPoints = subWindows
       .flatMap((w) => w.points)
       .sort((a, b) => a.timestamp - b.timestamp)
 
-    if (allPoints.length < 5)
-      return { flowStats: null, flowChartData: [] }
+    if (allPoints.length >= 5) {
+      const magData = allPoints.map((p) => ({
+        timestamp: p.timestamp,
+        x: p.x,
+        total: p.total,
+        bandEnergy10s: p.bandEnergy10s,
+        bandEnergy60s: p.bandEnergy60s,
+      }))
 
-    const magData = allPoints.map((p) => ({
-      timestamp: p.timestamp,
-      x: p.x,
-      total: p.total,
-      bandEnergy10s: p.bandEnergy10s,
-      bandEnergy60s: p.bandEnergy60s,
-    }))
+      const flowPoints = computeFlowFromPeaks(magData, sensor.multiplier)
+      if (flowPoints.length > 0) {
+        const lastRate = flowPoints[flowPoints.length - 1]!.flowRateLph
+        const totalLitres = flowPoints[flowPoints.length - 1]!.accumulatedL
+        const peakLph = Math.max(...flowPoints.map((p) => p.flowRateLph))
+        const avgLph = flowPoints.reduce((s, p) => s + p.flowRateLph, 0) / flowPoints.length
 
-    const flowPoints = computeFlowFromPeaks(magData, sensor.multiplier)
-    if (flowPoints.length === 0)
-      return { flowStats: { currentLph: 0, totalLitres: 0, peakLph: 0, avgLph: 0 }, flowChartData: [] }
-
-    const lastRate = flowPoints[flowPoints.length - 1]!.flowRateLph
-    const totalLitres = flowPoints[flowPoints.length - 1]!.accumulatedL
-    const peakLph = Math.max(...flowPoints.map((p) => p.flowRateLph))
-    const avgLph = flowPoints.reduce((s, p) => s + p.flowRateLph, 0) / flowPoints.length
-
-    return {
-      flowStats: {
-        currentLph: Math.round(lastRate * 10) / 10,
-        totalLitres: Math.round(totalLitres * 100) / 100,
-        peakLph: Math.round(peakLph * 10) / 10,
-        avgLph: Math.round(avgLph * 10) / 10,
-      },
-      flowChartData: flowPoints,
+        stableFlowRef.current = {
+          stats: {
+            currentLph: Math.round(lastRate * 10) / 10,
+            totalLitres: Math.round(totalLitres * 100) / 100,
+            peakLph: Math.round(peakLph * 10) / 10,
+            avgLph: Math.round(avgLph * 10) / 10,
+          },
+          chart: flowPoints,
+        }
+      }
+      // If flowPoints is empty but we had data before, hold the previous — wave still building
     }
-  }, [sensor.multiplier, subWindows])
+  }
 
-  const isFlowing = flowStats != null && flowStats.currentLph > 0
+  const rawStats = stableFlowRef.current.stats
+
+  // Further stabilize the displayed stats — hold last non-zero values for 15s
+  // so transient zero gaps from wave pattern settling don't cause flickering.
+  const HOLD_MS = 15_000
+  const stableStatsRef = useRef<{ currentLph: number; totalLitres: number; peakLph: number; avgLph: number } | null>(null)
+  const lastNonZeroAtRef = useRef(Date.now())
+
+  if (rawStats != null && (rawStats.currentLph > 0 || rawStats.totalLitres > 0)) {
+    stableStatsRef.current = rawStats
+    lastNonZeroAtRef.current = Date.now()
+  } else if (stableStatsRef.current != null && Date.now() - lastNonZeroAtRef.current > HOLD_MS) {
+    stableStatsRef.current = rawStats
+  }
+
+  const flowStats = stableStatsRef.current
+  const flowChartData = stableFlowRef.current.chart
+
+  const displayCurrent = flowStats?.currentLph ?? 0
+  const isFlowing = displayCurrent > 0
 
   return (
     <div className="mb-4 rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
@@ -817,7 +845,7 @@ function AdminSensorCard({
           <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900/40">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Current flow</p>
             <p className={`text-lg font-bold tabular-nums ${isFlowing ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-900 dark:text-white'}`}>
-              {flowStats.currentLph} <span className="text-xs font-normal text-gray-400">L/h</span>
+              {displayCurrent} <span className="text-xs font-normal text-gray-400">L/h</span>
             </p>
           </div>
           <div className="rounded-lg bg-gray-50 px-3 py-2 dark:bg-gray-900/40">
@@ -849,9 +877,8 @@ function AdminSensorCard({
         <p className="text-xs text-gray-400">No flow data in this window.</p>
       )}
 
-      {/* Flow rate chart */}
-      {flowChartData.length > 2 && (
-        <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50/50 p-2 dark:border-gray-700 dark:bg-gray-900/30">
+      {/* Flow rate + usage charts — always rendered to avoid layout spasm */}
+      <div className="mt-3 rounded-lg border border-gray-100 bg-gray-50/50 p-2 dark:border-gray-700 dark:bg-gray-900/30">
           <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
             Flow rate
           </p>
@@ -952,8 +979,7 @@ function AdminSensorCard({
               />
             </LineChart>
           </ResponsiveContainer>
-        </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -1000,7 +1026,7 @@ export default function Admin() {
       magSensorIds: adminSensorIds,
       timeRange: adminTimeRange,
       periodOffset: 0,
-      enabled: activeTab === 'sensors' && adminSensorIds.length > 0 && !adminPaused,
+      enabled: activeTab === 'sensors' && adminSensorIds.length > 0,
       refetchKey: adminPaused ? -1 : 0,
     })
   // Firmware OTA state
