@@ -24,7 +24,7 @@ import {
   type FixtureBenchmark,
 } from '@/utils/waterBenchmarks'
 import { detectRegionFromAddress, type Region } from '@/utils/regionDetection'
-import { computeWHI as computeWHICanonical } from '@beluga/core'
+import { computeWHI as computeWHICanonical } from '@/lib/whiCore'
 import { GET_BUILDING_ANALYTICS_SUMMARY, type BuildingAnalyticsSummary } from '@/queries/getBuildingAnalyticsSummary'
 
 // ─────────────────────────────────────────────────────────────────────────────

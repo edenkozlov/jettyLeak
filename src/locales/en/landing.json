@@ -10,7 +10,8 @@
     "caseStudy": "Case Study",
     "investor": "Investor",
     "signIn": "Sign In",
-    "getQuote": "Contact us"
+    "getQuote": "Contact us",
+    "propertyIntel": "Property Intelligence"
   },
   "navAnchors": {
     "product": "Product",
@@ -24,7 +25,10 @@
     "titleHighlight": "water system",
     "titleAfter": "visibility",
     "subtitle": "One sensor. Every fixture.",
-    "cta": "Contact us"
+    "cta": "Contact us",
+    "searchEyebrow": "Check any property",
+    "searchPlaceholder": "Enter an address…",
+    "searchHint": "Instant, signal-based estimate — directional only, not a substitute for inspection."
   },
   "product": {
     "titleLine1": "A system that understands",
@@ -236,7 +240,8 @@
       "support": "Support",
       "investorDeck": "Investor deck",
       "privacy": "Privacy policy",
-      "terms": "Terms of service"
+      "terms": "Terms of service",
+      "propertyIntel": "Property Intelligence"
     },
     "copyright": {
       "landing": "© {{year}} Beluga — Water intelligence for buildings",
@@ -432,5 +437,290 @@
     "contactTitle": "Contact",
     "contactLead": "Questions about these terms? Email",
     "contactOrCall": "or call"
+  },
+  "intelligence": {
+    "meta": {
+      "title": "Property Intelligence — Beluga",
+      "description": "Estimate the plumbing health of any property from an address. Signal-based category scores powered by infrastructure heuristics — not a substitute for physical inspection."
+    },
+    "hero": {
+      "eyebrow": "Property Intelligence",
+      "titleBefore": "See the hidden",
+      "titleHighlight": "plumbing health",
+      "titleAfter": "of any property.",
+      "subtitle": "Beluga estimates directional plumbing risk from an address using public records, infrastructure heuristics, and regional water-system signals. To learn more about your property and get accurate real-time data, you'll need a Beluga device.",
+      "searchHint": "Try a full street address. Estimates work best for the United States and Canada.",
+      "primaryCta": "Request a real assessment",
+      "secondaryCta": "How it works",
+      "tryAnother": "Check another address",
+      "requestReal": "Request a real assessment",
+      "trust": {
+        "publicRecords": "Public records",
+        "infrastructure": "Infrastructure heuristics",
+        "environmental": "Environmental signals"
+      }
+    },
+    "search": {
+      "placeholder": "Enter a property address…",
+      "clear": "Clear address",
+      "attribution": "Results by Mapbox"
+    },
+    "map": {
+      "pinConfirmation": "Pin confirmed",
+      "previewEyebrow": "Live coverage",
+      "previewTitle": "Drop any US or Canadian address",
+      "previewBody": "The map focuses on the property, then layers regional intelligence around it.",
+      "seeFullBreakdown": "See full breakdown"
+    },
+    "loading": {
+      "title": "Estimating plumbing health",
+      "estimating": "Estimating",
+      "steps": {
+        "collecting": "Collecting address and regional signals",
+        "heuristics": "Cross-referencing infrastructure heuristics",
+        "scoring": "Scoring categories and rolling up"
+      }
+    },
+    "bands": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "watch": "Average",
+      "action": "Poor"
+    },
+    "confidence": {
+      "high": "High confidence",
+      "medium": "Moderate confidence",
+      "low": "Limited signal",
+      "tooltip": "Confidence reflects how much public and infrastructure signal we could match to this address."
+    },
+    "results": {
+      "eyebrow": "Estimated plumbing health",
+      "overall": "Overall",
+      "estimated": "Estimated, not inspected",
+      "confidencePct": "Confidence {{pct}}%",
+      "confidenceShort": "Conf. {{pct}}%",
+      "categoriesEyebrow": "Category breakdown",
+      "categoriesTitle": "Seven signal-based category scores",
+      "categoriesSubtitle": "1 = highest risk · 10 = strongest signals for health",
+      "scaleHint": "1 high risk · 10 strong health",
+      "ctaPrimary": "Request a real assessment",
+      "ctaReset": "Check another address",
+      "narrative": {
+        "excellent": "Signals line up positively across the board. If a real assessment confirms these, this property looks well-maintained and low-risk from a plumbing perspective.",
+        "good": "Most indicators are healthy with a few mild watch points. A Beluga assessment can confirm which categories deserve attention first.",
+        "watch": "Several categories show elevated risk signals. A real assessment is worthwhile to turn these directional reads into confirmed findings.",
+        "action": "Multiple categories are signalling meaningful risk. We'd strongly recommend a real plumbing intelligence assessment to validate and prioritize."
+      }
+    },
+    "categories": {
+      "pipeCondition": {
+        "eyebrow": "Infrastructure",
+        "title": "Pipe Condition Health",
+        "rationale": {
+          "default": "Estimated from building era, local infrastructure age, and available address signals.",
+          "preWar": "Pre-war building era — supply lines and service laterals have likely aged past prime.",
+          "midCentury": "Mid-century era — mixed galvanized and early copper still common in service.",
+          "modern": "Modern-era supply infrastructure typical for this area.",
+          "recent": "Recent-build supply lines — well within expected service life.",
+          "agingMains": "Regional water mains skew old — baseline pipe-condition risk is elevated.",
+          "modernMains": "Region has relatively modern water mains — lower baseline risk.",
+          "coastalExposure": "Coastal air and brackish groundwater accelerate supply-line corrosion.",
+          "floodExposure": "Historic flood exposure stresses buried supply lines over time.",
+          "hardWater": "Regional hard water accelerates scale buildup in older supply piping."
+        }
+      },
+      "leakResilience": {
+        "eyebrow": "Reliability",
+        "title": "Leak Resilience",
+        "rationale": {
+          "default": "Combines pipe-age priors with regional climate stress signals.",
+          "freezeThaw": "Freeze-thaw climate elevates joint fatigue and pinhole failures in aging lines.",
+          "preWar": "Pre-war service lines carry above-average leak probability under load.",
+          "midCentury": "Mid-century era — fittings and valves are nearing end of reliable service life.",
+          "modern": "Modern-era lines keep baseline leak probability low.",
+          "recent": "Recent builds — modern PEX or copper keeps leak probability very low.",
+          "agingMains": "Aging municipal mains feed this area — more breaks upstream of the service line.",
+          "combinedSewer": "Combined-sewer backups can pressurise lines adversely during storms.",
+          "modernMains": "Relatively modern mains in this area — lower failure rates expected."
+        }
+      },
+      "pressureStability": {
+        "eyebrow": "Hydraulics",
+        "title": "Pressure Stability",
+        "rationale": {
+          "default": "Reflects municipal supply and building stack priors.",
+          "denseUrban": "Dense urban stacks see pressure swings across floors — elevated irregularity risk.",
+          "urbanCore": "Urban-core supply patterns add moderate pressure variability.",
+          "commercialUse": "Commercial fixture loads and backflow devices add pressure-irregularity risk.",
+          "residentialUse": "Residential supply profile — pressure irregularities uncommon.",
+          "freezeThaw": "Freeze-thaw cycles periodically disrupt main pressure in this region.",
+          "agingMains": "Aging mains carry higher likelihood of pressure irregularities.",
+          "modernMains": "Modern mains in this area support stable delivered pressure.",
+          "preWar": "Pre-war building stacks often have uneven pressure across units.",
+          "recent": "Modern stacks and pressure-balancing — stable delivered pressure expected."
+        }
+      },
+      "fixtureCondition": {
+        "eyebrow": "Wear",
+        "title": "Fixture Condition",
+        "rationale": {
+          "default": "Reflects water chemistry, install era, and usage profile.",
+          "hardWater": "Regional hard water shortens cartridge, valve, and flush-mechanism lifespans.",
+          "preWar": "Pre-war era fixtures have typically been replaced, but risers often remain original.",
+          "midCentury": "Mid-century fixtures — seals and valve cartridges approaching end of life.",
+          "modern": "Modern-era fixtures — normal wear profile expected.",
+          "recent": "Recent-build fixtures — early-life wear profile only.",
+          "commercialUse": "High-use commercial fixtures accelerate wear and seal failures.",
+          "residentialUse": "Residential usage — normal fixture wear expected.",
+          "coastalExposure": "Coastal air accelerates finish and cartridge corrosion."
+        }
+      },
+      "drainReliability": {
+        "eyebrow": "Drainage",
+        "title": "Drain / Sewer Reliability",
+        "rationale": {
+          "default": "Area-level drainage and sewer context may create moderate backup risk.",
+          "combinedSewer": "Combined-sewer service area — backup and surcharge risk is historically elevated.",
+          "floodExposure": "Historic flood and stormwater exposure raises drainage-backup probability.",
+          "coastalExposure": "Coastal / high-water-table conditions elevate infiltration and root intrusion.",
+          "preWar": "Era-appropriate clay or cast-iron laterals carry higher cracking and intrusion risk.",
+          "midCentury": "Mid-century laterals are approaching typical replacement age.",
+          "modern": "Modern PVC drainage typical for this area — baseline risk only.",
+          "recent": "Recent-build PVC drainage — baseline risk is low.",
+          "urbanCore": "Dense urban drainage networks carry modestly higher surcharge risk."
+        }
+      },
+      "waterEfficiency": {
+        "eyebrow": "Efficiency",
+        "title": "Water Efficiency",
+        "rationale": {
+          "default": "Blends fixture-era priors with regional usage and climate pressure.",
+          "droughtExposed": "Drought-exposed region combined with older fixtures — waste risk is meaningful.",
+          "droughtEfficient": "Drought-exposed region with modern fixtures — efficiency strongly supported.",
+          "hardWater": "Hard water reduces fixture efficiency over time as scale accumulates.",
+          "commercialUse": "Commercial usage patterns with legacy fixtures carry higher waste risk.",
+          "residentialUse": "Residential usage profile — moderate, stable waste risk expected.",
+          "preWar": "Pre-war installed fixtures use well above modern efficiency standards.",
+          "midCentury": "Mid-century fixtures — noticeably less efficient than modern equivalents.",
+          "modern": "Modern-era fixtures — efficiency baseline typical.",
+          "recent": "Recent-build fixtures — strong efficiency baselines throughout."
+        }
+      },
+      "scoreConfidence": {
+        "eyebrow": "Coverage",
+        "title": "Score Confidence",
+        "rationale": {
+          "default": "Reflects how much signal we could match to this address.",
+          "richSignals": "Strong address match with multiple public data signals.",
+          "goodCoverage": "Good regional coverage and a clean address match.",
+          "partialCoverage": "Partial coverage — street-level match with moderate regional signal density.",
+          "areaOnly": "Only area-level data matched — rescore with a full street address for higher confidence.",
+          "limitedRegion": "Region sits outside our strongest coverage footprint — signals are thinner than typical."
+        }
+      }
+    },
+    "signals": {
+      "northeastLegacy": "Northeast legacy infrastructure",
+      "midwestLegacy": "Midwest legacy infrastructure",
+      "quebecLegacy": "Québec legacy cohort",
+      "ontarioUrban": "Ontario urban cohort",
+      "pacificCa": "Pacific Canada",
+      "atlanticCa": "Atlantic Canada",
+      "prairieFreeze": "Prairie freeze-thaw climate",
+      "midAtlantic": "Mid-Atlantic cohort",
+      "uppermid": "Upper Midwest cohort",
+      "sunbelt": "Sunbelt newer-build cohort",
+      "desertSw": "Desert Southwest cohort",
+      "coastalHumid": "Coastal humid climate",
+      "gulfCoast": "Gulf Coast cohort",
+      "southeast": "Southeast cohort",
+      "westCoast": "West Coast / drought-exposed",
+      "pacificNw": "Pacific Northwest cohort",
+      "mountainWest": "Mountain West cohort",
+      "generalRegion": "General regional priors",
+      "era.pre1940": "Pre-1940 build era",
+      "era.1940-1970": "1940–1970 build era",
+      "era.1970-2000": "1970–2000 build era",
+      "era.2000+": "Post-2000 build era",
+      "combinedSewer": "Combined sewer service",
+      "freezeClimate": "Freeze-thaw climate",
+      "droughtClimate": "Drought-exposed climate",
+      "coastalExposure": "Coastal exposure",
+      "floodExposure": "Flood / stormwater exposure",
+      "hardWater": "Regional hard water",
+      "urbanCore": "Dense urban core",
+      "commercialUse": "Commercial / assembly use",
+      "residentialUse": "Residential use",
+      "streetLevelMatch": "Street-level address match",
+      "postalCodeMatch": "Postal-code match",
+      "areaOnlyMatch": "Area-only match"
+    },
+    "why": {
+      "title": "Why this score?",
+      "intro": "This estimate blends regional infrastructure priors, building-age heuristics, and environmental signals resolved from the address. It is deliberately explainable — nothing is a black box.",
+      "signalsHeading": "Signals used",
+      "categoriesHeading": "What moved each category"
+    },
+    "disclaimer": {
+      "title": "Estimated, not inspected",
+      "body": "This score is an estimate based on location, property signals, and infrastructure heuristics. It is not a substitute for physical inspection or licensed evaluation."
+    },
+    "howItWorks": {
+      "eyebrow": "How it works",
+      "title": "From an address to a directional plumbing read.",
+      "subtitle": "Three deterministic steps. No black-box models — every score is traceable to the signals that produced it.",
+      "step": "Step {{n}}",
+      "ingest": {
+        "title": "Ingest address signals",
+        "body": "We resolve the address into region, property type, postal code, and building-stock era — the backbone of every downstream estimate."
+      },
+      "heuristics": {
+        "title": "Apply infrastructure heuristics",
+        "body": "Regional priors for pipe age, sewer topology, water chemistry, and climate shape each category's baseline risk."
+      },
+      "estimate": {
+        "title": "Produce an explainable score",
+        "body": "Seven category scores roll up into one overall read, each with a rationale and a confidence signal for transparency."
+      }
+    },
+    "trust": {
+      "eyebrow": "Methodology",
+      "title": "Built to be inspected, not trusted blindly.",
+      "body": "Every score is signal-based and directional. Categories are weighted for decision-making, not marketing. Today's estimate runs on public and regional data; tomorrow's will layer in Beluga's live infrastructure network.",
+      "note": "Same address, same score — deterministic by design, so you can compare and defend numbers over time.",
+      "sources": {
+        "permits": {
+          "title": "Permit and construction records",
+          "body": "Local permit histories and construction era data feed pipe-age and fixture-wear priors."
+        },
+        "buildingAge": {
+          "title": "Building-age datasets",
+          "body": "Parcel-level age data calibrates per-address risk against regional building-stock distributions."
+        },
+        "environmental": {
+          "title": "Environmental and climate data",
+          "body": "Freeze-thaw exposure, drought stress, and coastal proximity inform leak and drainage risk."
+        },
+        "belugaNetwork": {
+          "title": "Beluga infrastructure network",
+          "body": "Real-world fixture behaviour from the Beluga sensor network will progressively replace heuristics with measured signal."
+        }
+      }
+    },
+    "finalCta": {
+      "eyebrow": "Ready for a real read?",
+      "title": "Turn a directional estimate into a confirmed assessment.",
+      "body": "A Beluga assessment replaces heuristics with measured signal — fixture-level behaviour, leak intelligence, and a plumbing health score grounded in real data.",
+      "primary": "Request a quote",
+      "secondary": "See a case study"
+    },
+    "ctaPopup": {
+      "eyebrow": "Want a real read?",
+      "title": "Turn this estimate into a confirmed assessment.",
+      "body": "Get measured data from a Beluga plumbing intelligence assessment — fixture-level behaviour, leak signals, and a certified score.",
+      "primary": "Get a Beluga device",
+      "later": "Later",
+      "dismiss": "Dismiss"
+    }
   }
 }

@@ -29,19 +29,17 @@ export function LandingNav() {
               </a>
             ))}
             <Link
+              to="/property-intelligence"
+              className="text-[13px] text-gray-400 transition hover:text-gray-700"
+            >
+              {t('nav.propertyIntel')}
+            </Link>
+            <Link
               to="/case-study"
               className="text-[13px] text-gray-400 transition hover:text-gray-700"
             >
               {t('nav.caseStudy')}
             </Link>
-            <a
-              href="https://pitch.com/v/belugapitchdeck-j52a9r"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[13px] text-gray-400 transition hover:text-gray-700"
-            >
-              {t('nav.investor')}
-            </a>
           </div>
           <LandingLanguageSwitch />
           <Link
@@ -49,12 +47,6 @@ export function LandingNav() {
             className="hidden text-[13px] text-gray-400 transition hover:text-gray-700 sm:block"
           >
             {t('nav.signIn')}
-          </Link>
-          <Link
-            to="/quote"
-            className="rounded-full bg-indigo-500 px-4 py-2 text-[12px] font-semibold text-white transition hover:bg-indigo-600 sm:px-5 sm:text-[13px]"
-          >
-            {t('nav.getQuote')}
           </Link>
           <button
             type="button"
@@ -109,21 +101,19 @@ export function LandingNav() {
               </a>
             ))}
             <Link
+              to="/property-intelligence"
+              onClick={() => setMenuOpen(false)}
+              className="text-[14px] text-gray-500 transition hover:text-gray-900"
+            >
+              {t('nav.propertyIntel')}
+            </Link>
+            <Link
               to="/case-study"
               onClick={() => setMenuOpen(false)}
               className="text-[14px] text-gray-500 transition hover:text-gray-900"
             >
               {t('nav.caseStudy')}
             </Link>
-            <a
-              href="https://pitch.com/v/belugapitchdeck-j52a9r"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setMenuOpen(false)}
-              className="text-[14px] text-gray-500 transition hover:text-gray-900"
-            >
-              {t('nav.investor')}
-            </a>
             <div className="py-1">
               <LandingLanguageSwitch />
             </div>
@@ -133,13 +123,6 @@ export function LandingNav() {
               className="text-[14px] text-gray-500 transition hover:text-gray-900"
             >
               {t('nav.signIn')}
-            </Link>
-            <Link
-              to="/quote"
-              onClick={() => setMenuOpen(false)}
-              className="mt-1 inline-flex w-full items-center justify-center rounded-full bg-indigo-500 py-3 text-[14px] font-semibold text-white"
-            >
-              {t('nav.getQuote')}
             </Link>
           </div>
         </div>
