@@ -24,7 +24,8 @@ import {
   type FixtureBenchmark,
 } from '@/utils/waterBenchmarks'
 import { detectRegionFromAddress, type Region } from '@/utils/regionDetection'
-import { computeWHI as computeWHICanonical } from '@/lib/whiCore'
+// WHI weighting done inline from local sub-scores for breakdown consistency
+// import { computeWHI as computeWHICanonical } from '@beluga/core'
 import { GET_BUILDING_ANALYTICS_SUMMARY, type BuildingAnalyticsSummary } from '@/queries/getBuildingAnalyticsSummary'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -122,7 +123,7 @@ export interface FixtureEfficiencyRow {
 }
 
 export interface WaterHealthIndex {
-  score: number | null
+  score: number
   grade: WaterHealthGrade
   loading: boolean
   error: string | null
@@ -700,12 +701,16 @@ function computeIntensitySub(
   analytics: AnalyticsData | null,
   footprint: LatLon[] | null | undefined,
   numberOfFloors: number | null | undefined,
+  totalSqft?: number | null,
 ): WaterHealthSubScore & {
   areaM2: number | null
   annualLitres: number | null
   lPerM2PerYear: number | null
 } {
-  const areaM2 = estimateFloorAreaM2(footprint, numberOfFloors)
+  // Prefer explicit sqft from DB, fall back to polygon estimate
+  const areaM2 = (totalSqft && totalSqft > 0)
+    ? totalSqft * 0.092903
+    : estimateFloorAreaM2(footprint, numberOfFloors)
 
   if (!areaM2 || !analytics || !Number.isFinite(analytics.thisMonth) || analytics.thisMonth <= 0) {
     return {
@@ -891,8 +896,13 @@ export function useBuildingWaterHealth({
   const region = useMemo<Region>(() => detectRegionFromAddress(address), [address])
 
   return useMemo<WaterHealthIndex>(() => {
-    const intensity = computeIntensitySub(analytics, footprint, numberOfFloors)
-    const leak = computeLeakSub(health)
+    const intensity = computeIntensitySub(analytics, footprint, numberOfFloors, totalSqft)
+    // Leak: prefer the RPC's score (single source of truth shared with mobile),
+    // fall back to the local night-flow analysis if RPC hasn't loaded yet.
+    const localLeak = computeLeakSub(health)
+    const leak: typeof localLeak = rpcSummary?.leak_score != null
+      ? { ...localLeak, score: rpcSummary.leak_score, available: true }
+      : localLeak
     const trend = computeTrendSub(analytics)
     // When the signal fetch was capped, scale the sampled counts up to the
     // true total so headline numbers match reality.
@@ -907,34 +917,24 @@ export function useBuildingWaterHealth({
       countScaleFactor,
     )
 
-    // Canonical WHI from @beluga/core — uses the RPC summary so web + mobile
-    // feed the exact same server-computed numbers into the same function.
-    const whiResult = rpcSummary
-      ? computeWHICanonical({
-          monthLitres: rpcSummary.this_month,
-          footprint,
-          numberOfFloors,
-          totalSqft,
-          thisWeek: rpcSummary.this_week,
-          lastWeek: rpcSummary.last_week,
-          leak: rpcSummary.leak_score != null
-            ? { score: rpcSummary.leak_score }
-            : leak.score != null
-              ? { score: leak.score }
-              : null,
-        })
-      : computeWHICanonical({
-          monthLitres: analytics?.thisMonth ?? 0,
-          footprint,
-          numberOfFloors,
-          totalSqft,
-          thisWeek: analytics?.thisWeek ?? 0,
-          lastWeek: analytics?.lastWeek ?? 0,
-          leak: leak.score != null ? { score: leak.score } : null,
-        })
+    // Weighted score from the locally computed sub-scores — these already have
+    // the real data (analytics, footprint, health). Using them directly ensures
+    // the overall score matches the breakdown the user sees.
+    const W_I = 0.50, W_L = 0.35, W_T = 0.15
+    const parts: Array<{ w: number; s: number }> = []
+    if (intensity.score != null) parts.push({ w: W_I, s: intensity.score })
+    if (leak.score != null) parts.push({ w: W_L, s: leak.score })
+    if (trend.score != null) parts.push({ w: W_T, s: trend.score })
 
-    const score = whiResult.score
-    const grade: WaterHealthGrade = score == null ? 'unknown' : scoreToGrade(score)
+    // Always produce a score — use neutral 70 only if truly no pillars available
+    let score: number
+    if (parts.length > 0) {
+      const totalW = parts.reduce((a, b) => a + b.w, 0)
+      score = Math.round(parts.reduce((a, b) => a + b.w * b.s, 0) / totalW)
+    } else {
+      score = 70
+    }
+    const grade: WaterHealthGrade = scoreToGrade(score)
 
     return {
       score,

@@ -3,7 +3,8 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 
 import { MagDataSection } from '@/components/BuildingAnalytics'
 import BuildingEditPanel from '@/components/BuildingEditPanel'
-import BuildingFixturesStrip from '@/components/BuildingFixturesStrip'
+// BuildingFixturesStrip removed — fixture data now in the Fixture Efficiency section
+// import BuildingFixturesStrip from '@/components/BuildingFixturesStrip'
 import BuildingFlowChart from '@/components/BuildingFlowChart'
 import BuildingOverviewHero from '@/components/BuildingOverviewHero'
 import BuildingFootprint from '@/components/BuildingFootprint'
@@ -674,13 +675,6 @@ export default function BuildingDetail() {
       {validBuildingId != null && (
         <div className="mb-4 sm:mb-6">
           <BuildingFlowChart buildingId={validBuildingId} />
-        </div>
-      )}
-
-      {/* 3. FIXTURES STRIP — typed icons, grouped by DB fixture type */}
-      {validBuildingId != null && (
-        <div className="mb-4 sm:mb-6">
-          <BuildingFixturesStrip buildingId={validBuildingId} />
         </div>
       )}
 

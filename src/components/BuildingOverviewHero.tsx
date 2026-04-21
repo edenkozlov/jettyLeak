@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router'
 
 import LiveFlowIndicator from '@/components/LiveFlowIndicator'
 import FixtureRow from '@/components/FixtureEfficiencyRow'
@@ -94,37 +95,25 @@ function computeDelta(current: number, reference: number): Delta {
   return { dir, pct, text: `${pct > 0 ? '+' : ''}${pct.toFixed(0)}%` }
 }
 
-function DeltaChip({ delta, label }: { delta: Delta; label: string }) {
-  const color =
-    delta.dir === 'up'
-      ? 'text-red-500 dark:text-red-400'
-      : delta.dir === 'down'
-        ? 'text-emerald-500 dark:text-emerald-400'
-        : 'text-gray-400 dark:text-gray-500'
-  const arrow = delta.dir === 'up' ? '↑' : delta.dir === 'down' ? '↓' : '—'
-  if (delta.dir === 'none') {
-    return <span className="text-sm text-gray-400">—</span>
-  }
-  return (
-    <span className={`text-sm font-semibold ${color}`}>
-      {arrow} {delta.text} {label}
-    </span>
-  )
-}
+// DeltaChip retired — delta now rendered inline in StatCell
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Quick stat cell with comparison + projection
 // ─────────────────────────────────────────────────────────────────────────────
+
+const STAT_ICONS: Record<string, string> = {
+  Today: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+  'This week': 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+  'This month': 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+  Yesterday: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+}
 
 function StatCell({
   label,
   current,
   unit,
   compareTo,
-  compareLabel,
   projected,
-  projectedCompareTo,
-  projectedCompareLabel,
 }: {
   label: string
   current: number | null
@@ -135,40 +124,53 @@ function StatCell({
   projectedCompareTo?: number | null
   projectedCompareLabel?: string
 }) {
-  const delta = compareTo != null && current != null ? computeDelta(current, compareTo) : null
-  const projDelta =
-    projected != null && projectedCompareTo != null
-      ? computeDelta(projected, projectedCompareTo)
-      : null
+  const delta = compareTo != null && compareTo > 0 && current != null ? computeDelta(current, compareTo!) : null
+  const isLoading = current == null
+  const iconPath = STAT_ICONS[label] ?? STAT_ICONS.Today
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-gray-800">
-      <p className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-        {label}
-      </p>
-      <p className="mt-1 text-3xl font-bold tabular-nums text-gray-900 dark:text-white">
-        {current != null ? formatLitres(current) : '—'}
-        <span className="ml-1.5 text-sm font-normal text-gray-400">{unit}</span>
-      </p>
-      {delta && (
-        <div className="mt-1">
-          <DeltaChip delta={delta} label={compareLabel ?? ''} />
-        </div>
-      )}
-      {projected != null && (
-        <p className="mt-2 border-t border-gray-100 pt-2 text-sm text-gray-500 dark:border-gray-700/60 dark:text-gray-400">
-          → <span className="font-semibold tabular-nums text-gray-700 dark:text-gray-200">
-            {formatLitres(projected)} {unit}
-          </span>{' '}
-          projected
-          {projDelta && projDelta.dir !== 'none' && (
-            <span className="ml-1 text-xs">
-              (
-              <DeltaChip delta={projDelta} label={projectedCompareLabel ?? ''} />
-              )
-            </span>
-          )}
+    <div className="rounded-xl border border-gray-200 bg-white px-3 py-3 dark:border-gray-700 dark:bg-gray-800">
+      <div className="flex items-center gap-1.5">
+        <svg className="h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <path d={iconPath} />
+        </svg>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+          {label}
         </p>
+      </div>
+      {isLoading ? (
+        <div className="mt-1.5 h-9 w-20 animate-pulse rounded-md bg-gray-100 dark:bg-gray-700" />
+      ) : (
+        <>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-3xl font-extrabold tabular-nums text-gray-900 dark:text-white">
+              {formatLitres(current)}
+            </span>
+            <span className="text-xs font-medium text-gray-400">{unit}</span>
+            {delta && delta.dir !== 'none' && (
+              <span className={`ml-auto flex items-center gap-0.5 text-xs font-semibold ${
+                delta.dir === 'down'
+                  ? 'text-emerald-500 dark:text-emerald-400'
+                  : delta.dir === 'up'
+                    ? 'text-amber-500 dark:text-amber-400'
+                    : 'text-gray-400 dark:text-gray-500'
+              }`}>
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+                  {delta.dir === 'down'
+                    ? <path d="M7 14l5 5 5-5H7z" />
+                    : <path d="M7 10l5-5 5 5H7z" />
+                  }
+                </svg>
+                {Math.abs(delta.pct ?? 0).toFixed(0)}%
+              </span>
+            )}
+          </div>
+          {projected != null && (
+            <p className="mt-1 text-[10px] tabular-nums text-gray-400">
+              → {formatLitres(projected)} {unit} projected
+            </p>
+          )}
+        </>
       )}
     </div>
   )
@@ -182,19 +184,23 @@ function PeakFlowCell({
   buildingId: number
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-gray-800">
-      <p className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-        Peak flow today
+    <div className="rounded-xl border border-gray-200 bg-white px-3 py-3 dark:border-gray-700 dark:bg-gray-800">
+      <div className="flex items-center gap-1.5">
+        <svg className="h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+          Peak flow
+        </p>
+      </div>
+      <p className="mt-1 flex items-baseline gap-1.5">
+        <span className="text-3xl font-extrabold tabular-nums text-gray-900 dark:text-white">
+          {peakLpm != null && peakLpm > 0 ? peakLpm.toFixed(1) : '—'}
+        </span>
+        <span className="text-xs font-medium text-gray-400">L/min</span>
       </p>
-      <p className="mt-1 text-3xl font-bold tabular-nums text-gray-900 dark:text-white">
-        {peakLpm != null && peakLpm > 0 ? peakLpm.toFixed(1) : '—'}
-        <span className="ml-1.5 text-sm font-normal text-gray-400">L/min</span>
-      </p>
-      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-        instantaneous peak
-      </p>
-      <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-700/60">
-        <LiveFlowIndicator buildingId={buildingId} />
+      <div className="mt-1.5">
+        <LiveFlowIndicator buildingId={buildingId} compact />
       </div>
     </div>
   )
@@ -209,9 +215,43 @@ function HealthRing({ score, grade }: { score: number | null; grade: WaterHealth
   const stroke = 14
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
-  const pct = score == null ? 0 : Math.max(0, Math.min(100, score)) / 100
-  const dash = c * pct
   const style = GRADE_STYLE[grade]
+
+  // Animate: ring sweeps and number counts up like an odometer
+  const [animPct, setAnimPct] = useState(0)
+  const [displayNum, setDisplayNum] = useState(0)
+  const prevScoreRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (score == null) {
+      setAnimPct(0)
+      setDisplayNum(0)
+      return
+    }
+    // Only animate on initial load or when score actually changes
+    if (prevScoreRef.current === score) return
+    const from = prevScoreRef.current ?? 0
+    prevScoreRef.current = score
+
+    const duration = 1200 // ms
+    const start = performance.now()
+
+    function tick(now: number) {
+      const elapsed = now - start
+      // Ease-out cubic
+      const t = Math.min(1, elapsed / duration)
+      const eased = 1 - Math.pow(1 - t, 3)
+
+      const currentScore = from + (score! - from) * eased
+      setAnimPct(Math.max(0, Math.min(1, currentScore / 100)))
+      setDisplayNum(Math.round(currentScore))
+
+      if (t < 1) requestAnimationFrame(tick)
+    }
+    requestAnimationFrame(tick)
+  }, [score])
+
+  const dash = c * animPct
 
   return (
     <div className="relative" style={{ width: size, height: size }}>
@@ -232,14 +272,14 @@ function HealthRing({ score, grade }: { score: number | null; grade: WaterHealth
             fill="none"
             strokeWidth={stroke}
             strokeLinecap="round"
-            className={`${style.ring} transition-[stroke-dashoffset] duration-500`}
+            className={style.ring}
             strokeDasharray={`${dash} ${c}`}
           />
         )}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-4xl font-extrabold tabular-nums text-gray-900 dark:text-white">
-          {score == null ? '—' : Math.round(score)}
+          {score != null ? displayNum : '—'}
         </span>
         <span className="-mt-0.5 text-xs font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
           / 100
@@ -433,7 +473,7 @@ function PillarBlock({
         </div>
         <div className="shrink-0 text-right">
           <p className="text-3xl font-bold tabular-nums text-gray-900 dark:text-white">
-            {score == null ? '—' : Math.round(score)}
+            {score != null ? Math.round(score) : '—'}
           </p>
           <span className={`rounded-full px-2 py-0.5 text-xs font-semibold uppercase ${style.chip}`}>
             {style.label}
@@ -530,15 +570,18 @@ function WhiBreakdownModal({
     setActiveIdx(closest)
   }, [])
 
+  // Snap to first card only when modal opens — not on every activeIdx change
+  const activeIdxRef = useRef(0)
+  activeIdxRef.current = activeIdx
+
   useEffect(() => {
     if (!open) return
     setActiveIdx(0)
-    // Snap to the first pillar when the modal opens (after layout flush)
     const t = setTimeout(() => scrollToIdx(0), 10)
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
-      else if (e.key === 'ArrowRight') scrollToIdx(Math.min(pillars.length - 1, activeIdx + 1))
-      else if (e.key === 'ArrowLeft') scrollToIdx(Math.max(0, activeIdx - 1))
+      else if (e.key === 'ArrowRight') scrollToIdx(Math.min(pillars.length - 1, activeIdxRef.current + 1))
+      else if (e.key === 'ArrowLeft') scrollToIdx(Math.max(0, activeIdxRef.current - 1))
     }
     document.body.style.overflow = 'hidden'
     document.addEventListener('keydown', onKey)
@@ -547,7 +590,7 @@ function WhiBreakdownModal({
       document.body.style.overflow = ''
       document.removeEventListener('keydown', onKey)
     }
-  }, [open, onClose, scrollToIdx, activeIdx, pillars.length])
+  }, [open, onClose, scrollToIdx, pillars.length])
 
   if (!open) return null
 
@@ -565,7 +608,7 @@ function WhiBreakdownModal({
     good: 'Good water performance',
     watch: 'A couple of things to watch',
     poor: 'Needs your attention',
-    unknown: 'Still learning this building',
+    unknown: 'Water Health Index',
   }
 
   return (
@@ -605,8 +648,8 @@ function WhiBreakdownModal({
               <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
                 Water Health Index
                 {isEstimate && (
-                  <span className="ml-2 rounded bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-                    LEARNING
+                  <span className="ml-2 rounded bg-amber-50 px-2 py-0.5 text-xs font-bold text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                    LIMITED DATA
                   </span>
                 )}
               </p>
@@ -623,8 +666,8 @@ function WhiBreakdownModal({
               </p>
               {isEstimate && (
                 <p className="mt-2 text-sm leading-relaxed text-amber-700 dark:text-amber-400">
-                  We have less than 28 days of sensor history — the score will tighten as data
-                  accumulates.
+                  Some data points are estimated — building area, overnight patterns, or weekly
+                  trends may be using neutral defaults. Score accuracy improves as more data arrives.
                 </p>
               )}
             </div>
@@ -807,70 +850,36 @@ export default function BuildingOverviewHero({
     good: 'Good water performance',
     watch: 'A couple of things to watch',
     poor: 'Needs your attention',
-    unknown: 'Still learning this building',
+    unknown: 'Water Health Index',
   }
   const subhead: Record<WaterHealthGrade, string> = {
     excellent: 'Intensity, leak integrity, and consumption trend are all within commercial benchmarks.',
     good: 'On the right side of the commercial benchmarks, with minor things to tune.',
     watch: 'At least one of intensity, leaks, or trend is outside the typical range.',
     poor: 'One or more water metrics are well outside commercial norms.',
-    unknown: 'We need a few more days of sensor history to score this building against industry benchmarks.',
+    unknown: 'Score based on available data — accuracy improves as more sensor history accumulates.',
   }
 
   // For month we don't have last-month data, but projected vs (thisWeek × 4)
   // is a reasonable monthly expectation signal.
-  const monthExpectation = analytics && analytics.lastWeek > 0 ? analytics.lastWeek * 4 : null
+  // monthExpectation removed — stats are now compact without projections
 
   return (
     <div className="space-y-4">
       {/* ── 1. Quick stats at top — with comparisons + projections ─────── */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <StatCell
-          label="Today"
-          current={analytics?.today ?? null}
-          unit="L"
-          compareTo={analytics?.yesterday ?? null}
-          compareLabel="vs yesterday"
-          projected={analytics?.todayProjected ?? null}
-          projectedCompareTo={analytics?.yesterday ?? null}
-          projectedCompareLabel="vs yest."
-        />
-        <StatCell
-          label="This week"
-          current={analytics?.thisWeek ?? null}
-          unit="L"
-          compareTo={analytics?.lastWeek ?? null}
-          compareLabel="vs last week"
-          projected={analytics?.weekProjected ?? null}
-          projectedCompareTo={analytics?.lastWeek ?? null}
-          projectedCompareLabel="vs last wk"
-        />
-        <StatCell
-          label="This month"
-          current={analytics?.thisMonth ?? null}
-          unit="L"
-          projected={analytics?.monthProjected ?? null}
-          projectedCompareTo={monthExpectation}
-          projectedCompareLabel="vs 4-wk avg"
-        />
-        <PeakFlowCell
-          peakLpm={whi.peakFlow?.peakLpm ?? null}
-          buildingId={buildingId}
-        />
-        <div className="rounded-xl border border-gray-200 bg-white px-4 py-4 dark:border-gray-700 dark:bg-gray-800">
-          <p className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-            Yesterday
-          </p>
-          <p className="mt-1 text-3xl font-bold tabular-nums text-gray-900 dark:text-white">
-            {analytics ? formatLitres(analytics.yesterday) : '—'}
-            <span className="ml-1.5 text-sm font-normal text-gray-400">L</span>
-          </p>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">full-day total</p>
-        </div>
+        <StatCell label="Today" current={analytics?.today ?? null} unit="L" compareTo={analytics?.yesterday ?? null} projected={analytics?.todayProjected ?? null} />
+        <StatCell label="This week" current={analytics?.thisWeek ?? null} unit="L" compareTo={analytics?.lastWeek ?? null} projected={analytics?.weekProjected ?? null} />
+        <StatCell label="This month" current={analytics?.thisMonth ?? null} unit="L" projected={analytics?.monthProjected ?? null} />
+        <PeakFlowCell peakLpm={whi.peakFlow?.peakLpm ?? null} buildingId={buildingId} />
+        <StatCell label="Yesterday" current={analytics?.yesterday ?? null} unit="L" />
       </div>
 
       {/* ── 2. WHI banner (pillar details hidden behind a button) ──────── */}
-      <div className={`rounded-2xl border bg-white p-6 dark:bg-gray-800 ${style.border}`}>
+      <div
+        className={`cursor-pointer rounded-2xl border bg-white p-6 transition-shadow hover:shadow-md dark:bg-gray-800 ${style.border}`}
+        onClick={() => setBreakdownOpen(true)}
+      >
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
           <HealthRing score={whi.score} grade={whi.grade} />
           <div className="min-w-0 flex-1">
@@ -923,9 +932,17 @@ export default function BuildingOverviewHero({
                 {whi.region === 'CA' ? ' — National Plumbing Code 2020' : whi.region === 'US' ? ' — EPA WaterSense / EPAct 1992' : ''}
               </p>
             </div>
-            <p className="text-sm text-gray-400">{whi.fixtureSummary}</p>
+            <div className="flex items-center gap-3">
+              <p className="text-sm text-gray-400">{whi.fixtureSummary}</p>
+              <Link
+                to={`/dashboard/fixtures/${buildingId}`}
+                className="shrink-0 text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+              >
+                View all →
+              </Link>
+            </div>
           </div>
-          <div className="space-y-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             {whi.fixtureRows.map((r) => (
               <FixtureRow
                 key={r.type}

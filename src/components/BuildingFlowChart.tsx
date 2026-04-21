@@ -17,6 +17,7 @@ import {
   type FlowHourlyRow,
 } from '@/queries/getFlowAnalytics'
 import { GET_SENSORS_BY_BUILDING_ID } from '@/queries/getSensorsByBuildingId'
+import { computeFlowFromPeaks, type MagDataPoint } from '@/utils/flowComputation'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Unified flow/usage chart
@@ -59,7 +60,7 @@ const DEFAULT_INTERVAL: Record<Range, Interval> = {
 }
 
 const ALLOWED_INTERVALS: Record<Range, Interval[]> = {
-  '1h': ['1m', '5m'],
+  '1h': ['1m', '5m', '15m'],
   '24h': ['1m', '5m', '15m', '1h'],
   '7d': ['15m', '1h'],
 }
@@ -169,10 +170,8 @@ export default function BuildingFlowChart({ buildingId }: Props) {
     return () => { cancelled = true }
   }, [sensors, range])
 
-  // If user is on 1m/5m but freq isn't available, auto-bump to 15m.
-  useEffect(() => {
-    if (!freqAvailable && useSubHour) setInterval('15m')
-  }, [freqAvailable, useSubHour])
+  // Sub-hour intervals now use computeFlowFromPeaks — no freq dependency.
+  // Keep this stub in case we need future gating.
 
   // ───────────────────────────────────────────────────────────────────────
   // Bucket building
@@ -188,34 +187,30 @@ export default function BuildingFlowChart({ buildingId }: Props) {
     const bucketDtS = new Array<number>(numBuckets).fill(0)
     const bucketWeightedLpm = new Array<number>(numBuckets).fill(0)
 
-    if (useSubHour && freqAvailable && magRows.length > 0) {
-      // Source: dominant_freq_hz per sample
-      const multiplierById = new Map(sensors.map((s) => [s.id, s.multiplier]))
-      const samples: Array<{ t: number; lpm: number }> = []
-      for (const r of magRows) {
-        if (r.dominant_freq_hz == null) continue
-        const mult = multiplierById.get(r.sensor_id)
-        if (!mult) continue
-        const t = new Date(r.created_at).getTime()
-        if (t < startMs || t > nowMs) continue
-        const lpm = (r.dominant_freq_hz * 60) / mult
-        if (!Number.isFinite(lpm) || lpm < 0) continue
-        samples.push({ t, lpm })
-      }
-      samples.sort((a, b) => a.t - b.t)
+    if (useSubHour && magRows.length > 0 && sensors.length > 0) {
+      // Source: computeFlowFromPeaks on raw total_magnitude — same pipeline as admin
+      const mult = sensors[0]!.multiplier
+      const magData: MagDataPoint[] = magRows
+        .map((r) => ({
+          timestamp: new Date(r.created_at).getTime(),
+          x: r.x_axis_reading,
+          total: r.total_magnitude,
+          bandEnergy10s: r.band_energy_10s,
+          bandEnergy60s: r.band_energy_60s,
+        }))
+        .filter((p) => p.timestamp >= startMs && p.timestamp <= nowMs)
+        .sort((a, b) => a.timestamp - b.timestamp)
 
-      for (let i = 0; i < samples.length; i++) {
-        const s = samples[i]!
-        const next = samples[i + 1]
-        const rawDt = next ? (next.t - s.t) / 1000 : 0
-        const dt = Math.max(0, Math.min(rawDt, 120))
-        if (dt <= 0) continue
-        const vol = (s.lpm / 60) * dt
-        const idx = Math.floor((s.t - startMs) / bucketMs)
+      const flowPoints = computeFlowFromPeaks(magData, mult)
+      for (const fp of flowPoints) {
+        const idx = Math.floor((fp.timestamp - startMs) / bucketMs)
         if (idx < 0 || idx >= numBuckets) continue
-        bucketVolL[idx]! += vol
+        const lpm = fp.flowRateLph / 60
+        // Approximate dt as bucket width / number of points in bucket (or 1s minimum)
+        const dt = 1
+        bucketVolL[idx]! += lpm / 60 * dt
         bucketDtS[idx]! += dt
-        bucketWeightedLpm[idx]! += s.lpm * dt
+        bucketWeightedLpm[idx]! += lpm * dt
       }
     } else {
       // Source: flow_hourly — split each hour row proportionally across the buckets it overlaps
@@ -307,8 +302,8 @@ export default function BuildingFlowChart({ buildingId }: Props) {
           </h2>
           <p className="mt-0.5 text-sm text-gray-400">
             {isUsage
-              ? `${totalL.toFixed(1)} L across ${range} · ${interval} buckets · ${useSubHour && freqAvailable ? 'instantaneous' : 'hourly rollup'}`
-              : `Peak ${peakLpm.toFixed(1)} L/min across ${range} · ${interval} buckets · ${useSubHour && freqAvailable ? 'instantaneous' : 'hourly rollup'}`}
+              ? `${totalL.toFixed(1)} L across ${range} · ${interval} buckets · ${useSubHour ? 'peak detection' : 'hourly rollup'}`
+              : `Peak ${peakLpm.toFixed(1)} L/min across ${range} · ${interval} buckets · ${useSubHour ? 'peak detection' : 'hourly rollup'}`}
           </p>
         </div>
 
@@ -350,16 +345,14 @@ export default function BuildingFlowChart({ buildingId }: Props) {
           <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 text-sm font-medium dark:border-gray-700 dark:bg-gray-900">
             {(['1m', '5m', '15m', '1h'] as Interval[]).map((iv) => {
               const allowed = ALLOWED_INTERVALS[range].includes(iv)
-              const subHour = iv === '1m' || iv === '5m'
-              const blockedByFreq = subHour && !freqAvailable
-              const usable = allowed && !blockedByFreq
+              const usable = allowed
               return (
                 <button
                   key={iv}
                   type="button"
                   disabled={!usable}
                   onClick={() => setInterval(iv)}
-                  title={blockedByFreq ? 'Needs dominant_freq_hz on mag_report — not reporting yet' : undefined}
+                  title={!usable ? 'Not available for this time range' : undefined}
                   className={`rounded-md px-2.5 py-1.5 transition-colors ${
                     interval === iv
                       ? 'bg-white text-indigo-600 shadow-sm dark:bg-gray-800 dark:text-indigo-400'
@@ -464,11 +457,6 @@ export default function BuildingFlowChart({ buildingId }: Props) {
         )}
       </div>
 
-      {!freqAvailable && hasAnyData && (
-        <p className="mt-2 text-[11px] text-gray-400">
-          1m and 5m buckets are disabled because <span className="font-mono">dominant_freq_hz</span> isn't reporting on this building's sensors — showing hourly rollups instead.
-        </p>
-      )}
     </div>
   )
 }

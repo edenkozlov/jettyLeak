@@ -144,6 +144,69 @@ export function TierDistributionBar({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Mini pie chart — tier distribution donut
+// ─────────────────────────────────────────────────────────────────────────────
+
+function TierPie({
+  tierCounts,
+  total,
+  size = 40,
+}: {
+  tierCounts: Record<EfficiencyTier, number>
+  total: number
+  size?: number
+}) {
+  const r = size / 2
+  const strokeW = size * 0.18
+  const ir = r - strokeW / 2
+  const c = 2 * Math.PI * ir
+
+  const segments = TIER_ORDER
+    .map((t) => ({ tier: t, count: tierCounts[t] ?? 0 }))
+    .filter((s) => s.count > 0)
+
+  if (segments.length === 0) return <div style={{ width: size, height: size }} />
+
+  let offset = 0
+  const arcs = segments.map((s) => {
+    const pct = s.count / total
+    const dash = c * pct
+    const gap = c - dash
+    const rotation = (offset / total) * 360 - 90
+    offset += s.count
+    return { ...s, dash, gap, rotation }
+  })
+
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+      <circle cx={r} cy={r} r={ir} fill="none" strokeWidth={strokeW} className="stroke-gray-100 dark:stroke-gray-700" />
+      {arcs.map((a) => (
+        <circle
+          key={a.tier}
+          cx={r}
+          cy={r}
+          r={ir}
+          fill="none"
+          strokeWidth={strokeW}
+          stroke={TIER_BG_HEX[a.tier]}
+          strokeDasharray={`${a.dash} ${a.gap}`}
+          transform={`rotate(${a.rotation} ${r} ${r})`}
+          strokeLinecap="butt"
+        />
+      ))}
+    </svg>
+  )
+}
+
+const TIER_BG_HEX: Record<EfficiencyTier, string> = {
+  excellent: '#10b981',
+  good: '#0ea5e9',
+  acceptable: '#6366f1',
+  high: '#f97316',
+  excessive: '#ef4444',
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Occurrences list (paginated, scrollable)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -608,76 +671,12 @@ export default function FixtureRow({
     benchmark.kind === 'volume_per_use' ? avgLitresPerSession : avgFlowLpm
   const unit = benchmark.unit
 
-  let comparison: React.ReactNode = 'Not enough data yet to estimate an average.'
-  let comparisonColor = 'text-gray-400'
-  if (measured != null && tier) {
-    const pctVsGood = ((measured - benchmark.tiers.goodMax) / benchmark.tiers.goodMax) * 100
-    if (tier === 'excellent') {
-      comparisonColor = 'text-emerald-600 dark:text-emerald-400'
-      comparison = (
-        <>
-          {Math.abs(pctVsGood).toFixed(0)}% below code target
-          <span className="text-gray-400"> ({benchmark.tiers.goodMax.toFixed(1)} {unit} · {benchmark.source})</span>
-        </>
-      )
-    } else if (tier === 'good') {
-      comparisonColor = 'text-sky-600 dark:text-sky-400'
-      comparison = (
-        <>
-          Meets code ({benchmark.tiers.goodMax.toFixed(1)} {unit})
-          <span className="text-gray-400"> · {benchmark.source}</span>
-        </>
-      )
-    } else if (tier === 'acceptable') {
-      comparisonColor = 'text-slate-600 dark:text-slate-300'
-      comparison = (
-        <>
-          {pctVsGood.toFixed(0)}% above code — still usable
-          <span className="text-gray-400"> ({benchmark.source})</span>
-        </>
-      )
-    } else if (tier === 'high') {
-      comparisonColor = 'text-amber-700 dark:text-amber-300'
-      comparison = (
-        <>
-          {pctVsGood.toFixed(0)}% above code — upgrade recommended
-          <span className="text-gray-400"> ({benchmark.source})</span>
-        </>
-      )
-    } else {
-      comparisonColor = 'text-red-600 dark:text-red-400'
-      comparison = (
-        <>
-          {pctVsGood.toFixed(0)}% above code — wasteful fixture
-          <span className="text-gray-400"> ({benchmark.source})</span>
-        </>
-      )
-    }
-  }
 
-  const borderAccent = tier
-    ? TIER_BORDER[tier]
-    : row.isHighestUsage
-      ? 'border-sky-200 dark:border-sky-800/60'
-      : 'border-gray-100 dark:border-gray-700'
-
-  const medianValue =
-    benchmark.kind === 'volume_per_use' ? row.medianLitresPerSession : row.medianFlowLpm
+  const borderAccent = 'border-gray-100 dark:border-gray-700'
 
   const meanTier = measured != null ? tierForValue(measured, benchmark.tiers) : null
-  const medianTier = medianValue != null ? tierForValue(medianValue, benchmark.tiers) : null
 
   const total = row.sessionCount > 0 ? row.sessionCount : 1
-
-  const handleReviewClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    if (!expanded) onToggle()
-    setTimeout(() => {
-      setMode('occurrences')
-      setSelectedClassifierName(null)
-      setAnomalyOnly(true)
-    }, 0)
-  }
 
   return (
     <div className={`rounded-lg border bg-gray-50/60 dark:bg-gray-900/40 ${borderAccent}`}>
@@ -696,55 +695,46 @@ export default function FixtureRow({
       >
         <FixtureTypeIcon type={type} size="h-12 w-12" padding="p-2.5" />
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <div className="flex flex-wrap items-baseline gap-2">
-              <p className="text-base font-semibold text-gray-900 dark:text-white">
-                {type}
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-2">
+                <p className="text-base font-semibold text-gray-900 dark:text-white">
+                  {type}
+                </p>
+                {measured != null && meanTier && (
+                  <p className="text-lg font-bold tabular-nums">
+                    <span className={TIER_TEXT[meanTier]}>{measured.toFixed(1)}</span>
+                    <span className="ml-0.5 text-sm font-normal text-gray-500">{unit} avg</span>
+                  </p>
+                )}
+              </div>
+              <p className="mt-0.5 text-xs text-gray-400">
+                {row.sessionCount.toLocaleString()} sessions
+                {row.totalLitres != null && ` · ${formatLitres(row.totalLitres)} L this month`}
               </p>
-              {measured != null && meanTier && (
-                <p className="text-lg font-bold tabular-nums">
-                  <span className={TIER_TEXT[meanTier]}>{measured.toFixed(1)}</span>
-                  <span className="ml-0.5 text-sm font-normal text-gray-500">{unit}</span>
-                  <span className="ml-1 text-sm font-normal text-gray-500">avg</span>
-                </p>
-              )}
-              {medianValue != null && medianTier && (
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  · <span className={`tabular-nums font-semibold ${TIER_TEXT[medianTier]}`}>{medianValue.toFixed(1)}</span> {unit} median
-                </p>
-              )}
-              {row.cvPct != null && (
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  · ±{row.cvPct.toFixed(0)}% spread
-                </span>
-              )}
             </div>
-            <div className="flex items-center gap-2">
-              {row.isHighestUsage && (
-                <span className="rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold uppercase text-sky-700 dark:bg-sky-900/20 dark:text-sky-400">
-                  Top use
-                </span>
-              )}
-              {tier && (
-                <span className={`rounded-full px-2.5 py-1 text-xs font-bold uppercase ${TIER_PILL[tier]}`}>
-                  {TIER_LABEL[tier]}
-                </span>
-              )}
+            <div className="flex items-center gap-3">
+              {/* Mini pie chart + legend */}
+              <div className="flex items-center gap-2.5">
+                <TierPie tierCounts={row.tierCounts} total={total} size={64} />
+                <div className="flex flex-col gap-0.5">
+                  {TIER_ORDER.map((t) => {
+                    const count = row.tierCounts[t] ?? 0
+                    if (count === 0) return null
+                    const pct = total > 0 ? Math.round((count / total) * 100) : 0
+                    return (
+                      <div key={t} className="flex items-center gap-1">
+                        <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: TIER_BG_HEX[t] }} />
+                        <span className="text-[10px] tabular-nums text-gray-500 dark:text-gray-400">
+                          {TIER_LABEL[t]} {pct}%
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           </div>
-
-          <p className={`mt-1 text-sm font-medium ${comparisonColor}`}>{comparison}</p>
-
-          <TierDistributionBar
-            tierCounts={row.tierCounts}
-            total={total}
-            onSegmentClick={handleReviewClick}
-          />
-
-          <p className="mt-1 text-xs text-gray-400">
-            {row.sessionCount.toLocaleString()} sessions
-            {row.totalLitres != null && ` · ${formatLitres(row.totalLitres)} L this month`}
-          </p>
         </div>
         <svg
           className={`h-5 w-5 shrink-0 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
