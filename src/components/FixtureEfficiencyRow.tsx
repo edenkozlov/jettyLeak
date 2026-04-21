@@ -653,7 +653,7 @@ export default function FixtureRow({
     }
   }, [expanded, defaultExpandedMode])
 
-  const { type, avgLitresPerSession, avgFlowLpm, benchmark, tier } = row
+  const { type, avgLitresPerSession, avgFlowLpm, benchmark } = row
 
   if (!benchmark) {
     return (
@@ -690,8 +690,7 @@ export default function FixtureRow({
             onToggle()
           }
         }}
-        className="flex w-full cursor-pointer items-center gap-4 rounded-lg px-4 py-4 text-left transition-colors hover:bg-gray-100/60 dark:hover:bg-gray-900/60"
-        aria-expanded={expanded}
+        className="flex w-full cursor-pointer items-center gap-4 rounded-lg px-4 py-4 text-left transition-all hover:bg-gray-100/60 hover:shadow-sm dark:hover:bg-gray-900/60"
       >
         <FixtureTypeIcon type={type} size="h-12 w-12" padding="p-2.5" />
         <div className="min-w-0 flex-1">
@@ -712,54 +711,81 @@ export default function FixtureRow({
                 {row.sessionCount.toLocaleString()} sessions
                 {row.totalLitres != null && ` · ${formatLitres(row.totalLitres)} L this month`}
               </p>
+              <span className="mt-2 inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition-colors hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400 dark:hover:bg-indigo-900/40">
+                View details
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </span>
             </div>
-            <div className="flex items-center gap-3">
-              {/* Mini pie chart + legend */}
-              <div className="flex items-center gap-2.5">
-                <TierPie tierCounts={row.tierCounts} total={total} size={64} />
-                <div className="flex flex-col gap-0.5">
-                  {TIER_ORDER.map((t) => {
-                    const count = row.tierCounts[t] ?? 0
-                    if (count === 0) return null
-                    const pct = total > 0 ? Math.round((count / total) * 100) : 0
-                    return (
-                      <div key={t} className="flex items-center gap-1">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: TIER_BG_HEX[t] }} />
-                        <span className="text-[10px] tabular-nums text-gray-500 dark:text-gray-400">
-                          {TIER_LABEL[t]} {pct}%
-                        </span>
-                      </div>
-                    )
-                  })}
-                </div>
+            <div className="flex items-center gap-2.5">
+              <TierPie tierCounts={row.tierCounts} total={total} size={64} />
+              <div className="flex flex-col gap-0.5">
+                {TIER_ORDER.map((t) => {
+                  const count = row.tierCounts[t] ?? 0
+                  if (count === 0) return null
+                  const pct = total > 0 ? Math.round((count / total) * 100) : 0
+                  return (
+                    <div key={t} className="flex items-center gap-1">
+                      <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: TIER_BG_HEX[t] }} />
+                      <span className="text-[10px] tabular-nums text-gray-500 dark:text-gray-400">
+                        {TIER_LABEL[t]} {pct}%
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
         </div>
-        <svg
-          className={`h-5 w-5 shrink-0 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </svg>
       </div>
 
+      {/* Modal overlay */}
       {expanded && (
-        <div className="border-t border-gray-200 px-4 pb-4 pt-4 dark:border-gray-700">
-          <FixtureExpandedBody
-            row={row}
-            mode={mode}
-            onModeChange={setMode}
-            anomalyOnly={anomalyOnly}
-            onAnomalyOnlyChange={setAnomalyOnly}
-            selectedClassifierName={selectedClassifierName}
-            onSelectClassifierName={setSelectedClassifierName}
-          />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={onToggle}
+        >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div
+            className="relative flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center gap-4 border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+              <FixtureTypeIcon type={type} size="h-10 w-10" padding="p-2" />
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">{type}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {measured != null ? `${measured.toFixed(1)} ${unit} avg` : ''}
+                  {row.sessionCount > 0 && ` · ${row.sessionCount.toLocaleString()} sessions`}
+                  {row.totalLitres != null && ` · ${formatLitres(row.totalLitres)} L this month`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={onToggle}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18" />
+                  <path d="m6 6 12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Modal body */}
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+              <FixtureExpandedBody
+                row={row}
+                mode={mode}
+                onModeChange={setMode}
+                anomalyOnly={anomalyOnly}
+                onAnomalyOnlyChange={setAnomalyOnly}
+                selectedClassifierName={selectedClassifierName}
+                onSelectClassifierName={setSelectedClassifierName}
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
