@@ -34,6 +34,7 @@ const CompareFlume = lazy(() => import('@/pages/compare/CompareFlume'))
 const WaterMonitoringSystems = lazy(() => import('@/pages/compare/WaterMonitoringSystems'))
 const GetQuote = lazy(() => import('@/pages/GetQuote'))
 const PropertyIntelligence = lazy(() => import('@/pages/PropertyIntelligence'))
+const HowItWorks = lazy(() => import('@/pages/HowItWorks'))
 const Faq = lazy(() => import('@/pages/Faq'))
 const Fixtures = lazy(() => import('@/pages/Fixtures'))
 const MagReports = lazy(() => import('@/pages/MagReports'))
@@ -100,6 +101,7 @@ function AppRoutes() {
           <Route path="/best-water-monitoring-systems" element={<WaterMonitoringSystems />} />
           <Route path="/quote" element={<GetQuote />} />
           <Route path="/property-intelligence" element={<PropertyIntelligence />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/faq" element={<Faq />} />
           <Route path="/articles" element={<Articles />} />
           <Route path="/articles/what-is-water-monitoring-system" element={<ArticleWhatIsWaterMonitoring />} />
