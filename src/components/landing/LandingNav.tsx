@@ -19,15 +19,25 @@ export function LandingNav() {
         </Link>
         <div className="flex items-center gap-3 sm:gap-6 md:gap-8">
           <div className="hidden gap-7 md:flex">
-            {LANDING_ANCHOR_LINKS.map(({ labelKey, href }) => (
-              <a
-                key={href}
-                href={href}
-                className="text-[13px] text-gray-400 transition hover:text-gray-700"
-              >
-                {t(labelKey)}
-              </a>
-            ))}
+            {LANDING_ANCHOR_LINKS.map(({ labelKey, href }) =>
+              href.startsWith('/') ? (
+                <Link
+                  key={href}
+                  to={href}
+                  className="text-[13px] text-gray-400 transition hover:text-gray-700"
+                >
+                  {t(labelKey)}
+                </Link>
+              ) : (
+                <a
+                  key={href}
+                  href={href}
+                  className="text-[13px] text-gray-400 transition hover:text-gray-700"
+                >
+                  {t(labelKey)}
+                </a>
+              ),
+            )}
             <Link
               to="/property-intelligence"
               className="text-[13px] text-gray-400 transition hover:text-gray-700"
@@ -90,16 +100,27 @@ export function LandingNav() {
       {menuOpen ? (
         <div className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 md:hidden">
           <div className="flex flex-col gap-3">
-            {LANDING_ANCHOR_LINKS.map(({ labelKey, href }) => (
-              <a
-                key={href}
-                href={href}
-                onClick={() => setMenuOpen(false)}
-                className="text-[14px] text-gray-500 transition hover:text-gray-900"
-              >
-                {t(labelKey)}
-              </a>
-            ))}
+            {LANDING_ANCHOR_LINKS.map(({ labelKey, href }) =>
+              href.startsWith('/') ? (
+                <Link
+                  key={href}
+                  to={href}
+                  onClick={() => setMenuOpen(false)}
+                  className="text-[14px] text-gray-500 transition hover:text-gray-900"
+                >
+                  {t(labelKey)}
+                </Link>
+              ) : (
+                <a
+                  key={href}
+                  href={href}
+                  onClick={() => setMenuOpen(false)}
+                  className="text-[14px] text-gray-500 transition hover:text-gray-900"
+                >
+                  {t(labelKey)}
+                </a>
+              ),
+            )}
             <Link
               to="/property-intelligence"
               onClick={() => setMenuOpen(false)}

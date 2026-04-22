@@ -95,11 +95,17 @@ export function SiteFooter({ variant = 'page' }: { variant?: 'landing' | 'page' 
             <FooterColumn heading={t('footer.columns.product')}>
               {variant === 'landing' ? (
                 <>
-                  {LANDING_ANCHOR_LINKS.map(({ labelKey, href }) => (
-                    <a key={href} href={href} className={linkClass}>
-                      {t(labelKey)}
-                    </a>
-                  ))}
+                  {LANDING_ANCHOR_LINKS.map(({ labelKey, href }) =>
+                    href.startsWith('/') ? (
+                      <Link key={href} to={href} className={linkClass}>
+                        {t(labelKey)}
+                      </Link>
+                    ) : (
+                      <a key={href} href={href} className={linkClass}>
+                        {t(labelKey)}
+                      </a>
+                    ),
+                  )}
                   <Link to="/property-intelligence" className={linkClass}>
                     {t('footer.links.propertyIntel')}
                   </Link>
