@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 
 import { BrandLogoMark } from '@/components/BrandLogoMark'
 
@@ -10,6 +10,14 @@ import { LandingLanguageSwitch } from './LandingLanguageSwitch'
 export function LandingNav() {
   const { t } = useTranslation('landing')
   const [menuOpen, setMenuOpen] = useState(false)
+  const { pathname } = useLocation()
+  const isLanding = pathname === '/'
+  // On anywhere other than the landing page, hash anchors (`#product`,
+  // `#features`, `#building-health`) don't resolve to anything, so show only
+  // route-based links and prepend a "Home" shortcut.
+  const anchorLinks = isLanding
+    ? LANDING_ANCHOR_LINKS
+    : LANDING_ANCHOR_LINKS.filter(({ href }) => href.startsWith('/'))
 
   return (
     <nav className="fixed top-0 z-50 w-full border-b border-gray-100 bg-white">
@@ -19,7 +27,15 @@ export function LandingNav() {
         </Link>
         <div className="flex items-center gap-3 sm:gap-6 md:gap-8">
           <div className="hidden gap-7 md:flex">
-            {LANDING_ANCHOR_LINKS.map(({ labelKey, href }) =>
+            {!isLanding ? (
+              <Link
+                to="/"
+                className="text-[13px] text-gray-400 transition hover:text-gray-700"
+              >
+                {t('nav.home')}
+              </Link>
+            ) : null}
+            {anchorLinks.map(({ labelKey, href }) =>
               href.startsWith('/') ? (
                 <Link
                   key={href}
@@ -100,7 +116,16 @@ export function LandingNav() {
       {menuOpen ? (
         <div className="border-t border-gray-100 bg-white px-4 pb-4 pt-2 md:hidden">
           <div className="flex flex-col gap-3">
-            {LANDING_ANCHOR_LINKS.map(({ labelKey, href }) =>
+            {!isLanding ? (
+              <Link
+                to="/"
+                onClick={() => setMenuOpen(false)}
+                className="text-[14px] text-gray-500 transition hover:text-gray-900"
+              >
+                {t('nav.home')}
+              </Link>
+            ) : null}
+            {anchorLinks.map(({ labelKey, href }) =>
               href.startsWith('/') ? (
                 <Link
                   key={href}
