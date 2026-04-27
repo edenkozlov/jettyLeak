@@ -75,7 +75,7 @@ const STEPS: Step[] = [
     n: '07',
     tag: 'Continuous live scoring',
     title: 'Your building gets a Water Health Index.',
-    body: 'Everything rolls up into a single live score: Healthy, Watch, Investigate, or Critical. See it at a glance across every property. Drill in and you get the full breakdown: leak risk, fixture degradation, consumption anomalies, and pipe stress.',
+    body: 'Everything rolls up into a single live score, so you can see the full health of your building in one shot, and exactly what is going wrong the moment it does, whether that be a leak, fixture degradation, a consumption anomaly, or pipe stress.',
     image: healthImg,
     alt: 'Water Health Index gauge reading Healthy',
   },
