@@ -33,6 +33,7 @@ const CompareWaterAlert = lazy(() => import('@/pages/compare/CompareWaterAlert')
 const CompareFlume = lazy(() => import('@/pages/compare/CompareFlume'))
 const WaterMonitoringSystems = lazy(() => import('@/pages/compare/WaterMonitoringSystems'))
 const GetQuote = lazy(() => import('@/pages/GetQuote'))
+const EventForm = lazy(() => import('@/pages/EventForm'))
 const PropertyIntelligence = lazy(() => import('@/pages/PropertyIntelligence'))
 const HowItWorks = lazy(() => import('@/pages/HowItWorks'))
 const Faq = lazy(() => import('@/pages/Faq'))
@@ -100,6 +101,7 @@ function AppRoutes() {
           <Route path="/flume-alternative" element={<CompareFlume />} />
           <Route path="/best-water-monitoring-systems" element={<WaterMonitoringSystems />} />
           <Route path="/quote" element={<GetQuote />} />
+          <Route path="/event-form" element={<EventForm />} />
           <Route path="/property-intelligence" element={<PropertyIntelligence />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/faq" element={<Faq />} />
