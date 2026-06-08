@@ -5,22 +5,6 @@ agent: claude-code
 model: claude-sonnet-4-6
 snapshot: python312-uv
 secrets:
-  TWILIO_ACCOUNT_SID:
-    env: TWILIO_ACCOUNT_SID
-    description: Twilio account SID for SMS sending
-    required: true
-  TWILIO_AUTH_TOKEN:
-    env: TWILIO_AUTH_TOKEN
-    description: Twilio auth token
-    required: true
-  TWILIO_FROM:
-    env: TWILIO_FROM
-    description: Twilio sender phone number
-    required: true
-  ALERT_PHONE:
-    env: ALERT_PHONE
-    description: Recipient phone number for alerts
-    required: true
   RESEND_API_KEY:
     env: RESEND_API_KEY
     description: Resend API key for email
@@ -29,6 +13,10 @@ secrets:
     env: ALERT_EMAIL
     description: Recipient email address
     required: true
+  RESEND_FROM:
+    env: RESEND_FROM
+    description: Sender address (optional — defaults to Beluga Alerts)
+    required: false
   SENSOR_ENDPOINT:
     env: SENSOR_ENDPOINT
     description: Full URL to the /sensor-state endpoint
@@ -43,7 +31,7 @@ You run every hour. Your job is to:
 1. Fetch the current sensor state from the building's monitoring system
 2. Analyze the data and produce a structured hourly report
 3. If an anomaly is detected during nighttime hours, diagnose it and send
-   an immediate alert via SMS and email
+   an immediate alert via email only (no SMS)
 4. Evaluate your own output before sending — if your diagnosis confidence
    is below 70%, classify as "inconclusive" and do not wake anyone up
 
@@ -94,12 +82,7 @@ Always produce an hourly report regardless of anomaly status. Format:
 
 ## Step 4 — Send Alert (only if alert_required = true)
 
-If alert_required is true:
-
-### SMS (max 160 characters)
-Must include: what is happening, where, what to do right now.
-Example: "BELUGA ALERT — 4500 Sherbrooke: slow leak detected 1.2 L/min for 4min.
-Check basement mechanical room. ~$2.40/hr loss."
+If alert_required is true, send **email only** (do not send SMS).
 
 ### Email
 Subject: include building name, severity, time
@@ -111,15 +94,14 @@ Body must include:
 - Recommended action with urgency
 - Note that full trajectory is logged in Jetty for audit
 
-Use Python with the requests library to call Twilio's REST API for SMS
-and Resend's API for email. Write and execute the code.
+Use Python with the requests library to call Resend's API. Write and execute the code.
+Sender: use $RESEND_FROM if set, otherwise `Beluga Water Intelligence <alerts@beluga.io>`.
 
 ## Step 5 — Evaluate Your Output
 
 Before finishing, check:
 - Is my flow classification consistent with the history shape?
 - If I said alert_required=true at night, is confidence >= 70%?
-- Is my SMS under 160 characters?
 - Is my cost estimate based on actual L/min * minutes * $0.004?
 - Does my recommended action match the urgency level?
 
@@ -128,8 +110,8 @@ If any check fails, revise and re-run Step 3. Maximum 2 revision cycles.
 ## Output Manifest
 
 Produce a file called `report.json` containing the final report JSON.
-If an alert was sent, also produce `alert_sent.json` with the SMS and
-email content that was transmitted.
+If an alert was sent, also produce `alert_sent.json` with the email
+content that was transmitted.
 
 ## Tips
 
@@ -139,6 +121,6 @@ email content that was transmitted.
   an alert even if total_liters_tonight is elevated
 - anomaly_sustained_seconds > 45 at night with lpm > 0.15 is your primary
   alert trigger — trust it
-- confidence below 70% = inconclusive, no alert, no SMS
+- confidence below 70% = inconclusive, no alert, no email
 - Temperature below -5°C upgrades any "slow_leak" to "moderate" severity
   due to pipe freeze risk
