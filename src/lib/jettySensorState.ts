@@ -8,6 +8,6 @@ export function sensorStateUrl(sensorId = SENSOR_ID): string | null {
   return `${base}/functions/v1/sensor-state?sensor_id=${sensorId}`
 }
 
-export const JETTY_COLLECTION = import.meta.env.VITE_JETTY_COLLECTION ?? 'beluga-demo'
+export const JETTY_COLLECTION = import.meta.env.VITE_JETTY_COLLECTION ?? 'myorg123'
 export const JETTY_TASK = import.meta.env.VITE_JETTY_TASK ?? 'hourly-water-report'
 export const JETTY_ROUTINE = import.meta.env.VITE_JETTY_ROUTINE ?? 'hourly-check'

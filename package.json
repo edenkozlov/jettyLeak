@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "jetty:setup": "node scripts/setup-jetty.mjs",
+    "jetty:run": "node scripts/run-jetty-runbook.mjs",
     "jetty:run-now": "node scripts/setup-jetty.mjs --run-now"
   },
   "dependencies": {

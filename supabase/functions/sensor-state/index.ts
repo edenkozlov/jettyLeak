@@ -153,8 +153,29 @@ Deno.serve(async (req) => {
     Deno.env.get("JETTY_FORCE_NIGHT") === "true";
   const isNightNow = isNight(now, forceNight);
 
-  const currentLpm = flows.length
-    ? Number(flows[flows.length - 1]!.lpm) || 0
+  /** One sample per 2s tick (simulator writes 4 sub-samples per tick — raw rows look like artifacts). */
+  function bucketFlows(samples: FlowSample[], bucketMs = 2_000): FlowSample[] {
+    const byBucket = new Map<number, FlowSample>();
+    for (const s of samples) {
+      const key = Math.floor(new Date(s.created_at).getTime() / bucketMs);
+      const prev = byBucket.get(key);
+      if (!prev || Number(s.lpm) > Number(prev.lpm)) byBucket.set(key, s);
+    }
+    return [...byBucket.values()].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+  }
+
+  const bucketed = bucketFlows(flows);
+  const recentBucketed = bucketed.slice(-10);
+  const last60s = bucketed.filter(
+    (s) => new Date(s.created_at).getTime() >= now.getTime() - 60_000,
+  );
+  const currentLpm = recentBucketed.length
+    ? Math.max(...recentBucketed.slice(-3).map((s) => Number(s.lpm) || 0))
+    : 0;
+  const peakLpm60s = last60s.length
+    ? Math.max(...last60s.map((s) => Number(s.lpm) || 0))
     : 0;
 
   const windowStart = nightWindowStart(now, forceNight);
@@ -174,20 +195,21 @@ Deno.serve(async (req) => {
 
   let anomalySustainedSeconds = 0;
   let anomalyActive = false;
-  if (isNightNow && watch?.anomaly_started_at && currentLpm > ANOMALY_LPM) {
-    anomalySustainedSeconds = Math.floor(
-      (now.getTime() - new Date(watch.anomaly_started_at).getTime()) / 1000,
-    );
-    anomalyActive = anomalySustainedSeconds >= SUSTAINED_SEC;
-  } else if (isNightNow && currentLpm > ANOMALY_LPM) {
-    anomalySustainedSeconds = Math.min(
-      90,
-      flows.filter((f) => Number(f.lpm) > ANOMALY_LPM).length * 2,
-    );
-    anomalyActive = anomalySustainedSeconds >= SUSTAINED_SEC;
+  const elevatedBuckets = bucketed.filter((s) => Number(s.lpm) > ANOMALY_LPM);
+  if (isNightNow && elevatedBuckets.length >= 2) {
+    const first = new Date(elevatedBuckets[0]!.created_at).getTime();
+    const last = new Date(elevatedBuckets[elevatedBuckets.length - 1]!.created_at).getTime();
+    anomalySustainedSeconds = Math.floor((last - first) / 1000);
+    if (watch?.anomaly_started_at) {
+      const since = Math.floor(
+        (now.getTime() - new Date(watch.anomaly_started_at).getTime()) / 1000,
+      );
+      anomalySustainedSeconds = Math.max(anomalySustainedSeconds, since);
+    }
+    anomalyActive = anomalySustainedSeconds >= SUSTAINED_SEC && currentLpm > ANOMALY_LPM;
   }
 
-  const recent = flows.slice(-10);
+  const recent = recentBucketed;
   const recentHistory = recent.map((f, i) => {
     const ts = new Date(f.created_at).getTime();
     const mag = nearestMag(mags, ts);
@@ -226,6 +248,7 @@ Deno.serve(async (req) => {
     timestamp: now.toISOString(),
     is_night: isNightNow,
     current_lpm: Math.round(currentLpm * 1000) / 1000,
+    peak_lpm_60s: Math.round(peakLpm60s * 1000) / 1000,
     total_liters_tonight: totalLitersTonight,
     anomaly_active: anomalyActive,
     anomaly_sustained_seconds: anomalySustainedSeconds,

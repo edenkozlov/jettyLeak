@@ -925,7 +925,8 @@ export default function JettyDemoPanel() {
           )}
           <p className="mb-2 text-[11px] text-gray-500">
             Demo: N → night · L → leak · then{' '}
-            <code className="text-gray-400">npm run jetty:run-now</code>
+            <code className="text-gray-400">npm run jetty:run</code>
+            {' '}(UI &quot;Run task&quot; needs task recreated — see setup script)
           </p>
           <div className="mb-2 flex flex-wrap gap-2">
             <button

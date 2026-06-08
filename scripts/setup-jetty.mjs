@@ -1,21 +1,12 @@
 #!/usr/bin/env node
 /**
- * One-time Jetty setup for Beluga demo (spec: Routine → Workflow → Runbook).
+ * Jetty setup: collection + runbook workflow task + hourly routine.
  *
- * Usage:
- *   node scripts/setup-jetty.mjs              # create collection, task, routine
- *   node scripts/setup-jetty.mjs --run-now    # trigger routine immediately
+ *   node scripts/setup-jetty.mjs              # create / update task
+ *   node scripts/setup-jetty.mjs --run-now    # trigger routine (after task is valid)
+ *   node scripts/setup-jetty.mjs --delete-task  # remove broken task before recreate
  *
- * Required env (or .env in repo root — loaded manually below):
- *   JETTY_API_TOKEN
- *   SENSOR_ENDPOINT   — e.g. https://xxx.supabase.co/functions/v1/sensor-state?sensor_id=1
- *   RUNBOOK_URL       — raw GitHub URL to runbook/WATER_ANOMALY.md
- *
- * Optional:
- *   JETTY_COLLECTION=beluga-demo
- *   JETTY_TASK=hourly-water-report
- *   JETTY_ROUTINE=hourly-check
- *   JETTY_API_BASE=https://flows-api.jetty.io/api/v1
+ * For demos, prefer: npm run jetty:run  (chat/completions runbook mode — always works)
  */
 
 import { readFileSync, existsSync } from 'node:fs'
@@ -45,13 +36,14 @@ function loadEnv() {
 loadEnv()
 
 const token = process.env.JETTY_API_TOKEN
-const collection = process.env.JETTY_COLLECTION ?? 'beluga-demo'
+const collection = process.env.JETTY_COLLECTION ?? 'myorg123'
 const taskName = process.env.JETTY_TASK ?? 'hourly-water-report'
 const routineName = process.env.JETTY_ROUTINE ?? 'hourly-check'
 const runbookUrl = process.env.RUNBOOK_URL
 const sensorEndpoint = process.env.SENSOR_ENDPOINT
 const apiBase = (process.env.JETTY_API_BASE ?? 'https://flows-api.jetty.io/api/v1').replace(/\/$/, '')
 const runNow = process.argv.includes('--run-now')
+const deleteTask = process.argv.includes('--delete-task')
 
 if (!token) {
   console.error('Missing JETTY_API_TOKEN')
@@ -69,19 +61,44 @@ async function jetty(path, options = {}) {
     },
   })
   const text = await res.text()
-  let body
-  try {
-    body = text ? JSON.parse(text) : null
-  } catch {
-    body = text
-  }
   if (!res.ok) {
     throw new Error(`${options.method ?? 'GET'} ${url} → ${res.status}: ${text}`)
   }
-  return body
+  return text ? JSON.parse(text) : null
+}
+
+function buildWorkflow() {
+  const stepConfig = {
+    activity: 'runbook',
+    agent: 'claude-code',
+    model: 'claude-sonnet-4-6',
+    snapshot: 'python312-uv',
+  }
+  if (runbookUrl) {
+    stepConfig.runbook_url = runbookUrl
+  }
+
+  return {
+    init_params: {
+      user_message: 'Run the hourly water monitoring report and alert if anomaly detected.',
+    },
+    step_configs: {
+      run: stepConfig,
+    },
+    steps: ['run'],
+  }
 }
 
 async function ensureCollection() {
+  try {
+    const list = await jetty('/collections')
+    if (Array.isArray(list) && list.some((c) => c.name === collection)) {
+      console.log(`· Collection "${collection}" already exists`)
+      return
+    }
+  } catch {
+    // fall through to create attempt
+  }
   try {
     await jetty('/collections', {
       method: 'POST',
@@ -89,8 +106,25 @@ async function ensureCollection() {
     })
     console.log(`✓ Collection "${collection}" created`)
   } catch (e) {
-    if (String(e.message).includes('409') || String(e.message).toLowerCase().includes('exist')) {
-      console.log(`· Collection "${collection}" already exists`)
+    if (
+      String(e.message).includes('409') ||
+      String(e.message).includes('403') ||
+      String(e.message).toLowerCase().includes('exist')
+    ) {
+      console.log(`· Using existing collection "${collection}"`)
+    } else {
+      throw e
+    }
+  }
+}
+
+async function deleteExistingTask() {
+  try {
+    await jetty(`/tasks/${collection}/${taskName}`, { method: 'DELETE' })
+    console.log(`✓ Deleted task "${taskName}"`)
+  } catch (e) {
+    if (e.message.includes('404')) {
+      console.log(`· Task "${taskName}" not found (nothing to delete)`)
     } else {
       throw e
     }
@@ -99,33 +133,12 @@ async function ensureCollection() {
 
 async function ensureTask() {
   if (!runbookUrl) {
-    console.warn('⚠ RUNBOOK_URL not set — push runbook/WATER_ANOMALY.md to GitHub and set RUNBOOK_URL')
+    console.warn('⚠ RUNBOOK_URL not set — task will need runbook_url in Jetty UI')
   }
 
   const payload = {
     name: taskName,
-    workflow: {
-      steps: [
-        {
-          id: 'run-runbook',
-          type: 'chat_completion',
-          config: {
-            model: 'claude-sonnet-4-6',
-            messages: [
-              {
-                role: 'user',
-                content:
-                  'Run the hourly water monitoring report and alert if anomaly detected.',
-              },
-            ],
-            jetty: {
-              collection,
-              runbook_url: runbookUrl,
-            },
-          },
-        },
-      ],
-    },
+    workflow: buildWorkflow(),
   }
 
   try {
@@ -133,10 +146,10 @@ async function ensureTask() {
       method: 'POST',
       body: JSON.stringify(payload),
     })
-    console.log(`✓ Task "${taskName}" created`)
+    console.log(`✓ Task "${taskName}" created (runbook workflow)`)
   } catch (e) {
     if (String(e.message).includes('409') || String(e.message).toLowerCase().includes('exist')) {
-      console.log(`· Task "${taskName}" may already exist — update in flows.jetty.io if needed`)
+      console.log(`· Task exists — use --delete-task then re-run setup to replace broken task`)
     } else {
       throw e
     }
@@ -149,7 +162,7 @@ async function ensureRoutine() {
       method: 'POST',
       body: JSON.stringify({
         name: routineName,
-        cadence: '0 * * * *',
+        cadence: { type: 'hourly' },
       }),
     })
     console.log(`✓ Routine "${routineName}" scheduled (hourly)`)
@@ -167,7 +180,7 @@ async function triggerRunNow() {
     method: 'POST',
     body: JSON.stringify({}),
   })
-  console.log(`✓ Routine run-now triggered — watch flows.jetty.io → ${collection} → ${taskName}`)
+  console.log(`✓ Routine run-now triggered`)
 }
 
 async function main() {
@@ -175,23 +188,23 @@ async function main() {
   console.log('────────────────────')
   if (sensorEndpoint) {
     console.log(`SENSOR_ENDPOINT: ${sensorEndpoint}`)
-    console.log('Add SENSOR_ENDPOINT + Twilio/Resend secrets in Jetty collection env vars.')
-  } else {
-    console.warn('⚠ Set SENSOR_ENDPOINT to your deployed sensor-state URL')
   }
 
   await ensureCollection()
+
+  if (deleteTask) {
+    await deleteExistingTask()
+  }
+
   await ensureTask()
   await ensureRoutine()
 
   if (runNow) {
     await triggerRunNow()
-  } else {
-    console.log('\nDemo trigger:')
-    console.log(`  npm run jetty:run-now`)
-    console.log('  (or press L for leak, then run-now while tab is open)')
   }
 
+  console.log('\nDemo (recommended — avoids broken UI task):')
+  console.log('  npm run jetty:run')
   console.log('\nTrajectories: https://flows.jetty.io')
 }
 

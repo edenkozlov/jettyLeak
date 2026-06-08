@@ -55,11 +55,14 @@ Examine the flow signature using these pattern definitions:
 | Major burst | Instant jump to > 5 L/min, stays high |
 | Data artifact | Irregular spikes with no sustained pattern |
 
-Compare the recent_history array shape against these patterns to determine
-which best fits. The shape of the drift matters more than the peak value.
+Compare the recent_history array shape against these patterns.
 
-Also consider: temperature_c below 0 significantly raises pipe freeze risk
-and changes the severity of any sustained flow anomaly.
+**Server-side triggers (trust these first):**
+- If `anomaly_active` is `true` → classify as `slow_leak`, `alert_required: true`, confidence ≥ 80
+- If `sensor_mode` is `leak` and `peak_lpm_60s` ≥ 0.15 → `slow_leak`, alert if sustained ≥ 45s
+- Duplicate timestamps in `recent_history` are a 2s sampling artifact — use bucketed `current_lpm` / `peak_lpm_60s`, not raw pairs
+
+Also consider: temperature_c below 0 significantly raises pipe freeze risk.
 
 ## Step 3 — Write the Hourly Report
 
@@ -107,20 +110,25 @@ Before finishing, check:
 
 If any check fails, revise and re-run Step 3. Maximum 2 revision cycles.
 
-## Output Manifest
+## REQUIRED OUTPUT FILES (MANDATORY)
 
-Produce a file called `report.json` containing the final report JSON.
-If an alert was sent, also produce `alert_sent.json` with the email
-content that was transmitted.
+Write all files to **`/app/results/`** (Jetty results directory). Task is NOT complete until these exist:
+
+| File | Description |
+|------|-------------|
+| `/app/results/report.json` | Final hourly report JSON |
+| `/app/results/validation_report.json` | `{"overall_passed": true, "stages": [...]}` |
+| `/app/results/alert_sent.json` | Only if email was sent |
+
+```bash
+mkdir -p /app/results
+```
 
 ## Tips
 
-- The sensor_mode field ("idle", "flush", "leak") is from the simulator —
-  use it as a hint but base your classification on the actual data shape
-- A flush that already resolved (mode back to "idle") should NOT trigger
-  an alert even if total_liters_tonight is elevated
-- anomaly_sustained_seconds > 45 at night with lpm > 0.15 is your primary
-  alert trigger — trust it
+- `anomaly_active: true` from the API = alert (do not downgrade to artifact)
+- `sensor_mode: "leak"` + `peak_lpm_60s` ≥ 0.15 = slow leak during demo
+- A resolved flush (`sensor_mode: "idle"`, no sustained elevation) = no alert
 - confidence below 70% = inconclusive, no alert, no email
 - Temperature below -5°C upgrades any "slow_leak" to "moderate" severity
   due to pipe freeze risk
