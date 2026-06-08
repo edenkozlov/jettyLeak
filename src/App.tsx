@@ -47,6 +47,7 @@ const Settings = lazy(() => import('@/pages/Settings'))
 const Team = lazy(() => import('@/pages/Team'))
 const BuildingCertification = lazy(() => import('@/pages/BuildingCertification'))
 const WaterAlerts = lazy(() => import('@/pages/WaterAlerts'))
+const Jetty = lazy(() => import('@/pages/Jetty'))
 const Activity = lazy(() => import('@/pages/Activity'))
 const Articles = lazy(() => import('@/pages/articles/Articles'))
 const ArticleWhatIsWaterMonitoring = lazy(() => import('@/pages/articles/ArticleWhatIsWaterMonitoring'))
@@ -141,6 +142,7 @@ function AppRoutes() {
               <Route path="mag-reports/:buildingId?" element={<MagReports />} />
               <Route path="engineering/mag/:buildingId?" element={<MagReports />} />
               <Route path="water-alerts" element={<WaterAlerts />} />
+              <Route path="jetty" element={<Jetty />} />
             </Route>
           </Route>
         </Routes>

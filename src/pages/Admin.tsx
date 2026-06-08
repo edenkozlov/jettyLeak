@@ -1053,6 +1053,7 @@ export default function Admin() {
   const [bleDevice, setBleDevice] = useState<BluetoothDevice | null>(null)
   const [bleConnected, setBleConnected] = useState(false)
   const [bleConnecting, setBleConnecting] = useState(false)
+  const [blePhase, setBlePhase] = useState<'idle' | 'picker' | 'connecting'>('idle')
   const [bleCurrentSSID, setBleCurrentSSID] = useState('')
   const [bleWifiStatus, setBleWifiStatus] = useState('')
   const [bleNewSSID, setBleNewSSID] = useState('')
@@ -1302,13 +1303,35 @@ export default function Admin() {
   async function handleBleScan() {
     setBleError('')
     setBleConnecting(true)
+    setBlePhase('picker')
+    const connectTimeoutMs = 20_000
+    const withTimeout = <T,>(promise: Promise<T>, label: string) =>
+      Promise.race([
+        promise,
+        new Promise<T>((_, reject) => {
+          setTimeout(
+            () => reject(new Error(
+              `${label} timed out — wrong device, or receiver not in range. Cancel and try another Unknown device (not EdenPhone).`,
+            )),
+            connectTimeoutMs,
+          )
+        }),
+      ])
+
     try {
       if (!navigator.bluetooth) {
         throw new Error('Web Bluetooth is not supported in this browser. Use Chrome or Edge.')
       }
+      if (!WIFI_SERVICE_UUID) {
+        throw new Error('Missing VITE_BLE_WIFI_SERVICE_UUID in .env — restart the dev server after adding it.')
+      }
+      // acceptAllDevices: ESP32 firmware often does not advertise the WiFi service
+      // UUID in scan packets, so filters: [{ services }] yields an empty picker forever.
       const device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: [WIFI_SERVICE_UUID] }],
+        acceptAllDevices: true,
+        optionalServices: [WIFI_SERVICE_UUID],
       })
+      setBlePhase('connecting')
       setBleDevice(device)
 
       device.addEventListener('gattserverdisconnected', () => {
@@ -1318,8 +1341,15 @@ export default function Admin() {
         setBleWifiStatus('')
       })
 
-      const server = await device.gatt!.connect()
-      const service = await server.getPrimaryService(WIFI_SERVICE_UUID)
+      if (!device.gatt) {
+        throw new Error('This device does not support GATT — pick a different Unknown device.')
+      }
+
+      const server = await withTimeout(device.gatt.connect(), 'Bluetooth connect')
+      const service = await withTimeout(
+        server.getPrimaryService(WIFI_SERVICE_UUID),
+        'WiFi service lookup',
+      )
 
       const ssidChar = await service.getCharacteristic(WIFI_SSID_CHAR_UUID)
       const passChar = await service.getCharacteristic(WIFI_PASS_CHAR_UUID)
@@ -1328,15 +1358,12 @@ export default function Admin() {
 
       setBleChars({ ssid: ssidChar, pass: passChar, status: statusChar, command: commandChar })
 
-      // Read current SSID
       const ssidValue = await ssidChar.readValue()
       setBleCurrentSSID(new TextDecoder().decode(ssidValue))
 
-      // Read current status
       const statusValue = await statusChar.readValue()
       setBleWifiStatus(new TextDecoder().decode(statusValue))
 
-      // Subscribe to status notifications
       await statusChar.startNotifications()
       statusChar.addEventListener('characteristicvaluechanged', ((event: Event) => {
         const target = event.target as BluetoothRemoteGATTCharacteristic
@@ -1349,11 +1376,16 @@ export default function Admin() {
 
       setBleConnected(true)
     } catch (e: unknown) {
-      if (e instanceof Error && e.name !== 'NotFoundError') {
-        setBleError(e.message)
+      if (e instanceof Error) {
+        if (e.name === 'NotFoundError') {
+          setBleError('Scan cancelled. Click Scan again and pick an Unknown device near the plugged-in receiver.')
+        } else {
+          setBleError(e.message)
+        }
       }
     } finally {
       setBleConnecting(false)
+      setBlePhase('idle')
     }
   }
 
@@ -1536,7 +1568,6 @@ export default function Admin() {
           )}
         </div>
       )}
-
 
       {/* Firmware OTA */}
       {activeTab === 'firmware' && (
@@ -1884,18 +1915,32 @@ export default function Admin() {
             <>
               {/* Connection */}
               <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 sm:p-6">
-                <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Connect to Sensor</h2>
+                <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Connect to Receiver</h2>
                 <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-                  Make sure you are near the sensor and Bluetooth is enabled on this device.
+                  Stand next to the <strong className="font-medium text-gray-800 dark:text-gray-200">plugged-in receiver</strong> (the hub with power/USB), not the clamp on the water meter. The meter unit uses LoRa only. Use Chrome or Edge with Bluetooth enabled on this laptop.
+                </p>
+                <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+                  If the list is empty, unplug the receiver for 5 seconds and plug it back in, then scan again. Safe to do — it just reboots the hub.
                 </p>
                 {!bleConnected ? (
-                  <button
-                    onClick={handleBleScan}
-                    disabled={bleConnecting}
-                    className="w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
-                  >
-                    {bleConnecting ? 'Scanning...' : 'Scan for Sensors'}
-                  </button>
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleBleScan}
+                      disabled={bleConnecting}
+                      className="w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+                    >
+                      {blePhase === 'picker'
+                        ? 'Waiting — pick device in Chrome dialog…'
+                        : blePhase === 'connecting'
+                          ? 'Connecting…'
+                          : 'Scan for Receiver'}
+                    </button>
+                    {bleConnecting && blePhase === 'picker' && (
+                      <p className="text-xs text-amber-700 dark:text-amber-300">
+                        A Chrome pairing popup should be open — it may be <strong>behind</strong> this window. Pick an Unknown device (skip EdenPhone), or click Cancel there.
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <div className="space-y-3">
                     <div className="flex flex-col gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-3 dark:border-green-700 dark:bg-green-900/30 sm:flex-row sm:items-center sm:justify-between sm:px-4">

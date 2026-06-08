@@ -217,7 +217,7 @@ CREATE OR REPLACE FUNCTION get_signal_downsampled(
     id          BIGINT,
     created_at  TIMESTAMPTZ,
     value       TEXT,
-    time        TIMESTAMPTZ,
+    "time"      TIMESTAMPTZ,
     sensor_id   INTEGER,
     start_time  TIMESTAMPTZ,
     end_time    TIMESTAMPTZ
@@ -226,7 +226,7 @@ CREATE OR REPLACE FUNCTION get_signal_downsampled(
         s.id,
         s.created_at,
         s.value::TEXT,
-        s.time,
+        s.time AS "time",
         s.sensor_id,
         s.start_time,
         s.end_time
