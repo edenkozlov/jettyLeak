@@ -65,15 +65,18 @@ function nightWindowStart(now: Date, forceNight: boolean): string {
   return start.toISOString();
 }
 
-function toSpecMode(simMode: string | null): string {
-  if (!simMode) return "idle";
-  if (simMode === "leak_pending") return "leak_pending";
-  if (simMode === "flush_pending") return "flush_pending";
-  if (simMode === "leak" || simMode === "flush" || simMode === "idle") {
-    return simMode;
+/** Map internal state to production-facing flow classification. */
+function toFlowState(internalMode: string | null): string {
+  if (!internalMode || internalMode === "idle") return "idle";
+  if (internalMode === "leak_pending" || internalMode === "flush_pending") {
+    return "ramping";
   }
-  if (simMode.includes("flush")) return "flush";
-  if (simMode.includes("leak")) return "leak";
+  if (internalMode === "leak" || internalMode.includes("leak")) {
+    return "elevated";
+  }
+  if (internalMode === "flush" || internalMode.includes("flush")) {
+    return "transient_spike";
+  }
   return "idle";
 }
 
@@ -89,6 +92,18 @@ function nearestMag(mags: MagRow[], ts: number): MagRow | null {
     }
   }
   return bestDiff <= 5_000 ? best : null;
+}
+
+function bucketFlows(samples: FlowRow[], bucketMs = 2_000): FlowRow[] {
+  const byBucket = new Map<number, FlowRow>();
+  for (const s of samples) {
+    const key = Math.floor(new Date(s.created_at).getTime() / bucketMs);
+    const prev = byBucket.get(key);
+    if (!prev || Number(s.lpm) > Number(prev.lpm)) byBucket.set(key, s);
+  }
+  return [...byBucket.values()].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+  );
 }
 
 Deno.serve(async (req) => {
@@ -160,19 +175,6 @@ Deno.serve(async (req) => {
     Deno.env.get("JETTY_FORCE_NIGHT") === "true";
   const isNightNow = isNight(now, forceNight);
 
-  /** One sample per 2s tick (simulator writes 4 sub-samples per tick — raw rows look like artifacts). */
-  function bucketFlows(samples: FlowSample[], bucketMs = 2_000): FlowSample[] {
-    const byBucket = new Map<number, FlowSample>();
-    for (const s of samples) {
-      const key = Math.floor(new Date(s.created_at).getTime() / bucketMs);
-      const prev = byBucket.get(key);
-      if (!prev || Number(s.lpm) > Number(prev.lpm)) byBucket.set(key, s);
-    }
-    return [...byBucket.values()].sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
-    );
-  }
-
   const bucketed = bucketFlows(flows);
   const recentBucketed = bucketed.slice(-10);
   const last60s = bucketed.filter(
@@ -226,7 +228,7 @@ Deno.serve(async (req) => {
   }
 
   const recent = recentBucketed;
-  const recentHistory = recent.map((f, i) => {
+  const recentHistory = recent.map((f) => {
     const ts = new Date(f.created_at).getTime();
     const mag = nearestMag(mags, ts);
     const ageSec = recent.length > 1
@@ -250,22 +252,31 @@ Deno.serve(async (req) => {
     };
   });
 
-  const lastJettyReportAt = incidentRes.data?.created_at ??
+  const lastReportAt = incidentRes.data?.created_at ??
     watch?.last_fired_at ??
     null;
 
   const building = Deno.env.get("BUILDING_NAME") ?? "4500 Rue Sherbrooke";
   const units = Deno.env.get("BUILDING_UNITS") ?? "42";
+  const sensorLabel = Deno.env.get("SENSOR_LABEL") ??
+    `Supply line · sensor ${sensorId}`;
   const rateCadPerL = 0.004;
   const litersPerHour = currentLpm * 60;
   const costPerHour = Math.round(litersPerHour * rateCadPerL * 100) / 100;
   const costPerDay = Math.round(costPerHour * 24 * 100) / 100;
   const costPerYear = Math.round(costPerDay * 365 * 100) / 100;
 
+  const lastReadingAt = watch?.last_flow_at ??
+    (flows.length ? flows[flows.length - 1]!.created_at : null);
+  const telemetryOnline = lastLpmFresh || (flows.length > 0 &&
+    now.getTime() - new Date(flows[flows.length - 1]!.created_at).getTime() <
+      10_000);
+
   return json({
     building,
     units,
     sensor_id: sensorId,
+    sensor_label: sensorLabel,
     timestamp: now.toISOString(),
     is_night: isNightNow,
     current_lpm: Math.round(currentLpm * 1000) / 1000,
@@ -279,28 +290,10 @@ Deno.serve(async (req) => {
     cost_per_hour_cad: currentLpm > 0 ? costPerHour : 0,
     cost_per_day_cad: currentLpm > 0 ? costPerDay : 0,
     cost_per_year_cad: currentLpm > 0 ? costPerYear : 0,
-    sensor_mode: toSpecMode(watch?.sim_mode ?? null),
-    sim_mode_raw: watch?.sim_mode ?? "idle",
-    last_jetty_report_at: lastJettyReportAt,
+    flow_state: toFlowState(watch?.sim_mode ?? null),
+    last_report_at: lastReportAt,
+    last_reading_at: lastReadingAt,
+    telemetry_online: telemetryOnline,
     recent_history: recentHistory,
-    sample_count: flows.length,
-    last_flow_at: watch?.last_flow_at ?? null,
-    last_lpm_stored: watch?.last_lpm ?? null,
-    data_fresh: lastLpmFresh || (flows.length > 0 &&
-      now.getTime() - new Date(flows[flows.length - 1]!.created_at).getTime() <
-        10_000),
-    demo_hint: (() => {
-      if (lastLpmFresh && currentLpm > ANOMALY_LPM) return null;
-      if (flows.length === 0) {
-        return "No flow samples in last 5 min — open /dashboard/jetty as admin, press N then L, keep tab open until DB shows live.";
-      }
-      if (watch?.sim_mode === "leak_pending") {
-        return "Leak starting — wait ~3s then curl again.";
-      }
-      if (watch?.sim_mode === "leak" && currentLpm <= 0) {
-        return "sim_mode is leak but lpm is 0 — tab may be closed or DB persist failed (need admin login).";
-      }
-      return null;
-    })(),
   });
 });

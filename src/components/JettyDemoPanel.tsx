@@ -347,7 +347,7 @@ export default function JettyDemoPanel() {
         persistFailLoggedRef.current = true
         setDbStatus('error')
         addLog(
-          `DB write failed — apply migration 007_jetty_demo_persist. ${res.error ?? ''}`.trim(),
+          `DB write failed — apply jetty flow migrations. ${res.error ?? ''}`.trim(),
           'warn',
         )
       }
@@ -911,10 +911,10 @@ export default function JettyDemoPanel() {
             </a>
           </div>
           <p className="mb-2 text-[11px] leading-relaxed text-gray-400">
-            Routine <span className="text-gray-300">{JETTY_ROUTINE}</span> (hourly) → workflow{' '}
+            Routine <span className="text-gray-300">{JETTY_ROUTINE}</span> (hourly) →{' '}
             <span className="text-gray-300">{JETTY_TASK}</span> → runbook{' '}
-            <span className="text-gray-300">WATER_ANOMALY.md</span> fetches sensor state, diagnoses,
-            sends SMS/email from Jetty sandbox. Every run = trajectory.
+            <span className="text-gray-300">WATER_ANOMALY.md</span> fetches sensor state, diagnoses
+            flow, sends email alert when required.
           </p>
           {sensorEndpoint ? (
             <p className="mb-2 break-all text-[11px] text-emerald-400/90">
@@ -924,9 +924,8 @@ export default function JettyDemoPanel() {
             <p className="mb-2 text-amber-400">Set VITE_SUPABASE_URL for sensor-state URL</p>
           )}
           <p className="mb-2 text-[11px] text-gray-500">
-            Demo: N → night · L → leak · then{' '}
-            <code className="text-gray-400">npm run jetty:run</code>
-            {' '}(UI &quot;Run task&quot; needs task recreated — see setup script)
+            Controls: N — night window · L — elevated flow ·{' '}
+            <code className="text-gray-400">npm run jetty:run</code> to trigger analysis
           </p>
           <div className="mb-2 flex flex-wrap gap-2">
             <button
@@ -935,7 +934,7 @@ export default function JettyDemoPanel() {
               onClick={() => void runNightWatch(true)}
               className="rounded border border-gray-700 bg-gray-800 px-2 py-0.5 text-[10px] font-medium text-indigo-300 hover:bg-gray-700 disabled:opacity-50"
             >
-              Check pattern (legacy)
+              Pattern check
             </button>
             <button
               type="button"
@@ -943,7 +942,7 @@ export default function JettyDemoPanel() {
               onClick={() => void runNightWatch(false)}
               className="rounded border border-gray-700 bg-gray-800 px-2 py-0.5 text-[10px] font-medium text-indigo-300 hover:bg-gray-700 disabled:opacity-50"
             >
-              Edge fn Jetty (legacy)
+              Night watch
             </button>
             <a
               href={jettyDashboardUrl()}
@@ -966,7 +965,7 @@ export default function JettyDemoPanel() {
             </p>
           ) : (
             <div className="max-h-40 space-y-2 overflow-y-auto">
-              <p className="text-[10px] uppercase tracking-wider text-gray-600">Legacy edge-fn incidents</p>
+              <p className="text-[10px] uppercase tracking-wider text-gray-600">Recent incidents</p>
               {incidents.map((inc) => (
                 <div
                   key={inc.id}

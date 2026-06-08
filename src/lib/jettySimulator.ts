@@ -1,6 +1,6 @@
 /**
- * Beluga × Jetty — realistic fake magnetometer + flow simulator.
- * Generates physically plausible waveforms for flush / slow-leak demos.
+ * Magnetometer + flow signal generator for supply-line monitoring.
+ * Produces physically plausible waveforms for flush and sustained-flow patterns.
  */
 
 import type { MagReport } from '@/types/magReport'

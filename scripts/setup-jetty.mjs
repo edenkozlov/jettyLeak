@@ -6,7 +6,7 @@
  *   node scripts/setup-jetty.mjs --run-now    # trigger routine (after task is valid)
  *   node scripts/setup-jetty.mjs --delete-task  # remove broken task before recreate
  *
- * For demos, prefer: npm run jetty:run  (chat/completions runbook mode — always works)
+ * Manual trigger: npm run jetty:run  (chat/completions runbook mode)
  */
 
 import { readFileSync, existsSync } from 'node:fs'
@@ -36,7 +36,7 @@ function loadEnv() {
 loadEnv()
 
 const token = process.env.JETTY_API_TOKEN
-const collection = process.env.JETTY_COLLECTION ?? 'myorg123'
+const collection = process.env.JETTY_COLLECTION ?? 'beluga-water'
 const taskName = process.env.JETTY_TASK ?? 'hourly-water-report'
 const routineName = process.env.JETTY_ROUTINE ?? 'hourly-check'
 const runbookUrl = process.env.RUNBOOK_URL
@@ -80,7 +80,8 @@ function buildWorkflow() {
 
   return {
     init_params: {
-      user_message: 'Run the hourly water monitoring report and alert if anomaly detected.',
+      user_message:
+        'Run the hourly water monitoring report. Fetch sensor state, analyze flow, email if anomaly detected.',
     },
     step_configs: {
       run: stepConfig,
@@ -184,8 +185,8 @@ async function triggerRunNow() {
 }
 
 async function main() {
-  console.log('Beluga × Jetty setup')
-  console.log('────────────────────')
+  console.log('Jetty water monitoring setup')
+  console.log('────────────────────────────')
   if (sensorEndpoint) {
     console.log(`SENSOR_ENDPOINT: ${sensorEndpoint}`)
   }
@@ -203,9 +204,8 @@ async function main() {
     await triggerRunNow()
   }
 
-  console.log('\nDemo (recommended — avoids broken UI task):')
-  console.log('  npm run jetty:run')
-  console.log('\nTrajectories: https://flows.jetty.io')
+  console.log('\nManual run: npm run jetty:run')
+  console.log('Runs: https://flows.jetty.io')
 }
 
 main().catch((e) => {

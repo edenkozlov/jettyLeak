@@ -1,6 +1,6 @@
 /** Jetty web dashboard — NOT dock.jetty.io (that's API-only, returns JSON 404). */
 const UI_BASE = import.meta.env.VITE_JETTY_UI_URL ?? 'https://flows.jetty.io'
-const DEFAULT_TASK = import.meta.env.VITE_JETTY_TASK ?? 'beluga-night-watch'
+const DEFAULT_TASK = import.meta.env.VITE_JETTY_TASK ?? 'hourly-water-report'
 
 /** Task runs list in the Jetty dashboard. */
 export function jettyTaskUrl(collection?: string | null, task?: string | null): string {

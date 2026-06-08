@@ -170,7 +170,7 @@ function analyzeFlowPattern(samples: FlowSample[]): FlowPattern {
     series,
   };
 
-  // Flush: brief high spike then drop (toilet ~6s, >>0.35 L/min peak in demo)
+  // Flush: brief high spike then drop (toilet ~6s, >>0.35 L/min peak)
   if (peak > FLUSH_PEAK_LPM) {
     const high = samples.filter((s) => Number(s.lpm) > 0.25);
     const highSpan = high.length > 1

@@ -35,7 +35,7 @@ function loadEnv() {
 loadEnv()
 
 const token = process.env.JETTY_API_TOKEN
-const collection = process.env.JETTY_COLLECTION ?? 'myorg123'
+const collection = process.env.JETTY_COLLECTION ?? 'beluga-water'
 const task = process.env.JETTY_TASK ?? 'hourly-water-report'
 const runbookUrl = process.env.RUNBOOK_URL
 const useGithub = process.env.USE_GITHUB_RUNBOOK === '1'
