@@ -38,6 +38,8 @@ interface WatchRow {
   total_liters_tonight: number;
   sim_mode: string | null;
   force_night: boolean | null;
+  last_lpm: number | null;
+  last_flow_at: string | null;
 }
 
 function json(body: unknown, status = 200): Response {
@@ -63,8 +65,13 @@ function nightWindowStart(now: Date, forceNight: boolean): string {
   return start.toISOString();
 }
 
-function toSpecMode(simMode: string | null): "idle" | "flush" | "leak" {
+function toSpecMode(simMode: string | null): string {
   if (!simMode) return "idle";
+  if (simMode === "leak_pending") return "leak_pending";
+  if (simMode === "flush_pending") return "flush_pending";
+  if (simMode === "leak" || simMode === "flush" || simMode === "idle") {
+    return simMode;
+  }
   if (simMode.includes("flush")) return "flush";
   if (simMode.includes("leak")) return "leak";
   return "idle";
@@ -107,7 +114,7 @@ Deno.serve(async (req) => {
   );
 
   const now = new Date();
-  const sinceFlow = new Date(now.getTime() - 90_000).toISOString();
+  const sinceFlow = new Date(now.getTime() - 5 * 60_000).toISOString();
   const sinceMag = new Date(now.getTime() - 90_000).toISOString();
 
   const [flowRes, magRes, watchRes, incidentRes] = await Promise.all([
@@ -128,7 +135,7 @@ Deno.serve(async (req) => {
     sb
       .from("jetty_nightwatch_state")
       .select(
-        "anomaly_started_at, last_fired_at, total_liters_tonight, sim_mode, force_night",
+        "anomaly_started_at, last_fired_at, total_liters_tonight, sim_mode, force_night, last_lpm, last_flow_at",
       )
       .eq("sensor_id", sensorId)
       .maybeSingle(),
@@ -171,12 +178,21 @@ Deno.serve(async (req) => {
   const last60s = bucketed.filter(
     (s) => new Date(s.created_at).getTime() >= now.getTime() - 60_000,
   );
-  const currentLpm = recentBucketed.length
+  let currentLpm = recentBucketed.length
     ? Math.max(...recentBucketed.slice(-3).map((s) => Number(s.lpm) || 0))
     : 0;
   const peakLpm60s = last60s.length
     ? Math.max(...last60s.map((s) => Number(s.lpm) || 0))
     : 0;
+
+  const lastFlowAt = watch?.last_flow_at
+    ? new Date(watch.last_flow_at).getTime()
+    : null;
+  const lastLpmFresh = lastFlowAt != null &&
+    now.getTime() - lastFlowAt < 15_000;
+  if (lastLpmFresh && Number(watch?.last_lpm) > currentLpm) {
+    currentLpm = Number(watch!.last_lpm) || 0;
+  }
 
   const windowStart = nightWindowStart(now, forceNight);
   const tonightRes = await sb
@@ -262,6 +278,24 @@ Deno.serve(async (req) => {
     last_jetty_report_at: lastJettyReportAt,
     recent_history: recentHistory,
     sample_count: flows.length,
+    last_flow_at: watch?.last_flow_at ?? null,
+    last_lpm_stored: watch?.last_lpm ?? null,
+    data_fresh: lastLpmFresh || (flows.length > 0 &&
+      now.getTime() - new Date(flows[flows.length - 1]!.created_at).getTime() <
+        10_000),
+    demo_hint: (() => {
+      if (lastLpmFresh && currentLpm > ANOMALY_LPM) return null;
+      if (flows.length === 0) {
+        return "No flow samples in last 5 min — open /dashboard/jetty as admin, press N then L, keep tab open until DB shows live.";
+      }
+      if (watch?.sim_mode === "leak_pending") {
+        return "Leak starting — wait ~3s then curl again.";
+      }
+      if (watch?.sim_mode === "leak" && currentLpm <= 0) {
+        return "sim_mode is leak but lpm is 0 — tab may be closed or DB persist failed (need admin login).";
+      }
+      return null;
+    })(),
     jetty_routine_hint:
       "Jetty Routine hourly-water-report fetches this endpoint, then runs runbook WATER_ANOMALY.md",
   });
