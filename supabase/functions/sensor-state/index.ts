@@ -256,6 +256,11 @@ Deno.serve(async (req) => {
 
   const building = Deno.env.get("BUILDING_NAME") ?? "4500 Rue Sherbrooke";
   const units = Deno.env.get("BUILDING_UNITS") ?? "42";
+  const rateCadPerL = 0.004;
+  const litersPerHour = currentLpm * 60;
+  const costPerHour = Math.round(litersPerHour * rateCadPerL * 100) / 100;
+  const costPerDay = Math.round(costPerHour * 24 * 100) / 100;
+  const costPerYear = Math.round(costPerDay * 365 * 100) / 100;
 
   return json({
     building,
@@ -270,9 +275,10 @@ Deno.serve(async (req) => {
     anomaly_sustained_seconds: anomalySustainedSeconds,
     nighttime_baseline_lpm: 0.04,
     anomaly_threshold_lpm: ANOMALY_LPM,
-    temperature_c: -8,
-    last_maintenance_days_ago: 94,
-    recent_tenant_complaints: "none",
+    water_rate_cad_per_liter: rateCadPerL,
+    cost_per_hour_cad: currentLpm > 0 ? costPerHour : 0,
+    cost_per_day_cad: currentLpm > 0 ? costPerDay : 0,
+    cost_per_year_cad: currentLpm > 0 ? costPerYear : 0,
     sensor_mode: toSpecMode(watch?.sim_mode ?? null),
     sim_mode_raw: watch?.sim_mode ?? "idle",
     last_jetty_report_at: lastJettyReportAt,
@@ -296,7 +302,5 @@ Deno.serve(async (req) => {
       }
       return null;
     })(),
-    jetty_routine_hint:
-      "Jetty Routine hourly-water-report fetches this endpoint, then runs runbook WATER_ANOMALY.md",
   });
 });

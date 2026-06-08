@@ -39,8 +39,8 @@ You run every hour. Your job is to:
 
 Make an HTTP GET request to: $SENSOR_ENDPOINT
 
-This returns a JSON payload with current flow rate, history, anomaly status,
-building context, and environmental data. Parse it fully before proceeding.
+This returns flow rate, history, anomaly status, and building name. Use only
+fields present in the JSON — do not invent temperature, maintenance, or tenant data.
 
 ## Step 2 — Analyze the Data
 
@@ -62,7 +62,7 @@ Compare the recent_history array shape against these patterns.
 - If `sensor_mode` is `leak` and `peak_lpm_60s` ≥ 0.15 → `slow_leak`, alert if sustained ≥ 45s
 - Duplicate timestamps in `recent_history` are a 2s sampling artifact — use bucketed `current_lpm` / `peak_lpm_60s`, not raw pairs
 
-Also consider: temperature_c below 0 significantly raises pipe freeze risk.
+Do not mention pipe freeze, weather, or maintenance history.
 
 ## Step 3 — Write the Hourly Report
 
@@ -79,23 +79,45 @@ Always produce an hourly report regardless of anomaly status. Format:
   "confidence": 85,
   "recommended_action": "one sentence",
   "alert_required": true | false,
-  "alert_urgency": "none | morning | immediate"
+  "alert_urgency": "none | morning | immediate",
+  "cost_per_hour_cad": 0.00,
+  "cost_per_day_cad": 0.00,
+  "cost_per_year_cad": 0.00
 }
 ```
+
+**Cost math** (Montreal combined water rate ≈ **$0.004 CAD per liter**):
+- Liters per hour = `current_lpm × 60`
+- `cost_per_hour_cad` = liters/hour × 0.004
+- `cost_per_day_cad` = cost_per_hour × 24
+- `cost_per_year_cad` = cost_per_day × 365 (projection if leak ran continuously)
+
+Use `cost_*` fields from the API when present; otherwise compute from `current_lpm`.
 
 ## Step 4 — Send Alert (only if alert_required = true)
 
 If alert_required is true, send **email only** (do not send SMS).
 
-### Email
-Subject: include building name, severity, time
-Body must include:
-- What was detected and when
-- Flow data (current L/min, total tonight)
-- Pattern classification and confidence
-- Cost estimate (Montreal water rate: $0.004 per liter)
-- Recommended action with urgency
-- Note that full trajectory is logged in Jetty for audit
+### Email tone
+Plain operational alert — **no demo/LARP filler**. Do NOT mention: temperature,
+freeze risk, maintenance schedules, tenant complaints, or audit/trajectory links.
+
+### Email subject
+`[Beluga] Slow leak — {building} — {current_lpm} L/min`
+
+### Email body (keep under ~12 lines)
+1. **What:** Slow supply-line leak detected (not a flush; sustained low flow)
+2. **Where:** Building name + sensor id from API
+3. **When:** Detection timestamp from API
+4. **Flow:** Current L/min, liters used tonight (if > 0), how long elevated (`anomaly_sustained_seconds`)
+5. **Cost impact** (required):
+   - Estimated cost **right now:** $/hour at current flow rate
+   - If unchanged **24 hours:** $/day
+   - If unchanged **all year:** $/year (state clearly this is a projection)
+6. **Action:** One concrete step (e.g. check basement mechanical / supply line isolation valve)
+
+Example cost line:
+`At 0.22 L/min (~13 L/hr), estimated waste is ~$0.05/hr, ~$1.20/day, ~$438/year if uncorrected.`
 
 Use Python with the requests library to call Resend's API. Write and execute the code.
 Sender: use $RESEND_FROM if set, otherwise `Beluga Water Intelligence <alerts@beluga.io>`.
@@ -105,7 +127,8 @@ Sender: use $RESEND_FROM if set, otherwise `Beluga Water Intelligence <alerts@be
 Before finishing, check:
 - Is my flow classification consistent with the history shape?
 - If I said alert_required=true at night, is confidence >= 70%?
-- Is my cost estimate based on actual L/min * minutes * $0.004?
+- Did I include hourly, daily, and annual cost projection from current_lpm × $0.004/L?
+- Did I avoid weather, freeze, maintenance, or tenant filler?
 - Does my recommended action match the urgency level?
 
 If any check fails, revise and re-run Step 3. Maximum 2 revision cycles.
@@ -130,5 +153,4 @@ mkdir -p /app/results
 - `sensor_mode: "leak"` + `peak_lpm_60s` ≥ 0.15 = slow leak during demo
 - A resolved flush (`sensor_mode: "idle"`, no sustained elevation) = no alert
 - confidence below 70% = inconclusive, no alert, no email
-- Temperature below -5°C upgrades any "slow_leak" to "moderate" severity
-  due to pipe freeze risk
+- Alerts are for **slow supply leaks** caught at night — not flushes
